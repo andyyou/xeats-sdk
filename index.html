@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>SDK Development</title>
+  <style>
+    body {
+      background-color: rgba(0, 0, 0, .2);
+      margin: 50px;
+    }
+
+    svg {
+      background-color: white;
+      width: 100%;
+      overflow: scroll;
+    }
+
+    rect {
+      -moz-user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="seat-map"></div>
+  <div id="root">
+    <app></app>
+  </div>
+  <script src="dist/sdk.js"></script>
+  <script>
+    // 
+    var xeat = new Xeat({
+      el: '#seat-map',
+      token: 'A226248',
+      spot: 'SPACE-ID hash',
+      zoomMax: 2,
+      zoomMin: 0.5,
+      width: 800,
+      height: 600,
+      autoSize: true,   // Auto scale for Responsive
+      amountMax: 4,     // Limit selection amount
+      amountMin: 1
+    })
+
+  </script>
+</body>
+</html>
