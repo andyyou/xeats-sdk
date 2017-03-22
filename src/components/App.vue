@@ -1,20 +1,21 @@
 <template>
   <div>
-    
     <svg :viewBox="viewboxString"
       :width="width" 
       :height="height" 
       v-pan-zoom="viewBox"
     >
       <g>
-        <rect v-for="seat in seats"
-          :id="seat.nodeId" 
-          :x="seat.x" :y="seat.y" 
-          :fill="seat.fill" 
-          :width="seat.width" 
-          :height="seat.height"
+        <circle v-for="seat in seats"
+          :id="seat.nodeId"
+          :cx="seat.x + seat.width / 2"
+          :cy="seat.y + seat.height / 2"
+          :r="seat.width / 2"
+          :fill="seat.fill"
+          :stroke="seat.reserved ? '#666' : '#DDD'"
+          stroke-width="3"
           @click.stop.prevent="book(seat)"
-        ></rect>
+        ></circle>
       </g>
     </svg>
   </div>
@@ -1022,7 +1023,7 @@ export default {
         y: seat.y * ratio,
         width: seat.width * ratio,
         height: seat.height * ratio,
-        fill: '#E8403D',
+        fill: '#DDD',
         reserved: false
       })
     })
@@ -1042,9 +1043,9 @@ export default {
       }
 
       if (seat.reserved) {
-        seat.fill = 'aqua'
+        seat.fill = 'red'
       } else {
-        seat.fill = '#E8403D'
+        seat.fill = '#DDD'
       }
     }
   }

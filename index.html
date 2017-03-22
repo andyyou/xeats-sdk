@@ -24,25 +24,22 @@
 </head>
 <body>
   <div id="seat-map"></div>
-  <div id="root">
-    <app></app>
-  </div>
   <script src="dist/sdk.js"></script>
   <script>
-    // 
-    var xeat = new Xeat({
-      el: '#seat-map',
-      token: 'A226248',
-      spot: 'SPACE-ID hash',
-      zoomMax: 2,
-      zoomMin: 0.5,
-      width: 800,
-      height: 600,
-      autoSize: true,   // Auto scale for Responsive
-      amountMax: 4,     // Limit selection amount
-      amountMin: 1
-    })
-
+    (function () {
+      var xeat = new Xeat({
+        el: '#seat-map',
+        token: 'A226248',
+        spot: 'SPACE-ID hash',
+        zoomMax: 2,
+        zoomMin: 0.5,
+        width: 800,
+        height: 600,
+        autoSize: true,   // Auto scale for Responsive
+        amountMax: 4,     // Limit selection amount
+        amountMin: 1
+      })
+    })()
   </script>
 </body>
 </html>

@@ -27,6 +27,7 @@ export default {
 
         const drag = dragStart.map((e) => {
           e.preventDefault()
+          e.stopPropagation()
 
           // If click on elements in svg do NOT handle 
           if (e.currentTarget.tagName !== 'svg') {
