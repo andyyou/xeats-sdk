@@ -126,8 +126,7 @@ export default {
 
             // Get svgOffsetPoint position，mouse or touch point relative to origin point of SVG 
             let svgOffsetPoint = offsetPoint.matrixTransform(ctm.inverse())
-            let viewBox = svg.getAttribute('viewBox').split(' ').map(n => parseFloat(n))
-            svg.setAttribute('viewBox', `${viewBox[0] + svgOffsetPoint.x} ${viewBox[1] + svgOffsetPoint.y} ${viewport.width * scale} ${viewport.height * scale}`)
+            svg.setAttribute('viewBox', `${vnode.context[binding.expression].x} ${vnode.context[binding.expression].y} ${viewport.width * scale} ${viewport.height * scale}`)
 
             vnode.context[binding.expression].width = viewport.width * scale
             vnode.context[binding.expression].height = viewport.height * scale
@@ -137,17 +136,16 @@ export default {
              * mains will get scaled unit in svg
              */
             let svgScaledPoint = offsetPoint.matrixTransform(svg.getScreenCTM().inverse())
-            viewBox = svg.getAttribute('viewBox').split(' ').map(n => parseFloat(n))
+            let viewBox = svg.getAttribute('viewBox').split(' ').map(n => parseFloat(n))
             let movement = {
               x: viewBox[0] + (svgOffsetPoint.x - svgScaledPoint.x),
               y: viewBox[1] + (svgOffsetPoint.y - svgScaledPoint.y)
             }
-            svg.setAttribute('viewBox', `${movement.x} ${movement.y} ${viewBox[2]} ${viewBox[3]}`)
+            svg.setAttribute('viewBox', `${movement.x} ${movement.y} ${viewport.width * scale} ${viewport.height * scale}`)
 
             vnode.context[binding.expression].x = movement.x
             vnode.context[binding.expression].y = movement.y
           })
-          
         })
 
         /**
