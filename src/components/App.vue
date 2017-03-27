@@ -1,8 +1,10 @@
 <template>
-  <div>
-    <svg :viewBox="viewboxString"
+  <div class="seat">
+    <svg 
+      id="svgCanvas"
+      :viewBox="viewboxString"
       :width="width" 
-      :height="height" 
+      :height="height"
       v-pan-zoom="viewBox"
     >
       <g>
@@ -15,9 +17,63 @@
           :stroke="seat.reserved ? '#666' : '#DDD'"
           stroke-width="3"
           @click.stop.prevent="book(seat)"
+          @mouseover="showTooltip(seat, $event)"
+          @mouseout="tooltip.isActive = false"
         ></circle>
       </g>
     </svg>
+    <span v-if="tooltip.isActive" :style="tooltip.styleObject" >{{ tooltip.content }}</span>
+    <div class="manipulate">
+      <svg @click="zoom('in')" width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+        <title>zoomIn</title>
+        <desc>Created with Sketch.</desc>
+        <defs>
+          <rect id="path-1" x="0" y="0" width="24" height="24" rx="3"></rect>
+          <mask id="mask-2" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="24" height="24" fill="white">
+            <use xlink:href="#path-1"></use>
+          </mask>
+        </defs>
+        <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+          <g id="zoomIn">
+            <use id="Rectangle" stroke="#6F6F6F" mask="url(#mask-2)" stroke-width="4" fill="#FFFFFF" xlink:href="#path-1"></use>
+            <polygon id="plus" fill="#6F6F6F" points="17.6914286 10.6971429 13.5771429 10.6971429 13.5771429 6.58285714 10.8342857 6.58285714 10.8342857 10.6971429 6.72 10.6971429 6.72 13.44 10.8342857 13.44 10.8342857 17.5542857 13.5771429 17.5542857 13.5771429 13.44 17.6914286 13.44"></polygon>
+          </g>
+        </g>
+      </svg>
+
+      <svg @click="reset()" width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+        <title>zoomReset</title>
+        <defs>
+          <rect id="path-1" x="0" y="0" width="24" height="24" rx="3"></rect>
+          <mask id="mask-2" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="24" height="24" fill="white">
+            <use xlink:href="#path-1"></use>
+          </mask>
+        </defs>
+        <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+          <g id="zoomReset">
+            <use id="Rectangle" stroke="#6F6F6F" mask="url(#mask-2)" stroke-width="4" fill="#FFFFFF" xlink:href="#path-1"></use>
+            <path d="M16.4571429,13.0957834 L16.4571429,17.1428571 L13.7142857,17.1428571 L13.7142857,14.4954037 L10.9714286,14.4954037 L10.9714286,17.1428571 L8.22857143,17.1428571 L8.22857143,13.0957834 L12.3428571,9.40037963 C14.4,11.2480815 16.4571429,13.0957834 16.4571429,13.0957834 Z M12.342143,6.70227051 L6.53930664,11.8363037 L7.57922362,13.0478516 L12.342143,8.77252198 L17.0311894,13.0478517 L18.2575077,11.8363038 C18.2575077,11.8363038 13.0411037,7.36431194 12.342143,6.70227051 Z" id="home" fill="#6F6F6F"></path>
+          </g>
+        </g>
+      </svg>
+
+      <svg @click="zoom('out')" width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+        <title>zoomOut</title>
+        <defs>
+          <rect id="path-1" x="0" y="0" width="24" height="24" rx="3"></rect>
+          <mask id="mask-2" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="24" height="24" fill="white">
+            <use xlink:href="#path-1"></use>
+          </mask>
+        </defs>
+        <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+          <g id="zoomOut">
+            <use id="Rectangle" stroke="#6F6F6F" mask="url(#mask-2)" stroke-width="4" fill="#FFFFFF" xlink:href="#path-1"></use>
+            <polygon id="minus" fill="#6F6F6F" points="6.44571429 10.6971429 18.24 10.6971429 18.24 13.44 6.44571429 13.44"></polygon>
+          </g>
+        </g>
+      </svg>
+
+    </div>
   </div>
 </template>
 
@@ -968,14 +1024,14 @@ export default {
   },
   data () {
     return {
-      // FIXME: Original SVG size from API
       viewport: {
-        width: 1913.7,
-        height: 937.3
-      },
-      svg: {
         width: this.width,
         height: this.height
+      },
+      // FIXME: Original SVG size from API
+      svg: {
+        width: 1913.7,
+        height: 937.3
       },
       /**
        * Use v-pan-zoom required this
@@ -989,7 +1045,22 @@ export default {
         zoomMin: this.zoomMin
       },
       seats: [],
-      amount: 0
+      amount: 0,
+      tooltip:{
+        content: "",
+        isActive: false,
+        styleObject: {
+          color: '#FFF',
+          border: '1px solid #333',
+          'border-radius': '3px',
+          padding: '3px 6px',
+          background: '#333',
+          position: 'absolute',
+          left: '0',
+          top: '0',
+          'white-space': 'nowrap'
+        }
+      }
     }
   },
   computed: {
@@ -1008,15 +1079,15 @@ export default {
   mounted () {
     let ratio
     if (this.autoSize) {
-      this.svg.width = this.$el.getBoundingClientRect().width
-      ratio = this.svg.width / this.viewport.width
-      this.svg.height = this.viewport.height * ratio
+      this.viewport.width = this.$el.getBoundingClientRect().width
+      ratio = this.viewport.width / this.svg.width
+      this.viewport.height = this.svg.height * ratio
     } else {
       ratio = 1
     }
 
-    this.viewBox.width = this.svg.width
-    this.viewBox.height = this.svg.height
+    this.viewBox.width = this.viewport.width
+    this.viewBox.height = this.viewport.height
     this.seats = this.seats.map(function (seat) {
       return Object.assign({}, seat, {
         x: seat.x * ratio,
@@ -1047,11 +1118,85 @@ export default {
       } else {
         seat.fill = '#DDD'
       }
+    },
+    showTooltip (seat, event){
+      this.tooltip.isActive = true
+      this.tooltip.content = seat.nodeId
+
+      //  取得圓心的 SVG 座標
+      let svgCanvas = document.getElementById('svgCanvas')
+      let svgPoint = svgCanvas.createSVGPoint()
+      let ctm = svgCanvas.getScreenCTM()
+      svgPoint.x = event.target.getAttribute('cx')
+      svgPoint.y = event.target.getAttribute('cy')
+
+      //  轉成 viewport 的 client 座標
+      let viewportPoint = svgPoint.matrixTransform(ctm)
+
+      //  轉換成 viewport 的 offset 座標並代入 CSS
+      this.tooltip.styleObject.left = (viewportPoint.x - svgCanvas.getBoundingClientRect().left + 10) + "px"
+      this.tooltip.styleObject.top = (viewportPoint.y - svgCanvas.getBoundingClientRect().top + 10) + "px"
+
+    },
+    reset () {
+      this.viewBox.x = 0
+      this.viewBox.y = 0
+      this.viewBox.width = this.viewport.width
+      this.viewBox.height = this.viewport.height
+    },
+    zoom (effect) {
+      let svgCanvas = document.getElementById('svgCanvas')
+      let svgPoint = svgCanvas.createSVGPoint()
+      let ctm = svgCanvas.getScreenCTM()
+
+      //  設定縮放倍率
+      let ratio
+      if (effect === 'in' && ctm.a < 2) { //  目前放大情況為兩倍以下
+        ratio = 0.9
+      } else if(effect === 'out' && ctm.a > 0.5) {
+        ratio = 1.1
+      } else {
+        ratio = 1
+      }
+
+      //  取得目前螢幕中心點
+      let viewportCenterPoint = {
+        x: this.$el.getBoundingClientRect().width / 2 + this.$el.getBoundingClientRect().left,
+        y: this.$el.getBoundingClientRect().height / 2 + this.$el.getBoundingClientRect().top
+      }
+      svgPoint.x = viewportCenterPoint.x
+      svgPoint.y = viewportCenterPoint.y
+      let startSvgCenterPoint = svgPoint.matrixTransform(ctm.inverse())
+
+      //  放大
+      this.viewBox.width = this.viewBox.width * ratio
+      this.viewBox.height = this.viewBox.height * ratio
+      svgCanvas.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${this.viewBox.width} ${this.viewBox.height}`)
+
+      //  位移回中心點
+      ctm = svgCanvas.getScreenCTM()
+      let viewBox = svgCanvas.getAttribute('viewBox').split(' ').map(n => parseFloat(n))
+      let endSvgCenterPoint = svgPoint.matrixTransform(ctm.inverse())
+      this.viewBox.x = viewBox[0] + (startSvgCenterPoint.x - endSvgCenterPoint.x)
+      this.viewBox.y = viewBox[1] + (startSvgCenterPoint.y - endSvgCenterPoint.y)
     }
   }
 }
 </script>
 
 <style lang="sass" scoped>
+  .seat{
+    position: relative;
+  }
+  .manipulate{
+    position: absolute;
+    bottom: 60px;
+    left: 40px;
+    cursor: pointer;
 
+    svg{
+      width: 32px;
+      height: 32px;
+    }
+  }
 </style>

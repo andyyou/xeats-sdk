@@ -18,18 +18,18 @@ export default {
         const touchmove = Rx.Observable.fromEvent(el, 'touchmove')
         const touchcancel = Rx.Observable.fromEvent(el, 'touchcancel')
         const touchend = Rx.Observable.fromEvent(document, 'touchend')
-        
+
         const dragStart = Rx.Observable.merge(mousedown, touchstart)
         const dragMove = Rx.Observable.merge(mousemove, touchmove)
         const dragEnd = Rx.Observable.merge(mouseup, touchcancel, touchend)
-        
+
         let svg = el
 
         const drag = dragStart.map((e) => {
           e.preventDefault()
           e.stopPropagation()
 
-          // If click on elements in svg do NOT handle 
+          // If click on elements in svg do NOT handle
           if (e.currentTarget.tagName !== 'svg') {
             return Rx.Observable.empty()
           }
@@ -41,7 +41,7 @@ export default {
 
           /**
            * Current Transformation Matrix
-           * 
+           *
            * http://stackoverflow.com/questions/10298658/mouse-position-inside-autoscaled-svg
            */
 
@@ -83,7 +83,7 @@ export default {
         }).switch()
 
         drag.subscribe((p) => {
-          vnode.context[binding.expression].x = p.x 
+          vnode.context[binding.expression].x = p.x
           vnode.context[binding.expression].y = p.y
         })
 
@@ -124,7 +124,7 @@ export default {
               offsetPoint.y = e.clientY
             }
 
-            // Get svgOffsetPoint position，mouse or touch point relative to origin point of SVG 
+            // Get svgOffsetPoint position，mouse or touch point relative to origin point of SVG
             let svgOffsetPoint = offsetPoint.matrixTransform(ctm.inverse())
             svg.setAttribute('viewBox', `${vnode.context[binding.expression].x} ${vnode.context[binding.expression].y} ${viewport.width * scale} ${viewport.height * scale}`)
 
