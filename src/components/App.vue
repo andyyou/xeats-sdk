@@ -26,7 +26,6 @@
     <div class="manipulate">
       <svg @click="zoom('in')" width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
         <title>zoomIn</title>
-        <desc>Created with Sketch.</desc>
         <defs>
           <rect id="path-1" x="0" y="0" width="24" height="24" rx="3"></rect>
           <mask id="mask-2" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="24" height="24" fill="white">
@@ -1042,7 +1041,8 @@ export default {
         width: 0,
         height: 0,
         zoomMax: this.zoomMax,
-        zoomMin: this.zoomMin
+        zoomMin: this.zoomMin,
+        scale: 1
       },
       seats: [],
       amount: 0,
@@ -1081,7 +1081,8 @@ export default {
     if (this.autoSize) {
       this.viewport.width = this.$el.getBoundingClientRect().width
       ratio = this.viewport.width / this.svg.width
-      this.viewport.height = this.svg.height * ratio
+      // this.viewport.height = this.svg.height * ratio
+      this.viewport.height = this.$el.getBoundingClientRect().height
     } else {
       ratio = 1
     }
@@ -1143,42 +1144,43 @@ export default {
       this.viewBox.y = 0
       this.viewBox.width = this.viewport.width
       this.viewBox.height = this.viewport.height
+      this.viewBox.scale = 1
     },
     zoom (effect) {
       let svgCanvas = document.getElementById('svgCanvas')
       let svgPoint = svgCanvas.createSVGPoint()
-      let ctm = svgCanvas.getScreenCTM()
-
-      //  設定縮放倍率
-      let ratio
-      if (effect === 'in' && ctm.a < 2) { //  目前放大情況為兩倍以下
-        ratio = 0.9
-      } else if(effect === 'out' && ctm.a > 0.5) {
-        ratio = 1.1
-      } else {
-        ratio = 1
+      let viewport = svgCanvas.getBoundingClientRect()
+     
+      //  設定縮放倍率，且不能超過 zoomMax 和 zoomMin
+      let scale = this.viewBox.scale
+      if (effect === 'out') {
+        scale += 0.1
+        if (scale >= this.viewBox.zoomMax) {scale = this.viewBox.zoomMax}     //  縮小
+      } else if(effect === 'in') {
+        scale -= 0.1
+        if (scale <= this.viewBox.zoomMin) {scale = this.viewBox.zoomMin}     //  放大
       }
 
       //  取得目前螢幕中心點
       let viewportCenterPoint = {
-        x: this.$el.getBoundingClientRect().width / 2 + this.$el.getBoundingClientRect().left,
-        y: this.$el.getBoundingClientRect().height / 2 + this.$el.getBoundingClientRect().top
+        x: viewport.width / 2 + viewport.left,
+        y: viewport.height / 2 + viewport.top
       }
       svgPoint.x = viewportCenterPoint.x
       svgPoint.y = viewportCenterPoint.y
-      let startSvgCenterPoint = svgPoint.matrixTransform(ctm.inverse())
+      let startSvgCenterPoint = svgPoint.matrixTransform(svgCanvas.getScreenCTM().inverse())
 
-      //  放大
-      this.viewBox.width = this.viewBox.width * ratio
-      this.viewBox.height = this.viewBox.height * ratio
-      svgCanvas.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${this.viewBox.width} ${this.viewBox.height}`)
+      //  進行縮放
+      this.viewBox.width = viewport.width * scale
+      this.viewBox.height = viewport.height * scale
+      svgCanvas.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${viewport.width * scale} ${viewport.height * scale}`)
 
       //  位移回中心點
-      ctm = svgCanvas.getScreenCTM()
       let viewBox = svgCanvas.getAttribute('viewBox').split(' ').map(n => parseFloat(n))
-      let endSvgCenterPoint = svgPoint.matrixTransform(ctm.inverse())
+      let endSvgCenterPoint = svgPoint.matrixTransform(svgCanvas.getScreenCTM().inverse())
       this.viewBox.x = viewBox[0] + (startSvgCenterPoint.x - endSvgCenterPoint.x)
       this.viewBox.y = viewBox[1] + (startSvgCenterPoint.y - endSvgCenterPoint.y)
+      this.viewBox.scale = scale
     }
   }
 }

@@ -110,12 +110,12 @@ Table: Seat
 
 # Todos
 
-* Seat hover show text with information
-* Home button (rest map to center)
+* <del>Seat hover show text with information</del>
+* <del>Home button (rest map to center)</del>
 * Limit drag svg only show map
 * Zoom in out for mobile
-* Plus button (zoom in)
-* Minus button (zoom out)
+* <del>Plus button (zoom in)</del>
+* <del>Minus button (zoom out)</del>
 * Event and append elements for after selectd seat call API
 * Get seat map and data from API
 * <del>Click to select seats</del>

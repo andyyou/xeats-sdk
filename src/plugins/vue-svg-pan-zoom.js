@@ -92,7 +92,6 @@ export default {
          */
         const wheel = 'onwheel' in document ? 'wheel' : 'mousewheel'
         const zoom = Rx.Observable.fromEvent(el, wheel)
-        let scale = 1
 
         zoom.subscribe((e) => {
           e.preventDefault()
@@ -102,7 +101,7 @@ export default {
               width: svg.getBoundingClientRect().width,
               height: svg.getBoundingClientRect().height
             }
-
+            let scale = vnode.context[binding.expression].scale
             let tmp = scale + (e.deltaY / 100)
             if (tmp >= vnode.context[binding.expression].zoomMax) {
               tmp = vnode.context[binding.expression].zoomMax
@@ -111,6 +110,7 @@ export default {
               tmp = vnode.context[binding.expression].zoomMin
             }
             scale = tmp
+            vnode.context[binding.expression].scale = scale
 
             // Mouse or touch point
             let offsetPoint = svg.createSVGPoint()
@@ -127,7 +127,6 @@ export default {
             // Get svgOffsetPoint position，mouse or touch point relative to origin point of SVG
             let svgOffsetPoint = offsetPoint.matrixTransform(ctm.inverse())
             svg.setAttribute('viewBox', `${vnode.context[binding.expression].x} ${vnode.context[binding.expression].y} ${viewport.width * scale} ${viewport.height * scale}`)
-
             vnode.context[binding.expression].width = viewport.width * scale
             vnode.context[binding.expression].height = viewport.height * scale
 
