@@ -4,7 +4,7 @@
       id="svgCanvas"
       :viewBox="viewboxString"
       :width="width" 
-      :height="height"
+      :height="viewport.height"
       v-pan-zoom="viewBox"
     >
       <g>
@@ -1081,12 +1081,10 @@ export default {
     if (this.autoSize) {
       this.viewport.width = this.$el.getBoundingClientRect().width
       ratio = this.viewport.width / this.svg.width
-      // this.viewport.height = this.svg.height * ratio
-      this.viewport.height = this.$el.getBoundingClientRect().height
+      this.viewport.height = this.svg.height * ratio
     } else {
       ratio = 1
     }
-
     this.viewBox.width = this.viewport.width
     this.viewBox.height = this.viewport.height
     this.seats = this.seats.map(function (seat) {
