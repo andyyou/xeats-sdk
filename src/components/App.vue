@@ -3,7 +3,7 @@
     <svg 
       id="svg-canvas"
       :viewBox="viewboxString"
-      :width="width" 
+      :width="viewport.width" 
       :height="viewport.height"
       v-pan-zoom="viewBox"
     >
@@ -1079,9 +1079,10 @@ export default {
   mounted () {
     let ratio
     if (this.autoSize) {
-      this.viewport.width = this.$el.getBoundingClientRect().width
+      this.viewport.width = Math.floor(this.$el.getBoundingClientRect().width)
       ratio = this.viewport.width / this.svg.width
-      this.viewport.height = this.svg.height * ratio
+      this.viewport.height = Math.floor(this.svg.height * ratio)
+      console.log(this.viewport.height)
     } else {
       ratio = 1
     }
@@ -1136,7 +1137,6 @@ export default {
       // 轉換成 viewport 的 offset 座標並代入 CSS
       this.tooltip.styleObject.left = (viewportPoint.x - svgCanvas.getBoundingClientRect().left + 10) + "px"
       this.tooltip.styleObject.top = (viewportPoint.y - svgCanvas.getBoundingClientRect().top + 10) + "px"
-
     },
     reset () {
       this.viewBox.x = 0
@@ -1159,12 +1159,13 @@ export default {
         scale -= 0.1
         if (scale <= this.viewBox.zoomMin) {scale = this.viewBox.zoomMin}     //  放大
       }
-
+      console.log(viewport, this.viewport.width, this.viewport.height)
       //  取得目前螢幕中心點
       let viewportCenterPoint = {
         x: viewport.width / 2 + viewport.left,
         y: viewport.height / 2 + viewport.top
       }
+      console.log('p', viewportCenterPoint)
       svgPoint.x = viewportCenterPoint.x
       svgPoint.y = viewportCenterPoint.y
       let startSvgCenterPoint = svgPoint.matrixTransform(svgCanvas.getScreenCTM().inverse())
@@ -1186,10 +1187,15 @@ export default {
 </script>
 
 <style lang="sass" scoped>
-  .seat{
+  svg {
+    transation: all .3s ease;
+  }
+
+  .seat {
     position: relative;
   }
-  .manipulate{
+
+  .manipulate {
     position: absolute;
     bottom: 60px;
     left: 40px;
