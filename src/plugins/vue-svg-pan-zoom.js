@@ -18,18 +18,18 @@ export default {
         const touchmove = Rx.Observable.fromEvent(el, 'touchmove')
         const touchcancel = Rx.Observable.fromEvent(el, 'touchcancel')
         const touchend = Rx.Observable.fromEvent(document, 'touchend')
-        
+
         const dragStart = Rx.Observable.merge(mousedown, touchstart)
         const dragMove = Rx.Observable.merge(mousemove, touchmove)
         const dragEnd = Rx.Observable.merge(mouseup, touchcancel, touchend)
-        
+
         let svg = el
 
         const drag = dragStart.map((e) => {
           e.preventDefault()
           e.stopPropagation()
 
-          // If click on elements in svg do NOT handle 
+          // If click on elements in svg do NOT handle
           if (e.currentTarget.tagName !== 'svg') {
             return Rx.Observable.empty()
           }
@@ -41,7 +41,7 @@ export default {
 
           /**
            * Current Transformation Matrix
-           * 
+           *
            * http://stackoverflow.com/questions/10298658/mouse-position-inside-autoscaled-svg
            */
 
@@ -83,7 +83,7 @@ export default {
         }).switch()
 
         drag.subscribe((p) => {
-          vnode.context[binding.expression].x = p.x 
+          vnode.context[binding.expression].x = p.x
           vnode.context[binding.expression].y = p.y
         })
 
@@ -92,7 +92,6 @@ export default {
          */
         const wheel = 'onwheel' in document ? 'wheel' : 'mousewheel'
         const zoom = Rx.Observable.fromEvent(el, wheel)
-        let scale = 1
 
         zoom.subscribe((e) => {
           e.preventDefault()
@@ -102,7 +101,7 @@ export default {
               width: svg.getBoundingClientRect().width,
               height: svg.getBoundingClientRect().height
             }
-
+            let scale = vnode.context[binding.expression].scale
             let tmp = scale + (e.deltaY / 100)
             if (tmp >= vnode.context[binding.expression].zoomMax) {
               tmp = vnode.context[binding.expression].zoomMax
@@ -111,6 +110,7 @@ export default {
               tmp = vnode.context[binding.expression].zoomMin
             }
             scale = tmp
+            vnode.context[binding.expression].scale = scale
 
             // Mouse or touch point
             let offsetPoint = svg.createSVGPoint()
@@ -124,11 +124,9 @@ export default {
               offsetPoint.y = e.clientY
             }
 
-            // Get svgOffsetPoint position，mouse or touch point relative to origin point of SVG 
+            // Get svgOffsetPoint position，mouse or touch point relative to origin point of SVG
             let svgOffsetPoint = offsetPoint.matrixTransform(ctm.inverse())
-            let viewBox = svg.getAttribute('viewBox').split(' ').map(n => parseFloat(n))
-            svg.setAttribute('viewBox', `${viewBox[0] + svgOffsetPoint.x} ${viewBox[1] + svgOffsetPoint.y} ${viewport.width * scale} ${viewport.height * scale}`)
-
+            svg.setAttribute('viewBox', `${vnode.context[binding.expression].x} ${vnode.context[binding.expression].y} ${viewport.width * scale} ${viewport.height * scale}`)
             vnode.context[binding.expression].width = viewport.width * scale
             vnode.context[binding.expression].height = viewport.height * scale
 
@@ -137,17 +135,16 @@ export default {
              * mains will get scaled unit in svg
              */
             let svgScaledPoint = offsetPoint.matrixTransform(svg.getScreenCTM().inverse())
-            viewBox = svg.getAttribute('viewBox').split(' ').map(n => parseFloat(n))
+            let viewBox = svg.getAttribute('viewBox').split(' ').map(n => parseFloat(n))
             let movement = {
               x: viewBox[0] + (svgOffsetPoint.x - svgScaledPoint.x),
               y: viewBox[1] + (svgOffsetPoint.y - svgScaledPoint.y)
             }
-            svg.setAttribute('viewBox', `${movement.x} ${movement.y} ${viewBox[2]} ${viewBox[3]}`)
+            svg.setAttribute('viewBox', `${movement.x} ${movement.y} ${viewport.width * scale} ${viewport.height * scale}`)
 
             vnode.context[binding.expression].x = movement.x
             vnode.context[binding.expression].y = movement.y
           })
-          
         })
 
         /**
