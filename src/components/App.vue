@@ -1,7 +1,7 @@
 <template>
   <div class="seat">
     <svg 
-      id="svgCanvas"
+      id="svg-canvas"
       :viewBox="viewboxString"
       :width="width" 
       :height="viewport.height"
@@ -1085,6 +1085,7 @@ export default {
     } else {
       ratio = 1
     }
+
     this.viewBox.width = this.viewport.width
     this.viewBox.height = this.viewport.height
     this.seats = this.seats.map(function (seat) {
@@ -1122,17 +1123,17 @@ export default {
       this.tooltip.isActive = true
       this.tooltip.content = seat.nodeId
 
-      //  取得圓心的 SVG 座標
-      let svgCanvas = document.getElementById('svgCanvas')
+      // 取得圓心的 SVG 座標
+      let svgCanvas = document.getElementById('svg-canvas')
       let svgPoint = svgCanvas.createSVGPoint()
       let ctm = svgCanvas.getScreenCTM()
       svgPoint.x = event.target.getAttribute('cx')
       svgPoint.y = event.target.getAttribute('cy')
 
-      //  轉成 viewport 的 client 座標
+      // 轉成 viewport 的 client 座標
       let viewportPoint = svgPoint.matrixTransform(ctm)
 
-      //  轉換成 viewport 的 offset 座標並代入 CSS
+      // 轉換成 viewport 的 offset 座標並代入 CSS
       this.tooltip.styleObject.left = (viewportPoint.x - svgCanvas.getBoundingClientRect().left + 10) + "px"
       this.tooltip.styleObject.top = (viewportPoint.y - svgCanvas.getBoundingClientRect().top + 10) + "px"
 
@@ -1145,7 +1146,7 @@ export default {
       this.viewBox.scale = 1
     },
     zoom (effect) {
-      let svgCanvas = document.getElementById('svgCanvas')
+      let svgCanvas = document.getElementById('svg-canvas')
       let svgPoint = svgCanvas.createSVGPoint()
       let viewport = svgCanvas.getBoundingClientRect()
      
