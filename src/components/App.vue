@@ -1,5 +1,7 @@
 <template>
-  <div class="seat">
+  <div class="seat"
+  :style="{width: viewport.width + 'px', height: viewport.height + 'px'}"
+  >
     <svg 
       id="svg-canvas"
       :viewBox="viewboxString"
@@ -8,18 +10,33 @@
       v-pan-zoom="viewBox"
     >
       <g>
-        <circle v-for="seat in seats"
-          :id="seat.nodeId"
+        <!--<circle v-for="seat in seats"
+          :id="seat.node_id"
           :cx="seat.x + seat.width / 2"
           :cy="seat.y + seat.height / 2"
           :r="seat.width / 2"
           :fill="seat.fill"
-          :stroke="seat.reserved ? '#666' : '#DDD'"
-          stroke-width="3"
+          :stroke="seat.reserved ? '#333' : '#333'"
+          stroke-width="2"
           @click.stop.prevent="book(seat)"
           @mouseover="showTooltip(seat, $event)"
           @mouseout="tooltip.isActive = false"
-        ></circle>
+        ></circle>-->
+        <rect v-for="seat in seats"
+        :id="seat.node_id"
+        :x="seat.x"
+        :y="seat.y"
+        :width="seat.width"
+        :height="seat.height"
+        :fill="seat.fill"
+        :stroke="seat.reserved ? '#333' : '#333'"
+        stroke-width="2"
+        @touchend.stop.prevent="book(seat)"
+        @click.stop.prevent="book(seat)"
+        @mouseover="showTooltip(seat, $event)"
+        @mouseout="tooltip.isActive = false"
+        >
+        </rect>
       </g>
     </svg>
     <span v-if="tooltip.isActive" :style="tooltip.styleObject" >{{ tooltip.content }}</span>
@@ -77,6 +94,9 @@
 </template>
 
 <script>
+import axios from 'axios'
+
+/*
 const SEATS = [
   {
     "id": 0,
@@ -991,6 +1011,8 @@ const SEATS = [
     "height": "74.5"
   }
 ]
+*/
+
 export default {
   props: {
     width: {
@@ -1022,9 +1044,10 @@ export default {
     }
   },
   data () {
+    //  這裡的 this 指外層(<app></app>)傳進來的值
     return {
       viewport: {
-        width: this.width,
+        width: this.width,  
         height: this.height
       },
       // FIXME: Original SVG size from API
@@ -1074,35 +1097,53 @@ export default {
     }
   },
   created () {
-    this.seats = SEATS
-  },
-  mounted () {
-    let ratio
-    if (this.autoSize) {
-      this.viewport.width = Math.floor(this.$el.getBoundingClientRect().width)
-      ratio = this.viewport.width / this.svg.width
-      this.viewport.height = Math.floor(this.svg.height * ratio)
-      console.log(this.viewport.height)
-    } else {
-      ratio = 1
-    }
+    //  這裡得 this 指的是 component 的 data
+    axios.get(`https://xeats.herokuapp.com/v1.0/spots/1`)
+    .then( res => {
+      //  get data from API
+      this.seats = res.data.objects
+      this.svg.width = res.data.svg.width
+      this.svg.height = res.data.svg.height
 
-    this.viewBox.width = this.viewport.width
-    this.viewBox.height = this.viewport.height
-    this.seats = this.seats.map(function (seat) {
-      return Object.assign({}, seat, {
-        x: seat.x * ratio,
-        y: seat.y * ratio,
-        width: seat.width * ratio,
-        height: seat.height * ratio,
-        fill: '#DDD',
-        reserved: false
+      // for responsive viewport
+      let ratio
+      if (this.autoSize) {
+        //  判斷哪個是長邊，以此作為 Responsive 計算
+        if (res.data.svg.width > res.data.svg.height) {
+          //  getBoundingClientRect 會取得 new Xeat 時所設定的 width 和 height
+          this.viewport.width = Math.floor(this.$el.getBoundingClientRect().width)
+          ratio = this.viewport.width / this.svg.width
+          this.viewport.height = Math.floor(this.svg.height * ratio)
+        } else {
+          this.viewport.height = Math.floor(this.$el.getBoundingClientRect().height)
+          ratio = this.viewport.height / this.svg.height
+          this.viewport.width = Math.floor(this.svg.width * ratio)
+        }
+      } else {
+        ratio = 1
+      }
+      this.viewBox.width = this.viewport.width
+      this.viewBox.height = this.viewport.height
+      this.seats = this.seats.map(function (seat) {
+        return Object.assign({}, seat, {
+          x: seat.x * ratio,
+          y: seat.y * ratio,
+          width: seat.width * ratio,
+          height: seat.height * ratio,
+          fill: '#90CA77',
+          reserved: false
+        })
       })
     })
+    .catch( error => {
+      console.log(this.error)
+    })
+  },
+  mounted () {
+    
   },
   methods: {
     book (seat) {
-      console.log('Reserved', seat)
 
       if (!seat.reserved) {
         if (this.amount + 1 <= this.amountMax) {
@@ -1115,14 +1156,14 @@ export default {
       }
 
       if (seat.reserved) {
-        seat.fill = 'red'
+        seat.fill = 'DarkGreen'
       } else {
-        seat.fill = '#DDD'
+        seat.fill = '#90CA77'
       }
     },
     showTooltip (seat, event){
       this.tooltip.isActive = true
-      this.tooltip.content = seat.nodeId
+      this.tooltip.content = seat.label
 
       // 取得圓心的 SVG 座標
       let svgCanvas = document.getElementById('svg-canvas')
@@ -1193,11 +1234,20 @@ export default {
 
   .seat {
     position: relative;
+    border: 1px solid #e3e3e3;
+    border-radius: 4px;
+    box-shadow: inset 0 1px 1px rgba(0,0,0,0.05);
+    text-align: center;
+    margin: 0 auto;
+    box-sizing: border-box;
   }
 
   .manipulate {
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
     position: absolute;
-    bottom: 60px;
+    top: 60px;
     left: 40px;
     cursor: pointer;
 

@@ -1,4 +1,6 @@
 import Rx from 'rxjs'
+import Hammer from 'hammerjs'
+import hammertime from 'hammer-timejs'
 
 export default {
   install (Vue, options) {
