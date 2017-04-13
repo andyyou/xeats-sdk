@@ -8,7 +8,7 @@
   <style>
     body {
       background-color: rgba(0, 0, 0, .2);
-      margin: 50px;
+      /*margin: 50px;*/
     }
 
     svg {
@@ -37,8 +37,8 @@
         spot: 'SPACE-ID hash',
         zoomMax: 2,
         zoomMin: 0.5,
-        width: 800,
-        height: 600,
+        width: window.innerWidth || 1200,
+        height: window.innerHeight || 600,
         autoSize: true,   // Auto scale for Responsive
         amountMax: 4,     // Limit selection amount
         amountMin: 1

@@ -1,7 +1,10 @@
 import Vue from 'vue'
 import VueResource from 'vue-resource'
+import axios from 'axios'
 import VuePanZoom from '@/plugins/vue-svg-pan-zoom'
 import App from '@/components/App'
+
+Vue.prototype.$http = axios
 
 /**
  * TODO: Those variables need from API
