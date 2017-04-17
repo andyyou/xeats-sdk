@@ -1,33 +1,18 @@
 import Vue from 'vue'
-import VueResource from 'vue-resource'
 import axios from 'axios'
 import VuePanZoom from '@/plugins/vue-svg-pan-zoom'
-
+import '@/stylesheets/sdk'
 axios.defaults.baseURL = 'https://xeats.herokuapp.com/v1.0'
-Vue.prototype.$axios = axios
-
-/**
- * TODO: Those variables need from API
- */
-// const WIDTH = 800
-// const HEIGHT = 600
-
-// const VIEWPORT = {
-//   width: 1913.7,
-//   height: 937.3
-// }
+Vue.prototype.$http = axios
 
 var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
                             window.webkitRequestAnimationFrame || window.msRequestAnimationFrame
 window.requestAnimationFrame = requestAnimationFrame
-Vue.use(VueResource)
 Vue.use(VuePanZoom)
 
 /**
  * SDK Main Class
  */
-
-
 class Xeat {
   constructor (options) {
     const componentNames = ['reversation', 'setup']
@@ -43,12 +28,9 @@ class Xeat {
         data: {
           token: null
         },
-        created () {
-          this.setToken()
-        },
         methods: {
           setToken () {
-            this.$axios.post('/users/token', {
+            this.$http.post('/users/token', {
               access_key: options.accessKey,
               secret: options.secret
             }).then(function (res) {
@@ -57,11 +39,12 @@ class Xeat {
           }
         },
         render (createElement) {
+          this.setToken()
           return createElement('app', {
             props: {
               width: options.width,
               height: options.height,
-              source: options.component.source,
+              sourceId: options.component.sourceId,
               zoomMax: options.zoomMax,
               zoomMin: options.zoomMin,
               autoSize: options.autoSize,

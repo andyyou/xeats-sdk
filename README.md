@@ -188,6 +188,7 @@ Table: Seat
 * [x] Click to select seats
 * [x] Limit selection quanity
 * [x] Zoom in out
+* [x] Remove `autoSize`
 
 # Changelog
 
