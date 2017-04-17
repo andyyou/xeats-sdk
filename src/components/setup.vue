@@ -126,9 +126,6 @@ export default {
       }
     }
   },
-  watch: {
-
-  },
   created () {
     this.$http.get(`/spots/${this.sourceId}`, {
       headers: {
@@ -178,7 +175,7 @@ export default {
       })
     })
     .catch( error => {
-      console.log('error', this.error)
+      console.log('error', error)
     })
   },
   methods: {
@@ -198,6 +195,12 @@ export default {
       } else {
         seat.fill = '#d3d3d3'
       }
+    },
+    getToken () {
+      return this.$parent.getToken.call(this)
+    },
+    setToken () {
+      return this.$parent.setToken.call(this)
     },
     showTooltip (seat){
       this.tooltip.active = true

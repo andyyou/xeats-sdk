@@ -10,6 +10,17 @@ var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAni
 window.requestAnimationFrame = requestAnimationFrame
 Vue.use(VuePanZoom)
 
+function setToken (accessKey, secret) {
+  axios.post('/users/token', {
+    access_key: accessKey,
+    secret: secret
+  }).then(function (res) {
+    localStorage.setItem('_x_t', res.data.token)
+  }).catch(function (err) {
+    console.log(err)
+  })
+}
+
 /**
  * SDK Main Class
  */
@@ -20,26 +31,23 @@ class Xeat {
     if (!options.el && !/([^\r\n,{}]+)(,(?=[^}]*{)|\s*{)/g.test(options.el)) {
       throw new Error('el attribute has no setting')
     }
+    
+    // Initialize token
+    setToken(options.accessKey, options.secret)
 
     if (options.component && options.component.name && componentNames.indexOf(options.component.name)) {
       const app = require(`@/components/${options.component.name}`)
       return new Vue({
         el: options.el,
-        data: {
-          token: null
-        },
         methods: {
           setToken () {
-            this.$http.post('/users/token', {
-              access_key: options.accessKey,
-              secret: options.secret
-            }).then(function (res) {
-              localStorage.setItem('_x_t', res.data.token)
-            })
+            setToken(options.accessKey, options.secret)
+          },
+          getToken () {
+            return localStorage.getItem('_x_t')
           }
         },
         render (createElement) {
-          this.setToken()
           return createElement('app', {
             props: {
               width: options.width,
