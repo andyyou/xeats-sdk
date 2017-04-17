@@ -16,7 +16,7 @@ module.exports = {
     publicPath: '/dist'
   },
   resolve: {
-    extensions: ['.js', '.vue', '.json'],
+    extensions: ['.js', '.vue', '.json', '.css'],
     alias: {
       'vue$': 'vue/dist/vue.esm.js',
       '@': resolve('src')
@@ -37,6 +37,22 @@ module.exports = {
         test: /\.js$/,
         loader: 'babel-loader',
         include: [resolve('src')]
+      },
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader']
+      },
+      {
+        test: /\.(eot|svg|ttf|woff|woff2)(\?.*)?$/,
+        use: [
+          {
+            loader: 'url-loader',
+            options: {
+              limit: 1000000 /* 小於 10kB 的圖片轉成 base64 */,
+              name: 'fonts/[name]-[hash].[ext]'
+            }
+          }
+        ]
       }
     ]
   }

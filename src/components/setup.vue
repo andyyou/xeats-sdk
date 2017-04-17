@@ -1,6 +1,6 @@
 <template>
-  <div class="seat"
-  :style="styles.edge"
+  <div
+    class="container"
   >
     <svg 
       id="svg-canvas"
@@ -9,101 +9,44 @@
       v-pan-zoom="viewBox"
     >
       <g>
-        <!--<circle v-for="seat in seats"
+        <rect v-for="seat in seats"
           :id="seat.node_id"
-          :cx="seat.x + seat.width / 2"
-          :cy="seat.y + seat.height / 2"
-          :r="seat.width / 2"
+          :x="seat.x"
+          :y="seat.y"
+          :width="seat.width"
+          :height="seat.height"
           :fill="seat.fill"
           :stroke="seat.reserved ? '#333' : '#333'"
-          stroke-width="2"
+          stroke-width="1"
+          @touchend.stop.prevent="book(seat)"
           @click.stop.prevent="book(seat)"
-          @mouseover="showTooltip(seat, $event)"
-          @mouseout="tooltip.isActive = false"
-        ></circle>-->
-        <rect v-for="seat in seats"
-        :id="seat.node_id"
-        :x="seat.x"
-        :y="seat.y"
-        :width="seat.width"
-        :height="seat.height"
-        :fill="seat.fill"
-        :stroke="seat.reserved ? '#333' : '#333'"
-        stroke-width="1"
-        @touchend.stop.prevent="book(seat)"
-        @click.stop.prevent="book(seat)"
-        @mouseover="showTooltip(seat, $event)"
-        @mouseout="tooltip.isActive = false"
+          @mouseover="showTooltip(seat)"
+          @mouseout="tooltip.active = false"
         >
         </rect>
       </g>
     </svg>
-    <span v-if="tooltip.isActive" :style="tooltip.styleObject" >{{ tooltip.content }}</span>
+    <span v-show="tooltip.active" class="tooltip" :style="styles.tooltip">{{ tooltip.content }}</span>
     <div class="manipulate">
-      <svg @click="zoom('in')" width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-        <title>zoomIn</title>
-        <defs>
-          <rect id="path-1" x="0" y="0" width="24" height="24" rx="3"></rect>
-          <mask id="mask-2" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="24" height="24" fill="white">
-            <use xlink:href="#path-1"></use>
-          </mask>
-        </defs>
-        <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-          <g id="zoomIn">
-            <use id="Rectangle" stroke="#6F6F6F" mask="url(#mask-2)" stroke-width="4" fill="#FFFFFF" xlink:href="#path-1"></use>
-            <polygon id="plus" fill="#6F6F6F" points="17.6914286 10.6971429 13.5771429 10.6971429 13.5771429 6.58285714 10.8342857 6.58285714 10.8342857 10.6971429 6.72 10.6971429 6.72 13.44 10.8342857 13.44 10.8342857 17.5542857 13.5771429 17.5542857 13.5771429 13.44 17.6914286 13.44"></polygon>
-          </g>
-        </g>
-      </svg>
-
-      <svg @click="reset()" width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-        <title>zoomReset</title>
-        <defs>
-          <rect id="path-1" x="0" y="0" width="24" height="24" rx="3"></rect>
-          <mask id="mask-2" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="24" height="24" fill="white">
-            <use xlink:href="#path-1"></use>
-          </mask>
-        </defs>
-        <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-          <g id="zoomReset">
-            <use id="Rectangle" stroke="#6F6F6F" mask="url(#mask-2)" stroke-width="4" fill="#FFFFFF" xlink:href="#path-1"></use>
-            <path d="M16.4571429,13.0957834 L16.4571429,17.1428571 L13.7142857,17.1428571 L13.7142857,14.4954037 L10.9714286,14.4954037 L10.9714286,17.1428571 L8.22857143,17.1428571 L8.22857143,13.0957834 L12.3428571,9.40037963 C14.4,11.2480815 16.4571429,13.0957834 16.4571429,13.0957834 Z M12.342143,6.70227051 L6.53930664,11.8363037 L7.57922362,13.0478516 L12.342143,8.77252198 L17.0311894,13.0478517 L18.2575077,11.8363038 C18.2575077,11.8363038 13.0411037,7.36431194 12.342143,6.70227051 Z" id="home" fill="#6F6F6F"></path>
-          </g>
-        </g>
-      </svg>
-
-      <svg @click="zoom('out')" width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-        <title>zoomOut</title>
-        <defs>
-          <rect id="path-1" x="0" y="0" width="24" height="24" rx="3"></rect>
-          <mask id="mask-2" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="24" height="24" fill="white">
-            <use xlink:href="#path-1"></use>
-          </mask>
-        </defs>
-        <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-          <g id="zoomOut">
-            <use id="Rectangle" stroke="#6F6F6F" mask="url(#mask-2)" stroke-width="4" fill="#FFFFFF" xlink:href="#path-1"></use>
-            <polygon id="minus" fill="#6F6F6F" points="6.44571429 10.6971429 18.24 10.6971429 18.24 13.44 6.44571429 13.44"></polygon>
-          </g>
-        </g>
-      </svg>
-
+      <button><i class="icon-arrows"></i></button>
+      <button><i class="icon-object-group"></i></button>
+      <button @click.stop.prevent="zoom('in')"><i class="icon-plus"></i></button>
+      <button @click.stop.prevent="zoom('out')"><i class="icon-minus"></i></button>
+      <button @click.stop.prevent="reset()"><i class="icon-refresh"></i></button>
     </div>
   </div>
 </template>
 
 <script>
-import axios from 'axios'
-
 export default {
   props: {
     width: {
-      type: Number
+      type: [String, Number]
     },
     height: {
-      type: Number
+      type: [String, Number]
     },
-    source: {
+    sourceId: {
       type: String
     },
     zoomMax: {
@@ -126,7 +69,6 @@ export default {
     }
   },
   data () {
-    //  這裡的 this 指外層(<app></app>)傳進來的值
     return {
       viewport: {
         width: this.width,
@@ -150,21 +92,15 @@ export default {
         scale: 1
       },
       seats: [],
+      stages: [],
+      facilities: [],
+      disabilities: [],
       amount: 0,
       tooltip:{
         content: "",
-        isActive: false,
-        styleObject: {
-          color: '#FFF',
-          border: '1px solid #333',
-          'border-radius': '3px',
-          padding: '3px 6px',
-          background: '#333',
-          position: 'absolute',
-          left: '0',
-          top: '0',
-          'white-space': 'nowrap'
-        }
+        active: false,
+        left: 0,
+        top: 0
       }
     }
   },
@@ -178,47 +114,53 @@ export default {
       return `${minX} ${minY} ${width} ${height}`
     },
     styles () {
-      const width = isNaN(+this.width) ? '100%' : `${this.width}px`
-      const height = isNaN(+this.height) ? '100%' : `${this.height}px`
       return {
         edge: {
-          width: width,
-          height: height
+          width: isNaN(+this.width) ? '100%' : `${this.width}px`,
+          height: isNaN(+this.height) ? '100%' : `${this.height}px`
+        },
+        tooltip: {
+          left: `${this.tooltip.left}px`,
+          top: `${this.tooltip.top}px`
         }
       }
     }
   },
   created () {
-    //  這裡的 this 指的是 component 的 data
-    this.$axios.get(`/spots/${this.source}`, {
+    this.$http.get(`/spots/${this.sourceId}`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('_x_t')}`
       }
     })
     .then(res => {
-      //  get data from API
-      this.seats = res.data.objects
+      this.seats = res.data.objects.filter(obj => obj.type === 'seat')
+      this.stages = res.data.objects.filter(obj => obj.type === 'stage')
+      this.facilities = res.data.objects.filter(obj => obj.type === 'facilities')
+      this.disabilities = res.data.objects.filter(obj => obj.type === 'disabilities')
+      
       this.svg.width = res.data.svg.width
       this.svg.height = res.data.svg.height
 
-      // for responsive viewport
+      // For calculate responsive of viewport
       let ratio
-      if (this.autoSize) {
-        //  判斷哪個是長邊，以此作為 Responsive 計算
-        if (res.data.svg.width > res.data.svg.height) {
-          //  getBoundingClientRect 會取得 new Xeat 時所設定的 width 和 height
-          this.viewport.width = Math.floor(this.$el.getBoundingClientRect().width)
-          ratio = this.viewport.width / this.svg.width
-          this.viewport.height = Math.floor(this.svg.height * ratio)
-        } else {
-          
-          this.viewport.height = Math.floor(this.$el.getBoundingClientRect().height)
-          ratio = this.viewport.height / this.svg.height
-          this.viewport.width = Math.floor(this.svg.width * ratio)
-        }
-      } else {
-        ratio = 1
+
+      // Base on longer axis to calculate for responsive.
+      if (isNaN(+this.viewport.width)) {
+        this.viewport.width = Math.floor(this.$el.getBoundingClientRect().width)
       }
+
+      if (isNaN(+this.viewport.height)) {
+        this.viewport.height = Math.floor(this.$el.getBoundingClientRect().height)
+      }
+
+      if (res.data.svg.width > res.data.svg.height) {
+        ratio = this.viewport.width / this.svg.width
+      } else {  
+        ratio = this.viewport.height / this.svg.height
+      }
+
+      this.viewport.width = Math.floor(this.svg.width * ratio)
+      this.viewport.height = Math.floor(this.svg.height * ratio)
       this.viewBox.width = this.viewport.width
       this.viewBox.height = this.viewport.height
       this.seats = this.seats.map(function (seat) {
@@ -233,48 +175,48 @@ export default {
       })
     })
     .catch( error => {
-      console.log('error', this.error)
+      console.log('error', error)
     })
-  },
-  mounted () {
-    
   },
   methods: {
     book (seat) {
-
       if (!seat.reserved) {
         if (this.amount + 1 <= this.amountMax) {
-          seat.reserved = !seat.reserved
+          seat.reserved = true
           this.amount++
         }
       } else {
-        seat.reserved = !seat.reserved
+        seat.reserved = false
         this.amount--
       }
 
       if (seat.reserved) {
-        seat.fill = 'DarkGreen'
-      } else {
         seat.fill = '#90CA77'
+      } else {
+        seat.fill = '#d3d3d3'
       }
     },
-    showTooltip (seat, event){
-      this.tooltip.isActive = true
+    getToken () {
+      return this.$parent.getToken.call(this)
+    },
+    setToken () {
+      return this.$parent.setToken.call(this)
+    },
+    showTooltip (seat){
+      this.tooltip.active = true
       this.tooltip.content = seat.label
 
-      // 取得圓心的 SVG 座標
       let svgCanvas = document.getElementById('svg-canvas')
-      let svgPoint = svgCanvas.createSVGPoint()
-      let ctm = svgCanvas.getScreenCTM()
-      svgPoint.x = event.target.getAttribute('x')
-      svgPoint.y = event.target.getAttribute('y')
+      let point = svgCanvas.createSVGPoint()
+      point.x = seat.x
+      point.y = seat.y
 
-      // 轉成 viewport 的 client 座標
-      let viewportPoint = svgPoint.matrixTransform(ctm)
+      // Update point base on current transform matrix
+      point = point.matrixTransform(svgCanvas.getScreenCTM())
 
-      // 轉換成 viewport 的 offset 座標並代入 CSS
-      this.tooltip.styleObject.left = (viewportPoint.x + svgCanvas.getBoundingClientRect().left) + "px"
-      this.tooltip.styleObject.top = (viewportPoint.y + svgCanvas.getBoundingClientRect().top) + "px"
+      // Offset point base svg translate x,y
+      this.tooltip.left = point.x
+      this.tooltip.top = point.y + (seat.height + 5) / this.viewBox.scale
     },
     reset () {
       this.viewBox.x = 0
@@ -285,40 +227,45 @@ export default {
     },
     zoom (effect) {
       let svgCanvas = document.getElementById('svg-canvas')
-      let svgPoint = svgCanvas.createSVGPoint()
+      let point = svgCanvas.createSVGPoint()
+      // Viewport is equal to width & height of svg el.
       let viewport = svgCanvas.getBoundingClientRect()
      
-      //  設定縮放倍率，且不能超過 zoomMax 和 zoomMin
+      // Setup ratio & never grater than zoomMax nor smaller than zoomMin.
       let scale = this.viewBox.scale
       if (effect === 'out') {
         scale += 0.1
-        if (scale >= this.viewBox.zoomMax) {scale = this.viewBox.zoomMax}     //  縮小
+        if (scale >= this.viewBox.zoomMax) {
+          scale = this.viewBox.zoomMax
+        }
       } else if(effect === 'in') {
         scale -= 0.1
-        if (scale <= this.viewBox.zoomMin) {scale = this.viewBox.zoomMin}     //  放大
+        if (scale <= this.viewBox.zoomMin) {
+          scale = this.viewBox.zoomMin
+        }
       }
 
-      //  取得目前螢幕中心點
-      let viewportCenterPoint = {
-        x: viewport.width / 2 + viewport.left,
-        y: viewport.height / 2 + viewport.top
-      }
+      /**
+       * Because svg will be transform so need to get point reference to browser.
+       * Get center point of browser viewport
+       */
+      point.x = viewport.width / 2 + viewport.left
+      point.y = viewport.height / 2 + viewport.top
+    
+      let startSvgCenterPoint = point.matrixTransform(svgCanvas.getScreenCTM().inverse())
 
-      svgPoint.x = viewportCenterPoint.x
-      svgPoint.y = viewportCenterPoint.y
-      let startSvgCenterPoint = svgPoint.matrixTransform(svgCanvas.getScreenCTM().inverse())
-
-      //  進行縮放
+      // process scale directly
       this.viewBox.width = viewport.width * scale
       this.viewBox.height = viewport.height * scale
-      svgCanvas.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${viewport.width * scale} ${viewport.height * scale}`)
+      svgCanvas.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${this.viewBox.width} ${this.viewBox.height}`)
 
-      //  位移回中心點
       let viewBox = svgCanvas.getAttribute('viewBox').split(' ').map(n => parseFloat(n))
-      let endSvgCenterPoint = svgPoint.matrixTransform(svgCanvas.getScreenCTM().inverse())
-      this.viewBox.x = viewBox[0] + (startSvgCenterPoint.x - endSvgCenterPoint.x)
-      this.viewBox.y = viewBox[1] + (startSvgCenterPoint.y - endSvgCenterPoint.y)
+      let endSvgCenterPoint = point.matrixTransform(svgCanvas.getScreenCTM().inverse())
+      
+      this.viewBox.x = viewBox[0] + startSvgCenterPoint.x - endSvgCenterPoint.x
+      this.viewBox.y = viewBox[1] + startSvgCenterPoint.y - endSvgCenterPoint.y
       this.viewBox.scale = scale
+      svgCanvas.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${viewport.width * scale} ${viewport.height * scale}`)
     }
   }
 }
@@ -327,6 +274,11 @@ export default {
 <style lang="sass" scoped>
   svg {
     transation: all .3s ease;
+  }
+
+  .container {
+    padding: 15px;
+    background-color: white;
   }
 
   .seat {
@@ -344,13 +296,40 @@ export default {
     -moz-user-select: none;
     -webkit-user-select: none;
     position: absolute;
-    top: 60px;
-    left: 40px;
+    top: 30px;
+    left: 30px;
     cursor: pointer;
+    border: 1px solid #CCC;
+    background-color: white;
+    box-shadow: 0 1px 2px #DDD;
+    padding: 5px 0;
 
-    svg{
-      width: 32px;
-      height: 32px;
+    button {
+      float: left;
+      padding: 5px 8px;
+      background-color: transparent;
+      border: none;
+      border-right: 1px solid #CCC;
+      text-align: center;
+      vertical-align: middle;
+      font-size: 14px;
+      cursor: pointer;
+
+      &:last-child {
+        border-right: none;
+      }
     }
+  }
+
+  .tooltip {
+    color: #FFF;
+    border: 1px solid #333;
+    border-radius: 3px;
+    padding: 3px 6px;
+    background: #333;
+    position: absolute;
+    left: 0;
+    top: 0;
+    white-space: nowrap;
   }
 </style>

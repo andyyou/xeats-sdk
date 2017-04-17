@@ -305,7 +305,7 @@ export default {
       let endSvgCenterPoint = svgPoint.matrixTransform(svgCanvas.getScreenCTM().inverse())
       this.viewBox.x = viewBox[0] + (startSvgCenterPoint.x - endSvgCenterPoint.x)
       this.viewBox.y = viewBox[1] + (startSvgCenterPoint.y - endSvgCenterPoint.y)
-      this.viewBox.scale = scale
+      this.viewBox.scale = scale 
     }
   }
 }

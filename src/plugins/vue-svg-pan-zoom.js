@@ -1,4 +1,13 @@
-import Rx from 'rxjs'
+import { Observable } from 'rxjs/Observable'
+import 'rxjs/add/observable/fromEvent'
+import 'rxjs/add/observable/empty'
+import 'rxjs/add/observable/merge'
+import 'rxjs/add/operator/map'
+import 'rxjs/add/operator/switch'
+import 'rxjs/add/operator/observeOn'
+import 'rxjs/add/operator/takeUntil'
+import { animationFrame } from 'rxjs/scheduler/animationFrame'
+
 import Hammer from 'hammerjs'
 import hammertime from 'hammer-timejs'
 
@@ -12,18 +21,18 @@ export default {
         /**
          * Draggable svg
          */
-        const mousedown = Rx.Observable.fromEvent(el, 'mousedown')
-        const mousemove = Rx.Observable.fromEvent(el, 'mousemove')
-        const mouseup = Rx.Observable.fromEvent(document, 'mouseup')
+        const mousedown = Observable.fromEvent(el, 'mousedown')
+        const mousemove = Observable.fromEvent(el, 'mousemove')
+        const mouseup = Observable.fromEvent(document, 'mouseup')
 
-        const touchstart = Rx.Observable.fromEvent(el, 'touchstart')
-        const touchmove = Rx.Observable.fromEvent(el, 'touchmove')
-        const touchcancel = Rx.Observable.fromEvent(el, 'touchcancel')
-        const touchend = Rx.Observable.fromEvent(document, 'touchend')
+        const touchstart = Observable.fromEvent(el, 'touchstart')
+        const touchmove = Observable.fromEvent(el, 'touchmove')
+        const touchcancel = Observable.fromEvent(el, 'touchcancel')
+        const touchend = Observable.fromEvent(document, 'touchend')
 
-        const dragStart = Rx.Observable.merge(mousedown, touchstart)
-        const dragMove = Rx.Observable.merge(mousemove, touchmove)
-        const dragEnd = Rx.Observable.merge(mouseup, touchcancel, touchend)
+        const dragStart = Observable.merge(mousedown, touchstart)
+        const dragMove = Observable.merge(mousemove, touchmove)
+        const dragEnd = Observable.merge(mouseup, touchcancel, touchend)
 
         let svg = el
 
@@ -33,12 +42,12 @@ export default {
 
           // If click on elements in svg do NOT handle
           if (e.currentTarget.tagName !== 'svg') {
-            return Rx.Observable.empty()
+            return Observable.empty()
           }
 
           // Only handle one touch
           if (e.touches && e.touches.length > 1) {
-            return Rx.Observable.empty()
+            return Observable.empty()
           }
 
           /**
@@ -65,7 +74,7 @@ export default {
 
           startPoint = startPoint.matrixTransform(ctm.inverse())
 
-          return dragMove.observeOn(Rx.Scheduler.animationFrame).map((e) => {
+          return dragMove.observeOn(animationFrame).map((e) => {
             let moveToPoint = svg.createSVGPoint()
 
             if (e.touches) {
@@ -93,7 +102,7 @@ export default {
          * Zoom in out
          */
         const wheel = 'onwheel' in document ? 'wheel' : 'mousewheel'
-        const zoom = Rx.Observable.fromEvent(el, wheel)
+        const zoom = Observable.fromEvent(el, wheel)
 
         zoom.subscribe((e) => {
           e.preventDefault()

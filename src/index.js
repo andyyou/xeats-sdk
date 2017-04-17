@@ -1,33 +1,29 @@
 import Vue from 'vue'
-import VueResource from 'vue-resource'
 import axios from 'axios'
 import VuePanZoom from '@/plugins/vue-svg-pan-zoom'
-
+import '@/stylesheets/sdk'
 axios.defaults.baseURL = 'https://xeats.herokuapp.com/v1.0'
-Vue.prototype.$axios = axios
-
-/**
- * TODO: Those variables need from API
- */
-// const WIDTH = 800
-// const HEIGHT = 600
-
-// const VIEWPORT = {
-//   width: 1913.7,
-//   height: 937.3
-// }
+Vue.prototype.$http = axios
 
 var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
                             window.webkitRequestAnimationFrame || window.msRequestAnimationFrame
 window.requestAnimationFrame = requestAnimationFrame
-Vue.use(VueResource)
 Vue.use(VuePanZoom)
+
+function setToken (accessKey, secret) {
+  axios.post('/users/token', {
+    access_key: accessKey,
+    secret: secret
+  }).then(function (res) {
+    localStorage.setItem('_x_t', res.data.token)
+  }).catch(function (err) {
+    console.log(err)
+  })
+}
 
 /**
  * SDK Main Class
  */
-
-
 class Xeat {
   constructor (options) {
     const componentNames = ['reversation', 'setup']
@@ -35,25 +31,20 @@ class Xeat {
     if (!options.el && !/([^\r\n,{}]+)(,(?=[^}]*{)|\s*{)/g.test(options.el)) {
       throw new Error('el attribute has no setting')
     }
+    
+    // Initialize token
+    setToken(options.accessKey, options.secret)
 
     if (options.component && options.component.name && componentNames.indexOf(options.component.name)) {
       const app = require(`@/components/${options.component.name}`)
       return new Vue({
         el: options.el,
-        data: {
-          token: null
-        },
-        created () {
-          this.setToken()
-        },
         methods: {
           setToken () {
-            this.$axios.post('/users/token', {
-              access_key: options.accessKey,
-              secret: options.secret
-            }).then(function (res) {
-              localStorage.setItem('_x_t', res.data.token)
-            })
+            setToken(options.accessKey, options.secret)
+          },
+          getToken () {
+            return localStorage.getItem('_x_t')
           }
         },
         render (createElement) {
@@ -61,7 +52,7 @@ class Xeat {
             props: {
               width: options.width,
               height: options.height,
-              source: options.component.source,
+              sourceId: options.component.sourceId,
               zoomMax: options.zoomMax,
               zoomMin: options.zoomMin,
               autoSize: options.autoSize,

@@ -37,13 +37,15 @@
         secret: '61b4311e47a8dfce2c0819e95100e95f',
         component: {
           name: 'setup', // setup | reservation
-          source: '58ef43548095d200324f7e66'
+          sourceId: '58ef43548095d200324f7e66',
+          data: {
+            categories: ['A', 'B', 'C', 'D']
+          }
         },
         zoomMax: 2,
         zoomMin: 0.5,
-        width: 'auto',
+        width: 'auto',    // For responsive set value to `auto`
         height: 800,
-        autoSize: true,   // Auto scale for Responsive
         amountMax: 4,     // Limit selection amount
         amountMin: 1
       })
