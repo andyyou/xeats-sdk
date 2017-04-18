@@ -55,9 +55,9 @@ class Xeat {
               sourceId: options.component.sourceId,
               zoomMax: options.zoomMax,
               zoomMin: options.zoomMin,
-              autoSize: options.autoSize,
               amountMax: options.amountMax,
-              amountMin: options.amountMin
+              amountMin: options.amountMin,
+              categories: options.component.data.categories
             }
           })
         },
