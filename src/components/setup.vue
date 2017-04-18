@@ -1,43 +1,6 @@
-<template>
-  <div
-    class="container"
-  >
-    <svg 
-      id="svg-canvas"
-      :viewBox="viewboxString"
-      :style="styles.edge"
-      v-pan-zoom="viewBox"
-    >
-      <g>
-        <rect v-for="seat in seats"
-          :id="seat.node_id"
-          :x="seat.x"
-          :y="seat.y"
-          :width="seat.width"
-          :height="seat.height"
-          :fill="seat.fill"
-          :stroke="seat.reserved ? '#333' : '#333'"
-          stroke-width="1"
-          @touchend.stop.prevent="book(seat)"
-          @click.stop.prevent="book(seat)"
-          @mouseover="showTooltip(seat)"
-          @mouseout="tooltip.active = false"
-        >
-        </rect>
-      </g>
-    </svg>
-    <span v-show="tooltip.active" class="tooltip" :style="styles.tooltip">{{ tooltip.content }}</span>
-    <div class="manipulate">
-      <button><i class="icon-arrows"></i></button>
-      <button><i class="icon-object-group"></i></button>
-      <button @click.stop.prevent="zoom('in')"><i class="icon-plus"></i></button>
-      <button @click.stop.prevent="zoom('out')"><i class="icon-minus"></i></button>
-      <button @click.stop.prevent="reset()"><i class="icon-refresh"></i></button>
-    </div>
-  </div>
-</template>
-
 <script>
+import _ from 'lodash'
+
 export default {
   props: {
     width: {
@@ -58,14 +21,14 @@ export default {
     token: {
       type: String
     },
-    autoSize: {
-      type: Boolean
-    },
     amountMax: {
       type: Number
     },
     amountMin: {
       type: Number
+    },
+    categories: {
+      type: Array
     }
   },
   data () {
@@ -100,8 +63,10 @@ export default {
         content: "",
         active: false,
         left: 0,
-        top: 0
-      }
+        top: 0,
+        timer: null
+      },
+      mode: 'pan-zoom' // `pan-zoom`, `select`
     }
   },
   computed: {
@@ -203,6 +168,10 @@ export default {
       return this.$parent.setToken.call(this)
     },
     showTooltip (seat){
+      if (this.tooltip.lock) {
+        return
+      }
+
       this.tooltip.active = true
       this.tooltip.content = seat.label
 
@@ -267,6 +236,158 @@ export default {
       this.viewBox.scale = scale
       svgCanvas.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${viewport.width * scale} ${viewport.height * scale}`)
     }
+  },
+  render (createElement) {
+    let vm = this
+    let directive = directive = {
+      name: vm.mode, // mode is directive name
+      expression: 'viewBox'
+    }
+
+    return createElement('div', {
+      attrs: {
+        class: 'container'
+      }
+    }, [
+      createElement('svg', {
+        attrs: {
+          id: 'svg-canvas',
+          viewBox: vm.viewboxString,
+          
+        },
+        style: vm.styles.edge,
+        directives: [
+          directive
+        ]
+      }, [
+        createElement('g', null, vm.seats.map(function (seat) {
+          return createElement('rect', {
+            attrs: {
+              x: seat.x,
+              y: seat.y,
+              width: seat.width,
+              height: seat.height,
+              fill: seat.fill,
+              class: 'seat'
+            },
+            on: {
+              click: function (e) {
+                e.preventDefault()
+                e.stopPropagation()
+                return vm.book(seat)
+              },
+              touchend: function () {
+                return vm.book(seat)
+              },
+              mousedown: function (e) {
+                e.preventDefault()
+                e.stopPropagation()
+                vm.tooltip.active = false
+                
+              },
+              mouseover: function (e) {
+                e.preventDefault()
+                e.stopPropagation()
+                vm.tooltip.timer = setTimeout(function () {
+                  return vm.showTooltip(seat)
+                }, 300)
+              },
+              mouseout: function (e) {
+                e.preventDefault()
+                clearTimeout(vm.tooltip.timer)
+                vm.tooltip.active = false
+              }
+            }
+          })
+        }))
+      ]),
+      createElement('span', {
+        style: vm.styles.tooltip,
+        attrs: {
+          class: 'tooltip'
+        },
+        directives: [
+          {
+            name: 'show',
+            expression: 'tooltip.active',
+            value: vm.tooltip.active
+          }
+        ]
+      }, vm.tooltip.content),
+      createElement('div', {
+        attrs: {
+          class: 'manipulate'
+        }
+      }, [
+        createElement('button', {
+          class: {
+            active: vm.mode === 'pan-zoom'
+          }
+        }, [
+          createElement('i', {
+            attrs: {
+              class: 'icon-arrows'
+            }
+          })
+        ]),
+        createElement('button', {
+          class: {
+            active: vm.mode === 'select'
+          }
+        }, [
+          createElement('i', {
+            attrs: {
+              class: 'icon-object-group'
+            }
+          })
+        ]),
+        createElement('button', {
+          on: {
+            click: function (e) {
+              e.preventDefault()
+              e.stopPropagation()
+              vm.zoom('in')
+            }
+          }
+        }, [
+          createElement('i', {
+            attrs: {
+              class: 'icon-plus'
+            }
+          })
+        ]),
+        createElement('button', {
+          on: {
+            click: function (e) {
+              e.preventDefault()
+              e.stopPropagation()
+              vm.zoom('out')
+            }
+          }
+        }, [
+          createElement('i', {
+            attrs: {
+              class: 'icon-minus'
+            }
+          })
+        ]),
+        createElement('button', {
+          on: {
+            click: function (e) {
+              e.preventDefault()
+              e.stopPropagation()
+              vm.reset()
+            }
+          }
+        }, [
+          createElement('i', {
+            attrs: {
+              class: 'icon-refresh'
+            }
+          })
+        ])
+      ])
+    ])
   }
 }
 </script>
@@ -274,21 +395,19 @@ export default {
 <style lang="sass" scoped>
   svg {
     transation: all .3s ease;
+    background-color: transparent;
   }
 
   .container {
     padding: 15px;
+    border: 1px solid #EEE;
+    background-size: 20px 20px;
     background-color: white;
+    background-image: linear-gradient(to right, #EEE 1px, transparent 1px), linear-gradient(to bottom, #EEE 1px, transparent 1px);
   }
 
   .seat {
-    position: relative;
-    border: 1px solid #e3e3e3;
-    border-radius: 4px;
-    box-shadow: inset 0 1px 1px rgba(0,0,0,0.05);
-    text-align: center;
-    margin: 0 auto;
-    box-sizing: border-box;
+    cursor: pointer;
   }
 
   .manipulate {
@@ -314,9 +433,18 @@ export default {
       vertical-align: middle;
       font-size: 14px;
       cursor: pointer;
+      color: #A1A1A1;
+
+      &:hover {
+        color: black;
+      }
 
       &:last-child {
         border-right: none;
+      }
+
+      &.active {
+        color: black;
       }
     }
   }
