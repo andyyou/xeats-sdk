@@ -175,25 +175,9 @@ export default {
     })
   },
   methods: {
-    book (seat) {
-      if (!seat.reserved) {
-        if (this.amount + 1 <= this.amountMax) {
-          seat.reserved = true
-          this.amount++
-        }
-      } else {
-        seat.reserved = false
-        this.amount--
-      }
-
-      if (seat.reserved) {
-        seat.fill = '#90CA77'
-      } else {
-        seat.fill = '#d3d3d3'
-      }
-    },
     pick (seat) {
-      seat.picked = !seat.picked
+      if (this.mode === 'picking')
+        seat.picked = !seat.picked
     },
     getToken () {
       return this.$parent.getToken.call(this)
@@ -216,6 +200,9 @@ export default {
       // Offset point base svg translate x,y
       this.tooltip.left = point.x - svgCanvas.parentElement.getBoundingClientRect().left
       this.tooltip.top =  (point.y + (seat.height + 5) / this.viewBox.scale) - svgCanvas.parentElement.getBoundingClientRect().top
+
+      // Fix focus issue.
+      document.querySelector('.tooltip').blur()
     },
     reset () {
       this.viewBox.x = 0
@@ -265,12 +252,6 @@ export default {
       this.viewBox.y = viewBox[1] + startSvgCenterPoint.y - endSvgCenterPoint.y
       this.viewBox.scale = scale
       svgCanvas.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${viewport.width * scale} ${viewport.height * scale}`)
-    },
-    resetPicking () {
-      this.picking.x = 0
-      this.picking.y = 0
-      this.picking.width = 0
-      this.picking.height = 0
     }
   },
   render (createElement) {
@@ -318,10 +299,10 @@ export default {
               click: function (e) {
                 e.preventDefault()
                 e.stopPropagation()
-                // return vm.book(seat)
+                return vm.pick(seat)
               },
               touchend: function () {
-                // return vm.book(seat)
+                return vm.pick(seat)
               },
               mousedown: function (e) {
                 e.preventDefault()
@@ -397,51 +378,69 @@ export default {
               class: 'icon-object-group'
             }
           })
-        ]),
-        createElement('button', {
-          on: {
-            click: function (e) {
-              e.preventDefault()
-              e.stopPropagation()
-              vm.zoom('in')
+        ])
+      ]),
+      createElement('transition', {
+        props: {
+          name: 'fade'
+        }
+      }, [
+        createElement('div', {
+          attrs: {
+            class: 'sub-manipulate'
+          },
+          directives: [
+            {
+              name: 'show',
+              value: vm.mode === 'pan-zoom'
             }
-          }
+          ]
         }, [
-          createElement('i', {
-            attrs: {
-              class: 'icon-plus'
+          createElement('button', {
+            on: {
+              click: function (e) {
+                e.preventDefault()
+                e.stopPropagation()
+                vm.reset()
+              }
             }
-          })
-        ]),
-        createElement('button', {
-          on: {
-            click: function (e) {
-              e.preventDefault()
-              e.stopPropagation()
-              vm.zoom('out')
+          }, [
+            createElement('i', {
+              attrs: {
+                class: 'icon-refresh'
+              }
+            })
+          ]),
+          createElement('button', {
+            on: {
+              click: function (e) {
+                e.preventDefault()
+                e.stopPropagation()
+                vm.zoom('in')
+              }
             }
-          }
-        }, [
-          createElement('i', {
-            attrs: {
-              class: 'icon-minus'
+          }, [
+            createElement('i', {
+              attrs: {
+                class: 'icon-plus'
+              }
+            })
+          ]),
+          createElement('button', {
+            on: {
+              click: function (e) {
+                e.preventDefault()
+                e.stopPropagation()
+                vm.zoom('out')
+              }
             }
-          })
-        ]),
-        createElement('button', {
-          on: {
-            click: function (e) {
-              e.preventDefault()
-              e.stopPropagation()
-              vm.reset()
-            }
-          }
-        }, [
-          createElement('i', {
-            attrs: {
-              class: 'icon-refresh'
-            }
-          })
+          }, [
+            createElement('i', {
+              attrs: {
+                class: 'icon-minus'
+              }
+            })
+          ])
         ])
       ])
     ])
@@ -507,8 +506,53 @@ export default {
     }
   }
 
+  .sub-manipulate {
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+    top: 80px;
+    left: 30px;
+    cursor: pointer;
+    border: 1px solid #CCC;
+    background-color: white;
+    box-shadow: 0 1px 2px #DDD;
+    padding: 5px;
+
+    button {
+      padding: 6px 3px;
+      background-color: transparent;
+      border: none;
+      border-bottom: 1px solid #CCC;
+      text-align: center;
+      vertical-align: middle;
+      font-size: 14px;
+      cursor: pointer;
+      color: #A1A1A1;
+
+      &:hover {
+        color: black;
+      }
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      &.active {
+        color: black;
+      }
+    }
+  }
+
   .tooltip {
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
     color: #FFF;
+    background-color: transparent;
     border: 1px solid #333;
     border-radius: 3px;
     padding: 3px 6px;
@@ -519,35 +563,10 @@ export default {
     white-space: nowrap;
   }
 
-  .ghost {
-    background-color: rgba(0, 0, 0, .2);
-    border: 1px solid white;
-    position: absolute;
+  .fade-enter-active, .fade-leave-active {
+    transition: opacity .3s ease-out;
   }
-
-  .ghost-active {
-    display: block !important;
+  .fade-enter, .fade-leave-to /* .fade-leave-active in <2.1.8 */ {
+    opacity: 0
   }
-
-  .ghost-pick {
-    display: none;
-    z-index: 9;
-    position: absolute !important;
-    cursor: default !important;
-
-    > span {
-      background-color: rgba(0, 0, 0, .2);
-      border: 1px solid white;
-      width: 100%;
-      height: 100%;
-      float: left;
-    }
-  }
-
-  .test {
-    display: block;
-    position: absolute;
-    border: 1px dotted blue;
-  }
-
 </style>

@@ -1,8 +1,11 @@
+import _ from 'lodash'
+
 export default {
   install (Vue, options) {
     let pickzone = document.createElement('div')
     pickzone.style.border = '1px dotted #222'
     pickzone.style.position = 'absolute'
+    pickzone.style.boxSizing = 'border-box'
     pickzone.hidden = 1
 
     let begin = {
@@ -19,7 +22,12 @@ export default {
 
     Vue.directive('picking', {
       bind (el, binding, vnode, oldVnode) {
-        let xMin, xMax, yMin, yMax
+        let xMin, 
+            xMax, 
+            yMin, 
+            yMax, 
+            dragging = false
+
         onRefresh = function () {
           xMin = Math.min(begin.x, moveTo.x)
           xMax = Math.max(begin.x, moveTo.x)
@@ -33,21 +41,27 @@ export default {
 
         onDragStart = function (e) {
           pickzone.hidden = 0
+          dragging = true
           begin.x = e.clientX
           begin.y = e.clientY
-
-          onRefresh()
-        }
-
-        onDragMove = function (e) {
           moveTo.x = e.clientX
           moveTo.y = e.clientY
 
           onRefresh()
         }
 
+        onDragMove = function (e) {
+          if (dragging) {
+            moveTo.x = e.clientX
+            moveTo.y = e.clientY
+
+            onRefresh()
+          }
+        }
+
         onDragEnd = function (e) {
           pickzone.hidden = 1
+          dragging = false
           let point = el.createSVGPoint()
           point.x = xMin
           point.y = yMin
