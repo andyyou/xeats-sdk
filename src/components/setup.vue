@@ -72,8 +72,7 @@ export default {
         x: 0,
         y: 0,
         width: 0,
-        height: 0,
-        elements: []
+        height: 0
       }
     }
   },
@@ -97,6 +96,24 @@ export default {
           top: `${this.tooltip.top}px`
         }
       }
+    }
+  },
+  watch: {
+    picking: {
+      handler: function (val, oldVal) {
+        let vm = this
+        this.seats = this.seats.map(function (seat) {
+          let center = {
+            x: seat.x + seat.width / 2,
+            y: seat.y + seat.height / 2
+          }
+
+          return Object.assign({}, seat, {
+            picked: center.x >= val.x && center.x <= val.x + val.width && center.y >= val.y && center.y <= val.y + val.height
+          })
+        })
+      },
+      deep: true
     }
   },
   created () {
@@ -143,7 +160,9 @@ export default {
           width: seat.width * ratio,
           height: seat.height * ratio,
           fill: '#d3d3d3',
-          reserved: false
+          reserved: false,
+          /* For picking to setup */
+          picked: false
         })
       })
     })
@@ -279,7 +298,7 @@ export default {
               y: seat.y,
               width: seat.width,
               height: seat.height,
-              fill: seat.fill,
+              fill: seat.picked ? 'red' : seat.fill,
               class: 'seat'
             },
             on: {
