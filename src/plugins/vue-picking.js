@@ -20,49 +20,62 @@ export default {
       y: parseInt(window.getComputedStyle(document.body).marginTop)
     }
 
-    function refresh () {
-      let xMin = Math.min(begin.x, moveTo.x)
-      let xMax = Math.max(begin.x, moveTo.x)
-      let yMin = Math.min(begin.y, moveTo.y)
-      let yMax = Math.max(begin.y, moveTo.y)
-      pickzone.style.left = (xMin - offset.x - 2) + 'px';
-      pickzone.style.top = (yMin - offset.y - 2) + 'px';
-      pickzone.style.width = xMax - xMin + 'px';
-      pickzone.style.height = yMax - yMin + 'px';
-    }
+    let onRefresh, onDragStart, onDragMove, onDragEnd
 
     Vue.directive('picking', {
       bind (el, binding, vnode, oldVnode) {
-        el.parentElement.appendChild(pickzone)
-        el.addEventListener('mousedown', function (e) {
+        let xMin, xMax, yMin, yMax
+        onRefresh = function () {
+          xMin = Math.min(begin.x, moveTo.x)
+          xMax = Math.max(begin.x, moveTo.x)
+          yMin = Math.min(begin.y, moveTo.y)
+          yMax = Math.max(begin.y, moveTo.y)
+          pickzone.style.left = (xMin - offset.x ) + 'px';
+          pickzone.style.top = (yMin - offset.y ) + 'px';
+          pickzone.style.width = xMax - xMin + 'px';
+          pickzone.style.height = yMax - yMin + 'px';
+        }
+
+        onDragStart = function (e) {
           pickzone.hidden = 0
           begin.x = e.clientX
           begin.y = e.clientY
-          refresh()
-        }, false)
 
-        el.addEventListener('mousemove', function (e) {
+          onRefresh()
+        }
+
+        onDragMove = function (e) {
           moveTo.x = e.clientX
           moveTo.y = e.clientY
-          refresh()
-        }, false)
 
-        el.addEventListener('mouseup', function (e) {
+          onRefresh()
+        }
+
+        onDragEnd = function (e) {
           pickzone.hidden = 1
-        }, false)
+          let point = el.createSVGPoint()
+          point.x = xMin
+          point.y = yMin
+          point = point.matrixTransform(el.getScreenCTM().inverse())
+          vnode.context[binding.expression].x = point.x
+          vnode.context[binding.expression].y = point.y
+          vnode.context[binding.expression].width = xMax - xMin
+          vnode.context[binding.expression].height = yMax - yMin
+        }
+
+        el.parentElement.appendChild(pickzone)
+
+        el.addEventListener('mousedown', onDragStart)
+        el.addEventListener('mousemove', onDragMove)
+        document.addEventListener('mouseup', onDragEnd)
+        pickzone.addEventListener('mousemove', onDragMove)
 
         
-        pickzone.addEventListener('mousemove', function (e) {
-          moveTo.x = e.clientX
-          moveTo.y = e.clientY
-          refresh()
-        }, false)
-
-        pickzone.addEventListener('mouseup', function (e) {
-          pickzone.hidden = 1
-        }, false)
       },
       unbind (el) {
+        el.removeEventListener('mousedown', onDragStart)
+        el.removeEventListener('mousemove', onDragMove)
+        el.removeEventListener('mouseup', onDragEnd)
         el.parentElement.removeChild(pickzone)
       }
     })

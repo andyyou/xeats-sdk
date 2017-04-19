@@ -69,14 +69,10 @@ export default {
       /* `pan-zoom`, `picking` mode is the directive name */
       mode: 'pan-zoom',
       picking: {
-        begin: {
-          x: 0,
-          y: 0
-        },
-        moveTo: {
-          x: 0,
-          y: 0
-        },
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0,
         elements: []
       }
     }
@@ -264,6 +260,7 @@ export default {
         class: 'container'
       }
     }, [
+      createElement('div', null, `(${this.picking.x}, ${this.picking.y}) - ${this.picking.width} / ${this.picking.height}`),
       createElement('svg', {
         attrs: {
           id: 'svg-canvas',
@@ -428,7 +425,6 @@ export default {
   }
 
   .container {
-    padding: 15px;
     position: relative;
     border: 1px solid #EEE;
     background-size: 20px 20px;
