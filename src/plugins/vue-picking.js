@@ -70,7 +70,6 @@ export default {
           vnode.context[binding.expression].y = point.y
           vnode.context[binding.expression].width = xMax - xMin
           vnode.context[binding.expression].height = yMax - yMin
-          vnode.context[binding.expression].color = '#' + ((1 << 24) * Math.random() | 0).toString(16)
         }
 
         el.parentElement.appendChild(pickzone)

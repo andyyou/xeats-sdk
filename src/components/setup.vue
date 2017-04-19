@@ -72,10 +72,10 @@ export default {
         x: 0,
         y: 0,
         width: 0,
-        height: 0,
-        /* setting el's color of tmp */
-        color: '#000'
-      }
+        height: 0
+      },
+      /* setting el's color of tmp */
+      color: '#000'
     }
   },
   computed: {
@@ -446,6 +446,11 @@ export default {
       createElement('transition', {
         props: {
           name: 'fade'
+        },
+        on: {
+          'before-enter': function () {
+            vm.color = '#' + ((1 << 24) * Math.random() | 0).toString(16)
+          }
         }
       }, [
         createElement('div', {
@@ -469,7 +474,7 @@ export default {
           createElement('input', {
             attrs: {
               type: 'color',
-              value: vm.picking.color
+              value: vm.color
             }
           }),
           createElement('button', null, 'Confirm')
