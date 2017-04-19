@@ -72,10 +72,14 @@ export default {
 
         
       },
-      unbind (el) {
+      unbind (el, binding, vnode, oldVnode) {
         el.removeEventListener('mousedown', onDragStart)
         el.removeEventListener('mousemove', onDragMove)
-        el.removeEventListener('mouseup', onDragEnd)
+        document.removeEventListener('mouseup', onDragEnd)
+        vnode.context[binding.expression].x = 0
+        vnode.context[binding.expression].y = 0
+        vnode.context[binding.expression].width = 0
+        vnode.context[binding.expression].height = 0
         el.parentElement.removeChild(pickzone)
       }
     })
