@@ -15,11 +15,6 @@ export default {
       y: 0
     }
 
-    let offset = {
-      x: parseInt(window.getComputedStyle(document.body).marginLeft),
-      y: parseInt(window.getComputedStyle(document.body).marginTop)
-    }
-
     let onRefresh, onDragStart, onDragMove, onDragEnd
 
     Vue.directive('picking', {
@@ -30,8 +25,8 @@ export default {
           xMax = Math.max(begin.x, moveTo.x)
           yMin = Math.min(begin.y, moveTo.y)
           yMax = Math.max(begin.y, moveTo.y)
-          pickzone.style.left = (xMin - offset.x ) + 'px';
-          pickzone.style.top = (yMin - offset.y ) + 'px';
+          pickzone.style.left = (xMin - el.parentElement.getBoundingClientRect().left) + 'px';
+          pickzone.style.top = (yMin - el.parentElement.getBoundingClientRect().top) + 'px';
           pickzone.style.width = xMax - xMin + 'px';
           pickzone.style.height = yMax - yMin + 'px';
         }
@@ -67,10 +62,7 @@ export default {
 
         el.addEventListener('mousedown', onDragStart)
         el.addEventListener('mousemove', onDragMove)
-        document.addEventListener('mouseup', onDragEnd)
-        pickzone.addEventListener('mousemove', onDragMove)
-
-        
+        document.addEventListener('mouseup', onDragEnd)        
       },
       unbind (el, binding, vnode, oldVnode) {
         el.removeEventListener('mousedown', onDragStart)

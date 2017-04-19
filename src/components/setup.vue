@@ -108,8 +108,12 @@ export default {
             y: seat.y + seat.height / 2
           }
 
+          let picked = ((center.x >= val.x) && 
+                       (center.x <= val.x + val.width * vm.viewBox.scale) && 
+                       (center.y >= val.y) && 
+                       (center.y <= val.y + val.height * vm.viewBox.scale))
           return Object.assign({}, seat, {
-            picked: center.x >= val.x && center.x <= val.x + val.width && center.y >= val.y && center.y <= val.y + val.height
+            picked: picked
           })
         })
       },
@@ -188,6 +192,9 @@ export default {
         seat.fill = '#d3d3d3'
       }
     },
+    pick (seat) {
+      seat.picked = !seat.picked
+    },
     getToken () {
       return this.$parent.getToken.call(this)
     },
@@ -207,8 +214,8 @@ export default {
       point = point.matrixTransform(svgCanvas.getScreenCTM())
 
       // Offset point base svg translate x,y
-      this.tooltip.left = point.x
-      this.tooltip.top = point.y + (seat.height + 5) / this.viewBox.scale
+      this.tooltip.left = point.x - svgCanvas.parentElement.getBoundingClientRect().left
+      this.tooltip.top =  (point.y + (seat.height + 5) / this.viewBox.scale) - svgCanvas.parentElement.getBoundingClientRect().top
     },
     reset () {
       this.viewBox.x = 0
@@ -258,6 +265,12 @@ export default {
       this.viewBox.y = viewBox[1] + startSvgCenterPoint.y - endSvgCenterPoint.y
       this.viewBox.scale = scale
       svgCanvas.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${viewport.width * scale} ${viewport.height * scale}`)
+    },
+    resetPicking () {
+      this.picking.x = 0
+      this.picking.y = 0
+      this.picking.width = 0
+      this.picking.height = 0
     }
   },
   render (createElement) {
@@ -298,23 +311,22 @@ export default {
               y: seat.y,
               width: seat.width,
               height: seat.height,
-              fill: seat.picked ? 'red' : seat.fill,
+              fill: seat.picked ? 'orange' : seat.fill,
               class: 'seat'
             },
             on: {
               click: function (e) {
                 e.preventDefault()
                 e.stopPropagation()
-                return vm.book(seat)
+                // return vm.book(seat)
               },
               touchend: function () {
-                return vm.book(seat)
+                // return vm.book(seat)
               },
               mousedown: function (e) {
                 e.preventDefault()
                 e.stopPropagation()
                 vm.tooltip.active = false
-                
               },
               mouseover: function (e) {
                 e.preventDefault()
