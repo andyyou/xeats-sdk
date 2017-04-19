@@ -16,6 +16,9 @@ export default {
     /**
      * elements of svg moving ability
      */
+    
+    let subDrag, subZoom
+
     Vue.directive('pan-zoom', {
       bind (el, binding, vnode, oldVnode) {
         /**
@@ -93,7 +96,7 @@ export default {
           }).takeUntil(dragEnd)
         }).switch()
 
-        drag.subscribe((p) => {
+        subDrag = drag.subscribe((p) => {
           vnode.context[binding.expression].x = p.x
           vnode.context[binding.expression].y = p.y
         })
@@ -104,7 +107,7 @@ export default {
         const wheel = 'onwheel' in document ? 'wheel' : 'mousewheel'
         const zoom = Observable.fromEvent(el, wheel)
 
-        zoom.subscribe((e) => {
+        subZoom = zoom.subscribe((e) => {
           e.preventDefault()
           e.stopPropagation()
           requestAnimationFrame(() => {
@@ -161,6 +164,10 @@ export default {
         /**
          * TODO: touch for Zoom in out
          */
+      },
+      unbind () {
+        subDrag.unsubscribe()
+        subZoom.unsubscribe()
       }
     })
   }

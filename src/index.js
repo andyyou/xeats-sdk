@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import axios from 'axios'
 import VuePanZoom from '@/plugins/vue-svg-pan-zoom'
+import VuePicking from '@/plugins/vue-picking'
 import '@/stylesheets/sdk'
 axios.defaults.baseURL = 'https://xeats.herokuapp.com/v1.0'
 Vue.prototype.$http = axios
@@ -9,6 +10,7 @@ var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAni
                             window.webkitRequestAnimationFrame || window.msRequestAnimationFrame
 window.requestAnimationFrame = requestAnimationFrame
 Vue.use(VuePanZoom)
+Vue.use(VuePicking)
 
 function setToken (accessKey, secret) {
   axios.post('/users/token', {

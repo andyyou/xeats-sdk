@@ -37,7 +37,7 @@ export default {
         width: this.width,
         height: this.height
       },
-      // Original SVG size from API
+      /* Original SVG size from API */
       svg: {
         width: 0,
         height: 0
@@ -66,7 +66,19 @@ export default {
         top: 0,
         timer: null
       },
-      mode: 'pan-zoom' // `pan-zoom`, `select`
+      /* `pan-zoom`, `picking` mode is the directive name */
+      mode: 'pan-zoom',
+      picking: {
+        begin: {
+          x: 0,
+          y: 0
+        },
+        moveTo: {
+          x: 0,
+          y: 0
+        },
+        elements: []
+      }
     }
   },
   computed: {
@@ -168,10 +180,6 @@ export default {
       return this.$parent.setToken.call(this)
     },
     showTooltip (seat){
-      if (this.tooltip.lock) {
-        return
-      }
-
       this.tooltip.active = true
       this.tooltip.content = seat.label
 
@@ -239,9 +247,16 @@ export default {
   },
   render (createElement) {
     let vm = this
-    let directive = directive = {
-      name: vm.mode, // mode is directive name
-      expression: 'viewBox'
+
+    let expressions = {
+      'pan-zoom': 'viewBox',
+      'picking': 'picking'
+    }
+
+    let directive = {
+      /* mode is directive name */
+      name: vm.mode, 
+      expression: expressions[vm.mode]
     }
 
     return createElement('div', {
@@ -322,6 +337,13 @@ export default {
         createElement('button', {
           class: {
             active: vm.mode === 'pan-zoom'
+          },
+          on: {
+            click: function (e) {
+              e.preventDefault()
+              e.stopPropagation()
+              vm.mode = 'pan-zoom'
+            }
           }
         }, [
           createElement('i', {
@@ -332,7 +354,14 @@ export default {
         ]),
         createElement('button', {
           class: {
-            active: vm.mode === 'select'
+            active: vm.mode === 'picking'
+          },
+          on: {
+            click: function (e) {
+              e.preventDefault()
+              e.stopPropagation()
+              vm.mode = 'picking'
+            }
           }
         }, [
           createElement('i', {
@@ -400,6 +429,7 @@ export default {
 
   .container {
     padding: 15px;
+    position: relative;
     border: 1px solid #EEE;
     background-size: 20px 20px;
     background-color: white;
@@ -415,6 +445,7 @@ export default {
     -moz-user-select: none;
     -webkit-user-select: none;
     position: absolute;
+    z-index: 10;
     top: 30px;
     left: 30px;
     cursor: pointer;
@@ -460,4 +491,36 @@ export default {
     top: 0;
     white-space: nowrap;
   }
+
+  .ghost {
+    background-color: rgba(0, 0, 0, .2);
+    border: 1px solid white;
+    position: absolute;
+  }
+
+  .ghost-active {
+    display: block !important;
+  }
+
+  .ghost-pick {
+    display: none;
+    z-index: 9;
+    position: absolute !important;
+    cursor: default !important;
+
+    > span {
+      background-color: rgba(0, 0, 0, .2);
+      border: 1px solid white;
+      width: 100%;
+      height: 100%;
+      float: left;
+    }
+  }
+
+  .test {
+    display: block;
+    position: absolute;
+    border: 1px dotted blue;
+  }
+
 </style>
