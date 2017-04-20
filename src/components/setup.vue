@@ -73,7 +73,9 @@ export default {
         y: 0,
         width: 0,
         height: 0
-      }
+      },
+      /* setting el's color of tmp */
+      color: '#000'
     }
   },
   computed: {
@@ -112,6 +114,7 @@ export default {
                        (center.x <= val.x + val.width * vm.viewBox.scale) && 
                        (center.y >= val.y) && 
                        (center.y <= val.y + val.height * vm.viewBox.scale))
+           
           return Object.assign({}, seat, {
             picked: picked
           })
@@ -200,9 +203,6 @@ export default {
       // Offset point base svg translate x,y
       this.tooltip.left = point.x - svgCanvas.parentElement.getBoundingClientRect().left
       this.tooltip.top =  (point.y + (seat.height + 5) / this.viewBox.scale) - svgCanvas.parentElement.getBoundingClientRect().top
-
-      // Fix focus issue.
-      document.querySelector('.tooltip').blur()
     },
     reset () {
       this.viewBox.x = 0
@@ -442,6 +442,43 @@ export default {
             })
           ])
         ])
+      ]),
+      createElement('transition', {
+        props: {
+          name: 'fade'
+        },
+        on: {
+          'before-enter': function () {
+            vm.color = '#' + ((1 << 24) * Math.random() | 0).toString(16)
+          }
+        }
+      }, [
+        createElement('div', {
+          attrs: {
+            class: 'setup-panel'
+          },
+          directives: [
+            {
+              name: 'show',
+              value: this.seats.some(function (seat) {
+                return seat.picked
+              })
+            }
+          ]
+        }, [
+          createElement('select', null, this.categories.map(function (category) {
+            return createElement('option', {
+              value: category
+            }, category)
+          })),
+          createElement('input', {
+            attrs: {
+              type: 'color',
+              value: vm.color
+            }
+          }),
+          createElement('button', null, 'Confirm')
+        ])
       ])
     ])
   }
@@ -450,6 +487,9 @@ export default {
 
 <style lang="sass" scoped>
   svg {
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
     transation: all .3s ease;
     background-color: transparent;
   }
@@ -547,12 +587,28 @@ export default {
     }
   }
 
+  .setup-panel {
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+    top: 80px;
+    left: 30px;
+    cursor: pointer;
+    border: 1px solid #CCC;
+    background-color: white;
+    box-shadow: 0 1px 2px #DDD;
+    padding: 5px;
+  }
+
   .tooltip {
     user-select: none;
     -moz-user-select: none;
     -webkit-user-select: none;
     color: #FFF;
-    background-color: transparent;
     border: 1px solid #333;
     border-radius: 3px;
     padding: 3px 6px;
@@ -564,7 +620,7 @@ export default {
   }
 
   .fade-enter-active, .fade-leave-active {
-    transition: opacity .3s ease-out;
+    transition: opacity .1s ease-out;
   }
   .fade-enter, .fade-leave-to /* .fade-leave-active in <2.1.8 */ {
     opacity: 0
