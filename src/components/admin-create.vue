@@ -125,7 +125,6 @@ export default {
   watch: {
     picking: {
       handler: function (val, oldVal) {
-console.log('picking changed')
         let vm = this
         this.seats = this.seats.map(function (seat) {
           let center = {
@@ -301,6 +300,9 @@ console.log('picking changed')
           picked: false
         })
       })
+    },
+    save () {
+      // TODO: Save by calling API
     }
   },
   render (createElement) {
@@ -433,6 +435,13 @@ console.log('picking changed')
         createElement('button', {
           class: {
             diff: vm.diff
+          },
+          on: {
+            click: function (e) {
+              e.preventDefault()
+              e.stopPropagation()
+              vm.save()
+            }
           }
         }, [
           createElement('i', {

@@ -63,8 +63,8 @@ export default {
           pickzone.hidden = 1
           dragging = false
           let point = el.createSVGPoint()
-          point.x = xMin
-          point.y = yMin
+          point.x = xMin || 0
+          point.y = yMin || 0
           point = point.matrixTransform(el.getScreenCTM().inverse())
           vnode.context[binding.expression].x = point.x
           vnode.context[binding.expression].y = point.y
