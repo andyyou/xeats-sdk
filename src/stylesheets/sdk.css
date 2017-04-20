@@ -62,3 +62,36 @@
 .icon-lock:before {
   content: "\e007";
 }
+.icon-tags:before {
+  content: "\e008";
+}
+.icon-eyedropper:before {
+  content: "\e009";
+}
+.icon-caret-down:before {
+  content: "\e00a";
+}
+.icon-caret-left:before {
+  content: "\e00b";
+}
+.icon-caret-right:before {
+  content: "\e00c";
+}
+.icon-caret-up:before {
+  content: "\e00d";
+}
+.icon-angle-up:before {
+  content: "\e00e";
+}
+.icon-angle-right:before {
+  content: "\e00f";
+}
+.icon-angle-left:before {
+  content: "\e010";
+}
+.icon-angle-down:before {
+  content: "\e011";
+}
+.icon-floppy-o:before {
+  content: "\e012";
+}
