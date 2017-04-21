@@ -425,39 +425,37 @@ export default {
       expression: expressions[vm.mode]
     }
 
+    let loader = createElement('div', {
+      attrs: {
+        class: 'loader'
+      }
+    }, [
+      createElement('div', {
+        attrs: {
+          class: 'loader-figure'
+        },
+        style: {
+          display: vm.faild ? 'none' : 'block'
+        }
+      }),
+      createElement('p', {
+        class: {
+          'loader-label': true,
+          'animate': !vm.faild,
+          'error': vm.faild
+        }
+      }, vm.faild || 'LOADING')
+    ])
+
+    /**
+     * Begin rendering
+     */
     return createElement('div', {
       attrs: {
         class: 'container'
       }
     }, [
-      createElement('div', null, `(${this.picking.x}, ${this.picking.y}) - ${this.picking.width} / ${this.picking.height}`),
-      createElement('div', {
-        attrs: {
-          class: 'loader'
-        },
-        directives: [
-          {
-            name: 'show',
-            value: vm.loading
-          }
-        ]
-      }, [
-        createElement('div', {
-          attrs: {
-            class: 'loader-figure'
-          },
-          style: {
-            display: vm.faild ? 'none' : 'block'
-          }
-        }),
-        createElement('p', {
-          class: {
-            'loader-label': true,
-            'animate': !vm.faild,
-            'error': vm.faild
-          }
-        }, vm.faild || 'LOADING')
-      ]),
+      vm.loading ? loader : null,
       createElement('div', {
         attrs: {
           class: 'dotted-around'
