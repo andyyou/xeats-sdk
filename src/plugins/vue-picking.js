@@ -76,6 +76,7 @@ export default {
 
         el.addEventListener('mousedown', onDragStart)
         el.addEventListener('mousemove', onDragMove)
+        pickzone.addEventListener('mousemove', onDragMove)
         document.addEventListener('mouseup', onDragEnd)        
       },
       unbind (el, binding, vnode, oldVnode) {

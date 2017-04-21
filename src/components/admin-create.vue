@@ -12,15 +12,19 @@ function darken(color, percent) {
   return "#"+(0x1000000+(Math.round((t-R)*p)+R)*0x10000+(Math.round((t-G)*p)+G)*0x100+(Math.round((t-B)*p)+B)).toString(16).slice(1);
 }
 
-let defaultSeatColor = '#d3d3d3'
+let colors = {
+  seat: '#d3d3d3'
+}
 
 export default {
   props: {
     width: {
-      type: [String, Number]
+      type: [String, Number],
+      required: true
     },
     height: {
-      type: [String, Number]
+      type: [String, Number],
+      required: true
     },
     sourceId: {
       type: String
@@ -50,13 +54,16 @@ export default {
         width: this.width,
         height: this.height
       },
-      /* Original SVG size from API */
+      /**
+       * Original SVG size from API 
+       */
       svg: {
         width: 0,
         height: 0
       },
       /**
        * Use v-pan-zoom required this
+       * For svg's viewBox attrs
        */
       viewBox: {
         x: 0,
@@ -67,10 +74,16 @@ export default {
         zoomMin: this.zoomMin,
         scale: 1
       },
+      /**
+       * svg objects will divide 4 types
+       */
       seats: [],
       stages: [],
       facilities: [],
       disabilities: [],
+      /**
+       * Booking amount for limitation
+       */
       amount: 0,
       tooltip:{
         content: "",
@@ -79,8 +92,14 @@ export default {
         top: 0,
         timer: null
       },
-      /* `pan-zoom`, `picking` mode is the directive name */
+      /**
+       * mode will mount directive to svg
+       * `pan-zoom`, `picking` mode is the directive name 
+       */
       mode: 'pan-zoom',
+      /**
+       * Mousemove make a selection area to select seats 
+       */
       picking: {
         x: 0,
         y: 0,
@@ -88,11 +107,25 @@ export default {
         height: 0
       },
       /** 
-       * setting el's color of tmp 
+       * Make a dotted rectangle to note selection area 
+       */
+      around: {
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0
+      },
+      /** 
+       * select a color of tmp to set into seat's fill attr
        * current color & category
        */
       color: '#000',
-      category: this.categories[0]
+      category: this.categories[0],
+      /**
+       * Status for loader
+       */
+      loading: true,
+      faild: null
     }
   },
   computed: {
@@ -118,6 +151,15 @@ export default {
         tooltip: {
           left: `${this.tooltip.left}px`,
           top: `${this.tooltip.top}px`
+        },
+        around: {
+          left: `${this.around.x}px`,
+          top: `${this.around.y}px`,
+          width: `${this.around.width}px`,
+          height: `${this.around.height}px`,
+          display: this.seats.some(function (seat) {
+            return seat.picked
+          }) ? 'block' : 'none'
         }
       }
     }
@@ -141,61 +183,70 @@ export default {
             picked: picked
           })
         })
+
+        this.$nextTick(this.updateDottedAround)
       },
       deep: true
     }
   },
   created () {
-    this.$http.get(`/spots/${this.sourceId}`, {
+    let vm = this
+
+    vm.$http.get(`/spots/${vm.sourceId}`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('_x_t')}`
       }
     })
     .then(res => {
-      this.seats = res.data.objects.filter(obj => obj.type === 'seat')
-      this.stages = res.data.objects.filter(obj => obj.type === 'stage')
-      this.facilities = res.data.objects.filter(obj => obj.type === 'facilities')
-      this.disabilities = res.data.objects.filter(obj => obj.type === 'disabilities')
+      vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
+      vm.stages = res.data.objects.filter(obj => obj.type === 'stage')
+      vm.facilities = res.data.objects.filter(obj => obj.type === 'facilities')
+      vm.disabilities = res.data.objects.filter(obj => obj.type === 'disabilities')
       
-      this.svg.width = res.data.svg.width
-      this.svg.height = res.data.svg.height
+      vm.svg.width = res.data.svg.width
+      vm.svg.height = res.data.svg.height
 
       // For calculate responsive of viewport
       let ratio
 
       // Base on longer axis to calculate for responsive.
-      if (isNaN(+this.viewport.width)) {
-        this.viewport.width = Math.floor(this.$el.getBoundingClientRect().width)
+      if (isNaN(+vm.viewport.width)) {
+        vm.viewport.width = Math.floor(vm.$el.getBoundingClientRect().width)
       }
 
-      if (isNaN(+this.viewport.height)) {
-        this.viewport.height = Math.floor(this.$el.getBoundingClientRect().height)
+      if (isNaN(+vm.viewport.height)) {
+        vm.viewport.height = Math.floor(vm.$el.getBoundingClientRect().height)
       }
 
       if (res.data.svg.width > res.data.svg.height) {
-        ratio = this.viewport.width / this.svg.width
+        ratio = vm.viewport.width / vm.svg.width
       } else {  
-        ratio = this.viewport.height / this.svg.height
+        ratio = vm.viewport.height / vm.svg.height
       }
 
-      this.viewport.width = Math.floor(this.svg.width * ratio)
-      this.viewport.height = Math.floor(this.svg.height * ratio)
-      this.viewBox.width = this.viewport.width
-      this.viewBox.height = this.viewport.height
-      this.seats = this.seats.map(function (seat) {
+      vm.viewport.width = Math.floor(vm.svg.width * ratio)
+      vm.viewport.height = Math.floor(vm.svg.height * ratio)
+      vm.viewBox.width = vm.viewport.width
+      vm.viewBox.height = vm.viewport.height
+      vm.seats = vm.seats.map(function (seat) {
         return Object.assign({}, seat, {
           x: seat.x * ratio,
           y: seat.y * ratio,
           width: seat.width * ratio,
           height: seat.height * ratio,
-          fill: defaultSeatColor,
+          fill: colors.seat,
           reserved: false,
-          /* For picking to setup */
+          /* For picking to set seat */
           picked: false
         })
       })
+
+      vm.$nextTick(function () {
+        vm.loading = false
+      })
     })
     .catch( error => {
+      vm.faild = 'API request faild, Try to relaod please.'
       console.log('error', error)
     })
   },
@@ -271,9 +322,64 @@ export default {
       this.viewBox.scale = scale
       svgCanvas.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${viewport.width * scale} ${viewport.height * scale}`)
     },
-    pick (seat) {
+    pick: _.debounce(function (seat) {
       if (this.mode === 'picking') {
-        seat.picked = !seat.picked
+        
+        this.seats = this.seats.map(function (s) {
+          let picked = false
+          if (seat.node_id === s.node_id) {
+            picked = !s.picked
+          }
+          return Object.assign({}, s, {
+            picked: picked
+          })
+        })
+
+        this.$nextTick(this.updateDottedAround)
+      }
+    }, 100),
+    updateDottedAround () {
+      // Make dotted rectangle
+      let seats = this.seats.filter(function (seat) {
+        return seat.picked
+      })
+      
+      if (seats.length > 0) {
+        let left = seats.reduce(function (prev, curr, index, arr) {
+          return prev.x < curr.x ? prev : curr
+        })
+        let right = seats.reduce(function (prev, curr, index, arr) {
+          return prev.x > curr.x ? prev : curr
+        })
+        let top = seats.reduce(function (prev, curr, index, arr) {
+          return prev.y < curr.y ? prev : curr
+        })
+        let bottom = seats.reduce(function (prev, curr, index, arr) {
+          return prev.y > curr.y ? prev : curr
+        })
+
+        /**
+          * Calculate dotted around
+          */
+        let svg = document.querySelector('#svg-canvas')
+        let el = document.querySelector('.dotted-around')
+        let begin = svg.createSVGPoint()
+        let moveTo = svg.createSVGPoint()
+        begin.x = left.x - 4
+        begin.y = top.y - 4
+        moveTo.x = right.x + right.width
+        moveTo.y = bottom.y + bottom.width
+        begin = begin.matrixTransform(svg.getScreenCTM())
+        moveTo = moveTo.matrixTransform(svg.getScreenCTM())
+        this.around.x = begin.x - svg.parentElement.getBoundingClientRect().left
+        this.around.y = begin.y - svg.parentElement.getBoundingClientRect().top
+        this.around.width = (moveTo.x - begin.x)
+        this.around.height = (moveTo.y - begin.y)
+      } else {
+        this.around.x = 0
+        this.around.y = 0
+        this.around.width = 0
+        this.around.height = 0
       }
     },
     setCategory (options) {
@@ -288,7 +394,7 @@ export default {
         options['clean'] = false
       }
 
-      let changedColor = options.clean ? defaultSeatColor : vm.color
+      let changedColor = options.clean ? colors.seat : vm.color
       let category = options.clean ? null : vm.category
 
       this.seats = this.seats.map(function (seat) {
@@ -325,6 +431,47 @@ export default {
       }
     }, [
       createElement('div', null, `(${this.picking.x}, ${this.picking.y}) - ${this.picking.width} / ${this.picking.height}`),
+      createElement('div', {
+        attrs: {
+          class: 'loader'
+        },
+        directives: [
+          {
+            name: 'show',
+            value: vm.loading
+          }
+        ]
+      }, [
+        createElement('div', {
+          attrs: {
+            class: 'loader-figure'
+          },
+          style: {
+            display: vm.faild ? 'none' : 'block'
+          }
+        }),
+        createElement('p', {
+          class: {
+            'loader-label': true,
+            'animate': !vm.faild,
+            'error': vm.faild
+          }
+        }, vm.faild || 'LOADING')
+      ]),
+      createElement('div', {
+        attrs: {
+          class: 'dotted-around'
+        },
+        style: vm.styles.around,
+        on: {
+          click: function (e) {
+            vm.picking.x = 0
+            vm.picking.y = 0
+            vm.picking.width = 0
+            vm.picking.height = 0
+          }
+        }
+      }),
       createElement('svg', {
         attrs: {
           id: 'svg-canvas',
@@ -626,6 +773,8 @@ export default {
     -webkit-user-select: none;
     transation: all .3s ease;
     background-color: transparent;
+    position: relative;
+    z-index: 9;
   }
 
   .container {
@@ -831,9 +980,65 @@ export default {
     position: absolute;
     left: 0;
     top: 0;
+    z-index: 10;
     white-space: nowrap;
   }
 
+  .dotted-around {
+    position: absolute;
+    border: 1px dotted;
+    top: 0;
+    left: 0;
+    z-index: 11;
+  }
+
+  .loader, .loader-figure {
+    position: absolute;
+    z-index: 11;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  $loader-color: orange;
+
+  .loader {
+    overflow: visible;
+    padding-top: 50px;
+    width: 50px;
+    height: 0;
+  }
+
+  .loader-figure {
+    width: 0;
+    height: 0;
+    box-sizing: border-box;
+    border: 0 solid $loader-color;
+    border-radius: 50%;
+    animation-name: loader-figure;
+    animation-duration: 1s;
+    animation-iteration-count: infinite;
+    animation-timing-function: ease-out;
+  }
+
+  .loader-label {
+    color: $loader-color;
+    float: left;
+    margin-left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+
+    &.animate {
+      animation-name: loader-label;
+      animation-duration: 1s;
+      animation-iteration-count: infinite;
+      animation-timing-function: ease-out;
+    }
+
+    &.error {
+      color: red;
+    }
+  }
   .fade-enter-active, .fade-leave-active {
     transition: opacity .1s ease-out;
   }
@@ -841,4 +1046,47 @@ export default {
   .fade-enter, .fade-leave-to /* .fade-leave-active in <2.1.8 */ {
     opacity: 0
   }
+
+ @keyframes loader-figure {
+  0% {
+    width: 0;
+    height: 0;
+    background-color: $loader-color;
+  }
+
+  29% {
+    background-color: $loader-color;
+  }
+
+  30% {
+    width: 50px;
+    height: 50px;
+    background-color: transparent;
+    border-width: 25px;
+    opacity: 1
+  }
+
+  100% {
+    width: 50px;
+    height: 50px;
+    border-width: 0;
+    opacity: 0;
+    background-color: transparent;
+  }
+ }
+
+ @keyframes loader-label {
+   0% {
+     opacity: 0.25;
+   }
+
+   30% {
+     opacity: 1;
+   }
+
+   100% {
+     opacity: 0.25;
+   }
+ }
+
 </style>
