@@ -85,7 +85,7 @@ export default {
        * Booking amount for limitation
        */
       amount: 0,
-      tooltip:{
+      tooltip: {
         content: "",
         active: false,
         left: 0,
@@ -234,11 +234,13 @@ export default {
 
       vm.viewport.width = Math.floor(vm.svg.width * ratio)
       vm.viewport.height = Math.floor(vm.svg.height * ratio)
+
       vm.viewBox.width = vm.viewport.width * (1 / ratio)
       vm.viewBox.height = vm.viewport.height * (1 / ratio)
       vm.viewBox.scale = (1 / ratio)
 
       vm.seats = vm.seats.map(function (seat) {
+
         return Object.assign({}, seat, {
           // x: seat.x * ratio,
           // y: seat.y * ratio,
