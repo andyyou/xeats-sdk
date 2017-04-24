@@ -1,7 +1,7 @@
 <script>
 import _ from 'lodash'
 
-function darken(color, percent) {   
+function darken(color, percent) {
   let f = parseInt(color.slice(1),16),
       t = (percent < 0) ? 0:255,
       p = (percent < 0) ? percent * -1 : percent,
@@ -125,7 +125,7 @@ export default {
        * Status for loader
        */
       loading: true,
-      faild: null
+      failed: null
     }
   },
   computed: {
@@ -198,6 +198,7 @@ export default {
       }
     })
     .then(res => {
+
       vm.stages = res.data.objects
         .filter(obj => obj.type === 'stage')
         .map(function (stage) {
@@ -209,6 +210,7 @@ export default {
           return Object.assign({}, facility)
         })
       // vm.disabilities = res.data.objects.filter(obj => obj.type === 'disability')
+
       vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
  
       vm.svg.width = res.data.svg.width
@@ -232,6 +234,7 @@ export default {
       //   ratio = vm.viewport.height / vm.svg.height
       // }
 
+
       vm.viewport.width = Math.floor(vm.svg.width * ratio)
       vm.viewport.height = Math.floor(vm.svg.height * ratio)
 
@@ -254,9 +257,10 @@ export default {
       })
 
       vm.loading = false
+
     })
     .catch( error => {
-      vm.faild = 'API request faild, Try to relaod please.'
+      vm.failed = 'API request failed, Try to reload please.'
       console.log('error', error)
     })
   },
@@ -299,9 +303,9 @@ export default {
       // Update point base on current transform matrix
       point = point.matrixTransform(svgCanvas.getScreenCTM())
 
-      // Offset point base svg translate x,y
+      // Offset point base svg translate x, y
       this.tooltip.left = point.x - svgCanvas.parentElement.getBoundingClientRect().left
-      this.tooltip.top =  (point.y + (seat.height + 5) / this.viewBox.scale) - svgCanvas.parentElement.getBoundingClientRect().top
+      this.tooltip.top = (point.y + (seat.height + 5) / this.viewBox.scale) - svgCanvas.parentElement.getBoundingClientRect().top
     },
     reset () {
       this.viewBox.x = 0
@@ -467,16 +471,16 @@ export default {
           class: 'loader-figure'
         },
         style: {
-          display: vm.faild ? 'none' : 'block'
+          display: vm.failed ? 'none' : 'block'
         }
       }),
       createElement('p', {
         class: {
           'loader-label': true,
-          'animate': !vm.faild,
-          'error': vm.faild
+          'animate': !vm.failed,
+          'error': vm.failed
         }
-      }, vm.faild || 'LOADING')
+      }, vm.failed || 'LOADING')
     ])
 
     /**
