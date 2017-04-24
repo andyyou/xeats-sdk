@@ -28,7 +28,7 @@ function setToken (accessKey, secret) {
  */
 class Xeat {
   constructor (options) {
-    const componentNames = ['reversation', 'setup']
+    const componentNames = ['admin-create', 'admin-edit', 'user-booking']
 
     if (!options.el && !/([^\r\n,{}]+)(,(?=[^}]*{)|\s*{)/g.test(options.el)) {
       throw new Error('el attribute has no setting')
@@ -37,7 +37,7 @@ class Xeat {
     // Initialize token
     setToken(options.accessKey, options.secret)
 
-    if (options.component && options.component.name && componentNames.indexOf(options.component.name)) {
+    if (options.component && options.component.name && componentNames.indexOf(options.component.name) !== -1) {
       const app = require(`@/components/${options.component.name}`)
       return new Vue({
         el: options.el,
