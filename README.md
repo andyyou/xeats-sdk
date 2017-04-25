@@ -39,6 +39,7 @@
 
 # API
 
+## 讀取座位表
 1. 於 xeat.io 申請帳號密碼
 2. 取得 `access_key` 和 `secret`
 `POST` /v1.0/users/cert
@@ -89,7 +90,7 @@ Authorization: Bearer <JWT Token>
 // response
 [
   {
-    id: ObjectId,
+    id: ObjectId,   //  source_id (spots_id)
     name: String
   }
 ]
@@ -163,7 +164,27 @@ Table: Spot
 }
 ```
 
-3. 建立 活動座位、區域（座位綁定活動）
+## 新增修改座位表
+- 修改座位表
+`POST` /v1.0/spots
+
+```js
+// POST HEADER
+{
+  Authorization: 'Bearer <token>',
+  'Content-Type': 'application/x-www-form-urlencoded'
+}
+// POST BODY
+{
+  source_id: String, // required, <spots_id>
+  seats: Array,      // required, information to update seats, {node_id: '', type: '', fill: '', category: ''}
+  start_at: String,  // ISO-8601, 2017-04-24T04:13:45+00:00, or 2017-04-24T04:13:45Z
+  end_at: String,    // ISO-8601
+  name: String       // 座位表顯示名稱，例如小巨蛋
+}
+```
+
+___
 
 > 實際訂位購票 修改的資料
 

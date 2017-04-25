@@ -199,20 +199,11 @@ export default {
     })
     .then(res => {
 
-      vm.stages = res.data.objects
-        .filter(obj => obj.type === 'stage')
-        .map(function (stage) {
-          return Object.assign({}, stage)
-        })
-      vm.facilities = res.data.objects
-        .filter(obj => obj.type === 'facility')
-        .map(function (facility) {
-          return Object.assign({}, facility)
-        })
-      // vm.disabilities = res.data.objects.filter(obj => obj.type === 'disability')
-
       vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
- 
+      vm.stages = res.data.objects.filter(obj => obj.type === 'stage')
+      vm.facilities = res.data.objects.filter(obj => obj.type === 'facilities')
+      vm.disabilities = res.data.objects.filter(obj => obj.type === 'disabilities')
+
       vm.svg.width = res.data.svg.width
       vm.svg.height = res.data.svg.height
 
@@ -449,7 +440,6 @@ export default {
   },
   render (createElement) {
     let vm = this
-
     let expressions = {
       'pan-zoom': 'viewBox',
       'picking': 'picking'
@@ -510,7 +500,6 @@ export default {
         attrs: {
           id: 'svg-canvas',
           viewBox: vm.viewboxString,
-          
         },
         style: vm.styles.edge,
         directives: [
@@ -816,7 +805,7 @@ export default {
     user-select: none;
     -moz-user-select: none;
     -webkit-user-select: none;
-    transation: all .3s ease;
+    transition: all .3s ease;
     background-color: transparent;
     position: relative;
     z-index: 9;

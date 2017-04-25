@@ -1,17 +1,73 @@
+<template>
+  <div class="container">
+    <div class="loader"
+    v-if="loading"
+    >
+      <div class="loader-figure"
+      :style="{display: failed ? 'none' : 'block'}"
+      >
+      </div>
+      <p :class="{
+        'loader-label': true,
+        'animate': !failed,
+        'error': failed
+      }"> {{ failed || 'LOADING' }}</p>
+    </div>
+    <svg id="svg-canvas"
+    :viewBox="viewboxString"
+    :style="styles.edge"
+    v-pan-zoom="viewBox"
+    >
+      <g>
+        <rect
+        v-for="seat in seats"
+        :x="seat.x"
+        :y="seat.y"
+        :width="seat.width"
+        :height="seat.height"
+        :fill="seat.fill"
+        class="seat"
+        @click.prevent.stop="book(seat)"
+        @touchend="book(seat)"
+        @mousedown.prevent.stop="() => {tooltip.active = false}"
+        @mouseover.prevent.stop="showTooltip(seat)"
+        @mouseout.prevent="() => {tooltip.active = false}"
+        />
+      </g>
+    </svg>
+    <span
+    :style="styles.tooltip"
+    class="tooltip"
+    v-show="tooltip.active"
+    >
+    {{ tooltip.content }}
+    </span>
+    <div class="manipulate">
+      <button 
+      class="btn"
+      @click.prevent.stop="reset"
+      >
+        <i class="icon-refresh"></i>
+      </button>
+      <button
+      class="btn"
+      @click.prevent.stop="zoom('in')"
+      >
+        <i class="icon-plus"></i>
+      </button>
+      <button
+      class="btn"
+      @click.prevent.stop="zoom('out')"
+      >
+        <i class="icon-minus"></i>
+      </button>
+    </div>
+  </div>
+</template>
+
 <script>
-// cSpell:ignore viewbox rect
+// cSpell:ignore viewbox rect touchend mousedown mouseover mouseout nowrap keyframes
 import _ from 'lodash'
-
-function darken(color, percent) {
-  let f = parseInt(color.slice(1),16),
-      t = (percent < 0) ? 0:255,
-      p = (percent < 0) ? percent * -1 : percent,
-      R = f>>16,
-      G = f>>8 & 0x00FF,
-      B = f & 0x0000FF
-
-  return "#"+(0x1000000+(Math.round((t-R)*p)+R)*0x10000+(Math.round((t-G)*p)+G)*0x100+(Math.round((t-B)*p)+B)).toString(16).slice(1);
-}
 
 export default {
   props: {
@@ -69,7 +125,8 @@ export default {
         height: 0,
         zoomMax: this.zoomMax,
         zoomMin: this.zoomMin,
-        scale: 1
+        scale: 1,
+        initialScale: 1
       },
       /**
        * svg objects will divide 4 types
@@ -125,7 +182,6 @@ export default {
   },
   created () {
     let vm = this
-
     vm.$http.get(`/spots/${vm.sourceId}`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('_x_t')}`
@@ -141,46 +197,34 @@ export default {
       vm.svg.height = res.data.svg.height
 
       // For calculate responsive of viewport
-      let ratio
-
-      // Base on longer axis to calculate for responsive.
-      if (isNaN(+vm.viewport.width)) {
-        vm.viewport.width = Math.floor(vm.$el.getBoundingClientRect().width)
-      }
-
-      if (isNaN(+vm.viewport.height)) {
-        vm.viewport.height = Math.floor(vm.$el.getBoundingClientRect().height)
-      }
-
-      if (res.data.svg.width > res.data.svg.height) {
-        ratio = vm.viewport.width / vm.svg.width
-      } else {
-        ratio = vm.viewport.height / vm.svg.height
-      }
-
-      // 這裡是接從 API 過來的資料
+      let ratio = this.getInitialRatio()  //  ratio is for viewport
+      vm.viewBox.initialScale = ( 1 / ratio )    //  scale is for viewBox, larger value with smaller svg view
+      // TODO:這裡是接從 API 過來的資料
       let colors = {
-        seat: '#d3d3d3'   // res.data.o
+        seat: '#d3d3d3'   // res.data.objects.fill
       }
 
       vm.viewport.width = Math.floor(vm.svg.width * ratio)
       vm.viewport.height = Math.floor(vm.svg.height * ratio)
-      vm.viewBox.width = vm.viewport.width
-      vm.viewBox.height = vm.viewport.height
+      vm.viewBox.scale = vm.viewBox.initialScale
+      vm.viewBox.width = vm.svg.width
+      vm.viewBox.height = vm.svg.height
+
+
+      // TODO: 這段到時候應該可以移除
       vm.seats = vm.seats.map( seat => {
         return Object.assign({}, seat, {
-          x: seat.x * ratio,
-          y: seat.y * ratio,
-          width: seat.width * ratio,
-          height: seat.height * ratio,
+          // x: seat.x * ratio,
+          // y: seat.y * ratio,
+          // width: seat.width * ratio,
+          // height: seat.height * ratio,
           fill: colors.seat,    // TODO: 這裡要代入 API 的資料
-          reserved: false,
+          reserved: false,      // TODO: 這裡要根據 API 代入資料
         })
       })
 
-      vm.$nextTick(() => {
-        vm.loading = false
-      })
+      vm.loading = false
+
     })
     .catch( error => {
       vm.failed = 'API request failed, Try to reload please.'
@@ -193,6 +237,15 @@ export default {
     },
     setToken () {
       return this.$parent.setToken.call(this)
+    },
+    darken (color, percent) {
+      let f = parseInt(color.slice(1),16),
+      t = (percent < 0) ? 0:255,
+      p = (percent < 0) ? percent * -1 : percent,
+      R = f>>16,
+      G = f>>8 & 0x00FF,
+      B = f & 0x0000FF
+      return "#"+(0x1000000+(Math.round((t-R)*p)+R)*0x10000+(Math.round((t-G)*p)+G)*0x100+(Math.round((t-B)*p)+B)).toString(16).slice(1);
     },
     showTooltip (seat) {
       this.tooltip.active = true
@@ -213,9 +266,9 @@ export default {
     reset () {
       this.viewBox.x = 0
       this.viewBox.y = 0
-      this.viewBox.width = this.viewport.width
-      this.viewBox.height = this.viewport.height
-      this.viewBox.scale = 1
+      this.viewBox.width = this.svg.width
+      this.viewBox.height = this.svg.height
+      this.viewBox.scale = this.viewBox.initialScale
     },
     zoom (effect) {
       let svgCanvas = document.getElementById('svg-canvas')
@@ -225,15 +278,16 @@ export default {
     
       // Setup ratio & never grater than zoomMax nor smaller than zoomMin.
       let scale = this.viewBox.scale
+
       if (effect === 'out') {
         scale += 0.1
-        if (scale >= this.viewBox.zoomMax) {
-          scale = this.viewBox.zoomMax
+        if (scale >= this.viewBox.zoomMax * this.viewBox.initialScale) {
+          scale = this.viewBox.zoomMax * this.viewBox.initialScale
         }
       } else if(effect === 'in') {
         scale -= 0.1
-        if (scale <= this.viewBox.zoomMin) {
-          scale = this.viewBox.zoomMin
+        if (scale <= this.viewBox.zoomMin * this.viewBox.initialScale) {
+          scale = this.viewBox.zoomMin * this.viewBox.initialScale
         }
       }
       /**
@@ -262,19 +316,211 @@ export default {
       if (!seat.reserved) {
         if (this.amount + 1 <= this.amountMax) {
           seat.reserved = !seat.reserved
-          seat.fill = darken(seat.fill, -0.2)
+          seat.cache = seat.fill
+          seat.fill = this.darken(seat.fill, -0.2)
           this.amount++
         }
       } else {
         seat.reserved = !seat.reserved
-        seat.fill = colors.seat
+        seat.fill = seat.cache
         this.amount--
       }
+    },
+    getInitialRatio(){
+      // For calculate responsive of viewport
+      let ratio
+
+      // Base on longer axis to calculate for responsive.
+      if (isNaN(+this.viewport.width)) {
+        this.viewport.width = Math.floor(this.$el.getBoundingClientRect().width)
+      }
+
+      if (isNaN(+this.viewport.height)) {
+        this.viewport.height = Math.floor(this.$el.getBoundingClientRect().height)
+      }
+
+      if (this.svg.width > this.svg.height) {
+        ratio = this.viewport.width / this.svg.width
+      } else {  
+        ratio = this.viewport.height / this.svg.height
+      }
+
+      return ratio
     }
-  },
+  }
 }
 
 </script>
 
-<style>
+<style lang="sass" scoped>
+  svg {
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    transition: all .3s ease;
+    background-color: transparent;
+    position: relative;
+    z-index: 9;
+  }
+
+  .container {
+    position: relative;
+    border: 1px solid #EEE;
+    background-size: 20px 20px;
+    background-color: white;
+    background-image: linear-gradient(to right, #EEE 1px, transparent 1px), linear-gradient(to bottom, #EEE 1px, transparent 1px);
+  }
+
+  .seat {
+    cursor: pointer;
+  }
+
+  .manipulate {
+    position: absolute;
+    z-index: 10;
+    top: 30px;
+    left: 30px;
+    cursor: pointer;
+    border: 1px solid #CCC;
+    border-radius: 3px;
+    background-color: white;
+    box-shadow: 0 1px 2px #DDD;
+    padding: 5px 0;
+
+    button {
+      float: left;
+      padding: 5px 12px;
+      background-color: transparent;
+      border: none;
+      border-right: 1px solid #CCC;
+      text-align: center;
+      vertical-align: middle;
+      font-size: 14px;
+      cursor: pointer;
+      color: #A1A1A1;
+
+      &.btn:hover {
+        color: black;
+      }
+
+      &.diff {
+        color: #108ee9;
+      }
+
+      &:last-child {
+        border-right: none;
+      }
+
+      &.active {
+        color: black;
+      }
+    }
+  }
+
+  .tooltip {
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    color: #FFF;
+    border: 1px solid #333;
+    border-radius: 3px;
+    padding: 3px 6px;
+    background: #333;
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 10;
+    white-space: nowrap;
+  }
+
+  .loader, .loader-figure {
+    position: absolute;
+    z-index: 11;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  $loader-color: orange;
+
+  .loader {
+    overflow: visible;
+    padding-top: 50px;
+    width: 50px;
+    height: 0;
+  }
+
+  .loader-figure {
+    width: 0;
+    height: 0;
+    box-sizing: border-box;
+    border: 0 solid $loader-color;
+    border-radius: 50%;
+    animation-name: loader-figure;
+    animation-duration: 1s;
+    animation-iteration-count: infinite;
+    animation-timing-function: ease-out;
+  }
+
+  .loader-label {
+    color: $loader-color;
+    float: left;
+    margin-left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+
+    &.animate {
+      animation-name: loader-label;
+      animation-duration: 1s;
+      animation-iteration-count: infinite;
+      animation-timing-function: ease-out;
+    }
+
+    &.error {
+      color: red;
+    }
+  }
+
+ @keyframes loader-figure {
+  0% {
+    width: 0;
+    height: 0;
+    background-color: $loader-color;
+  }
+
+  29% {
+    background-color: $loader-color;
+  }
+
+  30% {
+    width: 50px;
+    height: 50px;
+    background-color: transparent;
+    border-width: 25px;
+    opacity: 1
+  }
+
+  100% {
+    width: 50px;
+    height: 50px;
+    border-width: 0;
+    opacity: 0;
+    background-color: transparent;
+  }
+ }
+
+ @keyframes loader-label {
+   0% {
+     opacity: 0.25;
+   }
+
+   30% {
+     opacity: 1;
+   }
+
+   100% {
+     opacity: 0.25;
+   }
+ }
+
 </style>
