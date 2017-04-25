@@ -31,7 +31,7 @@ class Xeat {
         secret: options.secret
       })
       .then(function (res) {
-        localStorage.setItem('_x_t', res.data.token)
+        window.localStorage.setItem('_x_t', res.data.token)
         return res.data.token
       })
       .then(function (token) {
@@ -59,7 +59,6 @@ class Xeat {
       .catch(function (err) {
         console.log(err)
       })
-      
     } else {
       throw new Error('Specific invalid Xeat component type')
     }

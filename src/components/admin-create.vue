@@ -1,4 +1,5 @@
 <script>
+// cSpell:ignore viewbox rect touchend mousedown mouseover mouseout mousemove nowrap keyframes
 import _ from 'lodash'
 
 function darken(color, percent) {
@@ -72,7 +73,8 @@ export default {
         height: 0,
         zoomMax: this.zoomMax,
         zoomMin: this.zoomMin,
-        scale: 1
+        scale: 1,
+        initialScale: 1
       },
       /**
        * svg objects will divide 4 types
@@ -208,38 +210,19 @@ export default {
       vm.svg.height = res.data.svg.height
 
       // For calculate responsive of viewport
-      let ratio = this.getInitialRatio()
-
-      // Base on longer axis to calculate for responsive.
-      // if (isNaN(+vm.viewport.width)) {
-      //   vm.viewport.width = Math.floor(vm.$el.getBoundingClientRect().width)
-      // }
-
-      // if (isNaN(+vm.viewport.height)) {
-      //   vm.viewport.height = Math.floor(vm.$el.getBoundingClientRect().height)
-      // }
-
-      // if (res.data.svg.width > res.data.svg.height) {
-      //   ratio = vm.viewport.width / vm.svg.width
-      // } else {  
-      //   ratio = vm.viewport.height / vm.svg.height
-      // }
-
+      let ratio = this.getInitialRatio()         // ratio is for viewport
+      vm.viewBox.initialScale = ( 1 / ratio )    //  scale is for viewBox, larger value with smaller svg view
 
       vm.viewport.width = Math.floor(vm.svg.width * ratio)
       vm.viewport.height = Math.floor(vm.svg.height * ratio)
 
-      vm.viewBox.width = vm.viewport.width * (1 / ratio)
-      vm.viewBox.height = vm.viewport.height * (1 / ratio)
-      vm.viewBox.scale = (1 / ratio)
+      vm.viewBox.scale = vm.viewBox.initialScale
+      vm.viewBox.width = vm.svg.width
+      vm.viewBox.height = vm.svg.height
 
       vm.seats = vm.seats.map(function (seat) {
 
         return Object.assign({}, seat, {
-          // x: seat.x * ratio,
-          // y: seat.y * ratio,
-          // width: seat.width * ratio,
-          // height: seat.height * ratio,
           fill: colors.seat,
           reserved: false,
           /* For picking to set seat */
@@ -301,11 +284,9 @@ export default {
     reset () {
       this.viewBox.x = 0
       this.viewBox.y = 0
-      // this.viewport.width = Math.floor(this.svg.width * ratio)
-      // this.viewport.height = Math.floor(this.svg.height * ratio)
-      this.viewBox.width = this.viewport.width * (1 / this.getInitialRatio())
-      this.viewBox.height = this.viewport.height * (1 / this.getInitialRatio())
-      this.viewBox.scale = this.getInitialRatio()
+      this.viewBox.width = this.svg.width
+      this.viewBox.height = this.svg.height
+      this.viewBox.scale = this.viewBox.initialScale
     },
     zoom (effect) {
       let svgCanvas = document.getElementById('svg-canvas')
@@ -317,13 +298,13 @@ export default {
       let scale = this.viewBox.scale
       if (effect === 'out') {
         scale += 0.1
-        if (scale >= this.viewBox.zoomMax) {
-          scale = this.viewBox.zoomMax
+        if (scale >= this.viewBox.zoomMax * this.viewBox.initialScale ) {
+          scale = this.viewBox.zoomMax * this.viewBox.initialScale
         }
       } else if(effect === 'in') {
         scale -= 0.1
-        if (scale <= this.viewBox.zoomMin) {
-          scale = this.viewBox.zoomMin
+        if (scale <= this.viewBox.zoomMin * this.viewBox.initialScale) {
+          scale = this.viewBox.zoomMin * this.viewBox.initialScale
         }
       }
 
