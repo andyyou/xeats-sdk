@@ -198,42 +198,52 @@ export default {
       }
     })
     .then(res => {
+      vm.stages = res.data.objects
+        .filter(obj => obj.type === 'stage')
+        .map(function (stage) {
+          return Object.assign({}, stage)
+        })
+      vm.facilities = res.data.objects
+        .filter(obj => obj.type === 'facility')
+        .map(function (facility) {
+          return Object.assign({}, facility)
+        })
+      // vm.disabilities = res.data.objects.filter(obj => obj.type === 'disability')
       vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
-      vm.stages = res.data.objects.filter(obj => obj.type === 'stage')
-      vm.facilities = res.data.objects.filter(obj => obj.type === 'facilities')
-      vm.disabilities = res.data.objects.filter(obj => obj.type === 'disabilities')
-      
+ 
       vm.svg.width = res.data.svg.width
       vm.svg.height = res.data.svg.height
 
       // For calculate responsive of viewport
-      let ratio
+      let ratio = this.getInitialRatio()
 
       // Base on longer axis to calculate for responsive.
-      if (isNaN(+vm.viewport.width)) {
-        vm.viewport.width = Math.floor(vm.$el.getBoundingClientRect().width)
-      }
+      // if (isNaN(+vm.viewport.width)) {
+      //   vm.viewport.width = Math.floor(vm.$el.getBoundingClientRect().width)
+      // }
 
-      if (isNaN(+vm.viewport.height)) {
-        vm.viewport.height = Math.floor(vm.$el.getBoundingClientRect().height)
-      }
+      // if (isNaN(+vm.viewport.height)) {
+      //   vm.viewport.height = Math.floor(vm.$el.getBoundingClientRect().height)
+      // }
 
-      if (res.data.svg.width > res.data.svg.height) {
-        ratio = vm.viewport.width / vm.svg.width
-      } else {  
-        ratio = vm.viewport.height / vm.svg.height
-      }
+      // if (res.data.svg.width > res.data.svg.height) {
+      //   ratio = vm.viewport.width / vm.svg.width
+      // } else {  
+      //   ratio = vm.viewport.height / vm.svg.height
+      // }
 
       vm.viewport.width = Math.floor(vm.svg.width * ratio)
       vm.viewport.height = Math.floor(vm.svg.height * ratio)
-      vm.viewBox.width = vm.viewport.width
-      vm.viewBox.height = vm.viewport.height
+      vm.viewBox.width = vm.viewport.width * (1 / ratio)
+      vm.viewBox.height = vm.viewport.height * (1 / ratio)
+      vm.viewBox.scale = (1 / ratio)
+
       vm.seats = vm.seats.map(function (seat) {
         return Object.assign({}, seat, {
-          x: seat.x * ratio,
-          y: seat.y * ratio,
-          width: seat.width * ratio,
-          height: seat.height * ratio,
+          // x: seat.x * ratio,
+          // y: seat.y * ratio,
+          // width: seat.width * ratio,
+          // height: seat.height * ratio,
           fill: colors.seat,
           reserved: false,
           /* For picking to set seat */
@@ -241,9 +251,7 @@ export default {
         })
       })
 
-      vm.$nextTick(function () {
-        vm.loading = false
-      })
+      vm.loading = false
     })
     .catch( error => {
       vm.faild = 'API request faild, Try to relaod please.'
@@ -256,6 +264,26 @@ export default {
     },
     setToken () {
       return this.$parent.setToken.call(this)
+    },
+    getInitialRatio () {
+      // For calculate responsive of viewport
+      let ratio
+
+      // Base on longer axis to calculate for responsive.
+      if (isNaN(+this.viewport.width)) {
+        this.viewport.width = Math.floor(this.$el.getBoundingClientRect().width)
+      }
+
+      if (isNaN(+this.viewport.height)) {
+        this.viewport.height = Math.floor(this.$el.getBoundingClientRect().height)
+      }
+
+      if (this.svg.width > this.svg.height) {
+        ratio = this.viewport.width / this.svg.width
+      } else {  
+        ratio = this.viewport.height / this.svg.height
+      }
+      return ratio
     },
     showTooltip (seat){
       this.tooltip.active = true
@@ -276,9 +304,11 @@ export default {
     reset () {
       this.viewBox.x = 0
       this.viewBox.y = 0
-      this.viewBox.width = this.viewport.width
-      this.viewBox.height = this.viewport.height
-      this.viewBox.scale = 1
+      // this.viewport.width = Math.floor(this.svg.width * ratio)
+      // this.viewport.height = Math.floor(this.svg.height * ratio)
+      this.viewBox.width = this.viewport.width * (1 / this.getInitialRatio())
+      this.viewBox.height = this.viewport.height * (1 / this.getInitialRatio())
+      this.viewBox.scale = this.getInitialRatio()
     },
     zoom (effect) {
       let svgCanvas = document.getElementById('svg-canvas')
@@ -481,6 +511,17 @@ export default {
           directive
         ]
       }, [
+        /* TODO: Adjust stage proportion */
+        vm.stages.map(function (stage) {
+          return createElement('svg', {
+            attrs: {
+              width: '100%'
+            },
+            domProps: {
+              innerHTML: stage.html
+            }
+          })
+        }),
         createElement('g', null, vm.seats.map(function (seat) {
           return createElement('rect', {
             attrs: {
