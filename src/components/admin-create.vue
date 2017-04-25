@@ -1,8 +1,8 @@
 <script>
-// cSpell:ignore viewbox rect touchend mousedown mouseover mouseout mousemove nowrap keyframes
+// cSpell:ignore viewbox rect touchend mousedown mouseover mouseout mousemove nowrap keyframes curr
 import _ from 'lodash'
 
-function darken(color, percent) {
+function darken (color, percent) {
   let f = parseInt(color.slice(1),16),
       t = (percent < 0) ? 0:255,
       p = (percent < 0) ? percent * -1 : percent,
@@ -13,8 +13,13 @@ function darken(color, percent) {
   return "#"+(0x1000000+(Math.round((t-R)*p)+R)*0x10000+(Math.round((t-G)*p)+G)*0x100+(Math.round((t-B)*p)+B)).toString(16).slice(1);
 }
 
+function getRandomColor () {
+  return '#' + ((1 << 24) * Math.random() | 0).toString(16)
+}
+
 let colors = {
-  seat: '#d3d3d3'
+  default: '#d3d3d3',
+  cache: null
 }
 
 export default {
@@ -121,7 +126,7 @@ export default {
        * select a color of tmp to set into seat's fill attr
        * current color & category
        */
-      color: '#000',
+      color: getRandomColor(),
       category: this.categories[0],
       /**
        * Status for loader
@@ -223,7 +228,7 @@ export default {
       vm.seats = vm.seats.map(function (seat) {
 
         return Object.assign({}, seat, {
-          fill: colors.seat,
+          fill: colors.default,
           reserved: false,
           /* For picking to set seat */
           picked: false
@@ -402,7 +407,7 @@ export default {
         options['clean'] = false
       }
 
-      let changedColor = options.clean ? colors.seat : vm.color
+      let changedColor = options.clean ? colors.default : vm.color
       let category = options.clean ? null : vm.category
 
       this.seats = this.seats.map(function (seat) {
@@ -487,14 +492,24 @@ export default {
           directive
         ]
       }, [
-        /* TODO: Adjust stage proportion */
         vm.stages.map(function (stage) {
-          return createElement('svg', {
-            attrs: {
-              width: '100%'
-            },
+          return createElement('g', {
             domProps: {
               innerHTML: stage.html
+            }
+          })
+        }),
+        vm.facilities.map(function (facility) {
+          return createElement('g', {
+            domProps: {
+              innerHTML: facility.html
+            }
+          })
+        }),
+        vm.disabilities.map(function (disability) {
+          return createElement('g', {
+            domProps: {
+              innerHTML: disability.html
             }
           })
         }),
@@ -688,11 +703,6 @@ export default {
       createElement('transition', {
         props: {
           name: 'fade'
-        },
-        on: {
-          'before-enter': function () {
-            vm.color = '#' + ((1 << 24) * Math.random() | 0).toString(16)
-          }
         }
       }, [
         createElement('div', {
@@ -739,6 +749,7 @@ export default {
                 },
                 on: {
                   change: function (e) {
+                    vm.color = getRandomColor()
                     vm.category = e.target.value
                     vm.$emit('change', e.target.value)
                   }
