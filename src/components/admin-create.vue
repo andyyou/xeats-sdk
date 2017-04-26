@@ -569,6 +569,20 @@ export default {
       createElement('div', {
         attrs: {
           class: 'manipulate'
+        },
+        on: {
+          mousedown: function (e) {
+            e.stopPropagation()
+          },
+          mousemove: function (e) {
+            e.stopPropagation()
+          },
+          mouseup: function (e) {
+            e.stopPropagation()
+          },
+          click: function (e) {
+            e.stopPropagation()
+          }
         }
       }, [
         createElement('button', {
@@ -709,6 +723,11 @@ export default {
           attrs: {
             class: 'setup-panel'
           },
+          on: {
+            mouseup: function (e) {
+              e.stopPropagation()
+            }
+          },
           directives: [
             {
               name: 'show',
@@ -721,7 +740,7 @@ export default {
           createElement('div', {
             attrs: {
               class: 'pickers'
-            }
+            },
           }, [
             createElement('input', {
               attrs: {
@@ -741,6 +760,11 @@ export default {
             createElement('div', {
               attrs: {
                 class: 'select-container'
+              },
+              on: {
+                mouseup: function (e) {
+                  e.stopPropagation()
+                }
               }
             }, [
               createElement('select', {
@@ -748,6 +772,9 @@ export default {
                   value: vm.category
                 },
                 on: {
+                  mouseup: function (e) {
+                    e.stopPropagation()
+                  },
                   change: function (e) {
                     vm.color = getRandomColor()
                     vm.category = e.target.value

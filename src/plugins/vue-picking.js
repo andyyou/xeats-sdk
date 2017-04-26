@@ -40,13 +40,13 @@ export default {
         }
 
         onDragStart = function (e) {
+          // console.log('onDragStart')
           pickzone.hidden = 0
           dragging = true
           begin.x = e.clientX
           begin.y = e.clientY
           moveTo.x = e.clientX
           moveTo.y = e.clientY
-
           onRefresh()
         }
 
@@ -60,6 +60,7 @@ export default {
         }
 
         onDragEnd = function (e) {
+          // console.log('onDragEnd')
           pickzone.hidden = 1
           dragging = false
           let point = el.createSVGPoint()
