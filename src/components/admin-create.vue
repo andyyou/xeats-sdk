@@ -135,114 +135,6 @@ export default {
       failed: null
     }
   },
-  computed: {
-    viewboxString () {
-      const minX = this.viewBox.x || 0 - this.viewBox.x
-      const minY = this.viewBox.y || 0 - this.viewBox.y
-      const width = this.viewBox.width
-      const height = this.viewBox.height
-
-      return `${minX} ${minY} ${width} ${height}`
-    },
-    diff () {
-      return this.seats.some(function (seat) {
-        return seat.category
-      })
-    },
-    styles () {
-      return {
-        edge: {
-          width: isNaN(+this.width) ? '100%' : `${this.width}px`,
-          height: isNaN(+this.height) ? '100%' : `${this.height}px`
-        },
-        tooltip: {
-          left: `${this.tooltip.left}px`,
-          top: `${this.tooltip.top}px`
-        },
-        around: {
-          left: `${this.around.x}px`,
-          top: `${this.around.y}px`,
-          width: `${this.around.width}px`,
-          height: `${this.around.height}px`,
-          display: this.seats.some(function (seat) {
-            return seat.picked
-          }) ? 'block' : 'none'
-        }
-      }
-    }
-  },
-  watch: {
-    picking: {
-      handler: function (val, oldVal) {
-          let vm = this
-          this.seats = this.seats.map(function (seat) {
-            let center = {
-              x: seat.x + seat.width / 2,
-              y: seat.y + seat.height / 2
-            }
-            
-            let picked = ((center.x >= val.x) && 
-                        (center.x <= val.x + val.width * vm.viewBox.scale) && 
-                        (center.y >= val.y) && 
-                        (center.y <= val.y + val.height * vm.viewBox.scale))
-            
-            return Object.assign({}, seat, {
-              picked: picked
-            })
-          })
-
-        this.$nextTick(this.updateDottedAround)
-      },
-      deep: true
-    }
-  },
-  created () {
-    let vm = this
-
-    vm.$http.get(`/spots/${vm.sourceId}`, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('_x_t')}`
-      }
-    })
-    .then(res => {
-
-      vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
-      vm.stages = res.data.objects.filter(obj => obj.type === 'stage')
-      vm.facilities = res.data.objects.filter(obj => obj.type === 'facilities')
-      vm.disabilities = res.data.objects.filter(obj => obj.type === 'disabilities')
-
-      vm.svg.width = res.data.svg.width
-      vm.svg.height = res.data.svg.height
-
-      // For calculate responsive of viewport
-      let ratio = this.getInitialRatio()         // ratio is for viewport
-      vm.viewBox.initialScale = ( 1 / ratio )    //  scale is for viewBox, larger value with smaller svg view
-
-      vm.viewport.width = Math.floor(vm.svg.width * ratio)
-      vm.viewport.height = Math.floor(vm.svg.height * ratio)
-
-      vm.viewBox.scale = vm.viewBox.initialScale
-      vm.viewBox.width = vm.svg.width
-      vm.viewBox.height = vm.svg.height
-
-      vm.seats = vm.seats.map(function (seat) {
-
-        return Object.assign({}, seat, {
-          fill: colors.default,
-          reserved: false,
-          /* For picking to set seat */
-          picked: false
-        })
-      })
-
-      vm.loading = false
-
-    })
-    .catch( error => {
-      vm.failed = 'API request failed, Try to reload please.'
-      console.log('error', error)
-    })
-  },
   methods: {
     getToken () {
       return this.$parent.getToken.call(this)
@@ -423,6 +315,114 @@ export default {
     save () {
       // TODO: Save by calling API
     }
+  },
+  computed: {
+    viewboxString () {
+      const minX = this.viewBox.x || 0 - this.viewBox.x
+      const minY = this.viewBox.y || 0 - this.viewBox.y
+      const width = this.viewBox.width
+      const height = this.viewBox.height
+
+      return `${minX} ${minY} ${width} ${height}`
+    },
+    diff () {
+      return this.seats.some(function (seat) {
+        return seat.category
+      })
+    },
+    styles () {
+      return {
+        edge: {
+          width: isNaN(+this.width) ? '100%' : `${this.width}px`,
+          height: isNaN(+this.height) ? '100%' : `${this.height}px`
+        },
+        tooltip: {
+          left: `${this.tooltip.left}px`,
+          top: `${this.tooltip.top}px`
+        },
+        around: {
+          left: `${this.around.x}px`,
+          top: `${this.around.y}px`,
+          width: `${this.around.width}px`,
+          height: `${this.around.height}px`,
+          display: this.seats.some(function (seat) {
+            return seat.picked
+          }) ? 'block' : 'none'
+        }
+      }
+    }
+  },
+  watch: {
+    picking: {
+      handler: function (val, oldVal) {
+          let vm = this
+          this.seats = this.seats.map(function (seat) {
+            let center = {
+              x: seat.x + seat.width / 2,
+              y: seat.y + seat.height / 2
+            }
+            
+            let picked = ((center.x >= val.x) && 
+                        (center.x <= val.x + val.width * vm.viewBox.scale) && 
+                        (center.y >= val.y) && 
+                        (center.y <= val.y + val.height * vm.viewBox.scale))
+            
+            return Object.assign({}, seat, {
+              picked: picked
+            })
+          })
+
+        this.$nextTick(this.updateDottedAround)
+      },
+      deep: true
+    }
+  },
+  created () {
+    let vm = this
+
+    vm.$http.get(`/spots/${vm.sourceId}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('_x_t')}`
+      }
+    })
+    .then(res => {
+
+      vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
+      vm.stages = res.data.objects.filter(obj => obj.type === 'stage')
+      vm.facilities = res.data.objects.filter(obj => obj.type === 'facilities')
+      vm.disabilities = res.data.objects.filter(obj => obj.type === 'disabilities')
+
+      vm.svg.width = res.data.svg.width
+      vm.svg.height = res.data.svg.height
+
+      // For calculate responsive of viewport
+      let ratio = this.getInitialRatio()         // ratio is for viewport
+      vm.viewBox.initialScale = ( 1 / ratio )    //  scale is for viewBox, larger value with smaller svg view
+
+      vm.viewport.width = Math.floor(vm.svg.width * ratio)
+      vm.viewport.height = Math.floor(vm.svg.height * ratio)
+
+      vm.viewBox.scale = vm.viewBox.initialScale
+      vm.viewBox.width = vm.svg.width
+      vm.viewBox.height = vm.svg.height
+
+      vm.seats = vm.seats.map(function (seat) {
+
+        return Object.assign({}, seat, {
+          fill: colors.default,
+          reserved: false,
+          /* For picking to set seat */
+          picked: false
+        })
+      })
+
+      vm.loading = false
+
+    })
+    .catch( error => {
+      vm.failed = 'API request failed, Try to reload please.'
+      console.log('error', error)
+    })
   },
   render (createElement) {
     let vm = this
