@@ -1,5 +1,5 @@
 <script>
-// cSpell:ignore viewbox rect touchend mousedown mouseover mouseout mousemove nowrap keyframes curr mouseup
+// cSpell:ignore viewbox rect touchend mousedown mouseover mouseout mousemove nowrap keyframes curr mouseup substr
 import _ from 'lodash'
 
 function darken (color, percent) {
@@ -14,7 +14,7 @@ function darken (color, percent) {
 }
 
 function getRandomColor () {
-  return '#' + ((1 << 24) * Math.random() | 0).toString(16)
+  return '#' + Math.random().toString(16).substr(-6)
 }
 
 let colors = {
@@ -161,6 +161,12 @@ export default {
         ratio = this.viewport.height / this.svg.height
       }
       return ratio
+    },
+    refreshColor(category){
+      let categoryIndex = this.categoriesColor.findIndex( (item) => {
+        return item.category === category
+      })
+      this.color = this.categoriesColor[categoryIndex].color
     },
     showTooltip (seat){
       this.tooltip.active = true
@@ -325,6 +331,11 @@ export default {
 
       return `${minX} ${minY} ${width} ${height}`
     },
+    categoriesColor () {
+      return this.categories.map((category) => {
+        return {category: category, color: getRandomColor()}
+      })
+    },
     diff () {
       return this.seats.some(function (seat) {
         return seat.category
@@ -426,6 +437,7 @@ export default {
   },
   render (createElement) {
     let vm = this
+
     let expressions = {
       'pan-zoom': 'viewBox',
       'picking': 'picking'
@@ -717,6 +729,11 @@ export default {
       createElement('transition', {
         props: {
           name: 'fade'
+        },
+        on: {
+          'before-enter': function () {
+            vm.refreshColor(vm.category)
+          }
         }
       }, [
         createElement('div', {
@@ -776,7 +793,7 @@ export default {
                     e.stopPropagation()
                   },
                   change: function (e) {
-                    vm.color = getRandomColor()
+                    vm.refreshColor(e.target.value)
                     vm.category = e.target.value
                     vm.$emit('change', e.target.value)
                   }
