@@ -1,5 +1,5 @@
 <script>
-// cSpell:ignore viewbox rect touchend mousedown mouseover mouseout mousemove nowrap keyframes curr
+// cSpell:ignore viewbox rect touchend mousedown mouseover mouseout mousemove nowrap keyframes curr mouseup
 import _ from 'lodash'
 
 function darken (color, percent) {
@@ -174,22 +174,22 @@ export default {
   watch: {
     picking: {
       handler: function (val, oldVal) {
-        let vm = this
-        this.seats = this.seats.map(function (seat) {
-          let center = {
-            x: seat.x + seat.width / 2,
-            y: seat.y + seat.height / 2
-          }
-
-          let picked = ((center.x >= val.x) && 
-                       (center.x <= val.x + val.width * vm.viewBox.scale) && 
-                       (center.y >= val.y) && 
-                       (center.y <= val.y + val.height * vm.viewBox.scale))
-           
-          return Object.assign({}, seat, {
-            picked: picked
+          let vm = this
+          this.seats = this.seats.map(function (seat) {
+            let center = {
+              x: seat.x + seat.width / 2,
+              y: seat.y + seat.height / 2
+            }
+            
+            let picked = ((center.x >= val.x) && 
+                        (center.x <= val.x + val.width * vm.viewBox.scale) && 
+                        (center.y >= val.y) && 
+                        (center.y <= val.y + val.height * vm.viewBox.scale))
+            
+            return Object.assign({}, seat, {
+              picked: picked
+            })
           })
-        })
 
         this.$nextTick(this.updateDottedAround)
       },
@@ -378,10 +378,10 @@ export default {
         let el = document.querySelector('.dotted-around')
         let begin = svg.createSVGPoint()
         let moveTo = svg.createSVGPoint()
-        begin.x = left.x - 4
+        begin.x = left.x - 4    // for around space insode
         begin.y = top.y - 4
         moveTo.x = right.x + right.width
-        moveTo.y = bottom.y + bottom.width
+        moveTo.y = bottom.y + bottom.height
         begin = begin.matrixTransform(svg.getScreenCTM())
         moveTo = moveTo.matrixTransform(svg.getScreenCTM())
         this.around.x = begin.x - svg.parentElement.getBoundingClientRect().left
@@ -769,7 +769,12 @@ export default {
             },
             on: {
               click: function (e) {
+                e.preventDefault()
+                e.stopPropagation()
                 return vm.setCategory()
+              },
+              mouseup: function (e) {
+                e.stopPropagation()
               }
             }
           }, 'Confirm'),
@@ -779,6 +784,8 @@ export default {
             },
             on: {
               click: function (e) {
+                e.preventDefault()
+                e.stopPropagation()
                 return vm.setCategory({
                   clean: true
                 })
