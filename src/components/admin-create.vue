@@ -1,5 +1,4 @@
 <script>
-// cSpell:ignore viewbox rect touchend mousedown mouseover mouseout mousemove nowrap keyframes curr mouseup substr
 import _ from 'lodash'
 
 function darken (color, percent) {
