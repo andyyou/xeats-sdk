@@ -17,9 +17,10 @@ function getRandomColor () {
   return '#' + Math.random().toString(16).substr(-6)
 }
 
-let colors = {
-  default: '#d3d3d3',
-  cache: null
+let seatsDefault = {
+  color: '#d3d3d3',
+  reserved: false,
+  picked: false
 }
 
 export default {
@@ -126,8 +127,14 @@ export default {
        * select a color of tmp to set into seat's fill attr
        * current color & category
        */
-      color: getRandomColor(),
+      color: '#333333',
       category: this.categories[0],
+      categoryItems: this.categories.map(function (category) {
+        return {
+          name: category,
+          color: getRandomColor()
+        }
+      }),
       /**
        * Status for loader
        */
@@ -163,10 +170,10 @@ export default {
       return ratio
     },
     refreshColor(category){
-      let categoryIndex = this.categoriesColor.findIndex( (item) => {
-        return item.category === category
+      let categoryIndex = this.categoryItems.findIndex( (item) => {
+        return item.name === category
       })
-      this.color = this.categoriesColor[categoryIndex].color
+      this.color = this.categoryItems[categoryIndex].color
     },
     showTooltip (seat){
       this.tooltip.active = true
@@ -305,7 +312,7 @@ export default {
         options['clean'] = false
       }
 
-      let changedColor = options.clean ? colors.default : vm.color
+      let changedColor = options.clean ? seatsDefault.color : vm.color
       let category = options.clean ? null : vm.category
 
       this.seats = this.seats.map(function (seat) {
@@ -330,11 +337,6 @@ export default {
       const height = this.viewBox.height
 
       return `${minX} ${minY} ${width} ${height}`
-    },
-    categoriesColor () {
-      return this.categories.map((category) => {
-        return {category: category, color: getRandomColor()}
-      })
     },
     diff () {
       return this.seats.some(function (seat) {
@@ -420,10 +422,10 @@ export default {
       vm.seats = vm.seats.map(function (seat) {
 
         return Object.assign({}, seat, {
-          fill: colors.default,
-          reserved: false,
+          fill: seatsDefault.color,
+          reserved: seatsDefault.reserved,
           /* For picking to set seat */
-          picked: false
+          picked: seatsDefault.picked
         })
       })
 
