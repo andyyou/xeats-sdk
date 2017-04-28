@@ -117,11 +117,11 @@ export default {
             }
             let scale = vnode.context[binding.expression].scale
             let tmp = scale + (e.deltaY / 100)
-            if (tmp >= vnode.context[binding.expression].zoomMax) {
-              tmp = vnode.context[binding.expression].zoomMax
+            if (tmp >= vnode.context[binding.expression].zoomMax * vnode.context[binding.expression].initialScale) {
+              tmp = vnode.context[binding.expression].zoomMax * vnode.context[binding.expression].initialScale
             }
-            if (tmp <= vnode.context[binding.expression].zoomMin) {
-              tmp = vnode.context[binding.expression].zoomMin
+            if (tmp <= vnode.context[binding.expression].zoomMin * vnode.context[binding.expression].initialScale) {
+              tmp = vnode.context[binding.expression].zoomMin * vnode.context[binding.expression].initialScale
             }
             scale = tmp
             vnode.context[binding.expression].scale = scale

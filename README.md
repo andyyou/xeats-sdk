@@ -16,13 +16,19 @@
   (function () {
     var xeat = new Xeat({
       el: '#seat-map',
-      token: 'A226248',
-      spot: 'SPACE-ID hash',
+      accessKey: 'ff5c1d60-ef8d-4284-82c1-35e8be350e34',
+      secret: '61b4311e47a8dfce2c0819e95100e95f',
+      component: {
+        name: 'admin-create', // admin-create | admin-edit | user-booking
+        sourceId: '58ef43548095d200324f7e66',
+        data: {
+          categories: ['A', 'B', 'C', 'D']
+        }
+      },
       zoomMax: 2,
       zoomMin: 0.5,
-      width: 800,
-      height: 600,
-      autoSize: true,   // Auto scale for Responsive
+      width: 'auto',    // For responsive set value to `auto`
+      height: 800,
       amountMax: 4,     // Limit selection amount
       amountMin: 1
     })
@@ -33,26 +39,70 @@
 
 # API
 
-1. 設定活動時取得場地列表資訊
+## 讀取座位表
+1. 於 xeat.io 申請帳號密碼
+2. 取得 `access_key` 和 `secret`
+`POST` /v1.0/users/cert
+`Content-Type`: application/x-www-form-urlencoded
 
-`GET` /spots
-
+```js
+// POST payload
+email: String
+password: String
 ```
+
+```js
+// response
+{
+  "access_key": String,
+  "secret": String
+}
+```
+
+3. 取得 `JWT Token`
+`POST` /v1.0/users/token
+`Content-Type`: application/x-www-form-urlencoded
+
+
+```js
+// POST BODY
+access_key: String
+secret: String
+```
+
+```js
+// response
+{
+  "token": String
+}
+```
+
+4. 取得使用者權限下，可取得的場地列表資訊
+TODO: 最後要記得鎖上 domain
+`GET` /v1.0/spots/
+
+```js
+// GET HEADER
+Authorization: Bearer <JWT Token>
+```
+
+```js
+// response
 [
   {
-    id: ObjectId,
+    id: ObjectId,   //  source_id (spots_id)
     name: String
   }
 ]
 ```
 
-2. 取得特定場地 座位表
+5. 取得特定場地 座位表
 
 `GET` /spots/:id
 
 Table: Spot
 
-```
+```js
 {
   // 場地 Id
   id: ObjectId,
@@ -68,13 +118,12 @@ Table: Spot
   // 場地設施，物件 e.g. 座位、舞台、殘障席
   objects: [ 
     {
-      // 物件 Id
-      id: String,
-      // svg 元素 Id
-      node_id: String,
+      'node-id': ObjectId
+      // 給 API 使用者註記誰取得票價的 hash
+      sn: String,
       // 排
       row: Number,
-      // 位
+      // 位/號
       column: Number,
       // 文字標記 e.g 4排5號
       label: String,
@@ -82,17 +131,25 @@ Table: Spot
       x: Number,
       // svg y 座標
       y: Number,
-      // svg 物件寬
-      width: Number,
-      // svg 物件高
-      height: Number,
       // 物件類型: 座位、舞台、其他設施、殘障席
       // Enum: seat, stage, facility, disability
       type: String,
-      // 建立時間
-      created_at: Date
-      // 更新時間
-      updated_at: Date
+      // 座位狀態 :available, :reserved
+      status: Number,
+      // svg 顏色
+      fill: String,
+      // svg 形狀寬
+      width: Number,
+      // svg 形狀高
+      height: Number,
+      // 鎖，表示該座位不可更新
+      lock: Boolean,
+      // 備註
+      comment: String,
+      // 區
+      zone: String,
+      // 給 API 使用者註記 訂單／訂購者等資訊欄位
+      info: Object || Mixed
     },
     // 權限 ['User #1 Id', 'User #2 Id']
     // 預設把建立者的 Id 加入，空陣列任何人都不能 get
@@ -107,7 +164,27 @@ Table: Spot
 }
 ```
 
-3. 建立 活動座位、區域（座位綁定活動）
+## 新增修改座位表
+- 修改座位表
+`POST` /v1.0/spots
+
+```js
+// POST HEADER
+{
+  Authorization: 'Bearer <token>',
+  'Content-Type': 'application/x-www-form-urlencoded'
+}
+// POST BODY
+{
+  source_id: String, // required, <spots_id>
+  seats: Array,      // required, information to update seats, {node_id: '', type: '', fill: '', category: ''}
+  start_at: String,  // ISO-8601, 2017-04-24T04:13:45+00:00, or 2017-04-24T04:13:45Z
+  end_at: String,    // ISO-8601
+  name: String       // 座位表顯示名稱，例如小巨蛋
+}
+```
+
+___
 
 > 實際訂位購票 修改的資料
 
@@ -118,7 +195,7 @@ Table: Spot
 
 Table: Seat
 
-```
+```js
 {
   // 單場訂位活動名稱 e.g. 張學友演唱會
   name: String,
@@ -126,7 +203,7 @@ Table: Seat
   spot_name: String,
   objects: [
     {
-      id: ObjectId
+      'node-id': ObjectId
       // 給 API 使用者註記誰取得票價的 hash
       sn: String,
       // 排
@@ -162,6 +239,7 @@ Table: Seat
   ],
   spot: Spot,
   user: User,
+  public: Boolean,
   created_at: Date,
   updated_at: Date
 }

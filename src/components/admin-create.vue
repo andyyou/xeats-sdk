@@ -1,7 +1,8 @@
 <script>
+// cSpell:ignore viewbox rect touchend mousedown mouseover mouseout mousemove nowrap keyframes curr mouseup substr
 import _ from 'lodash'
 
-function darken(color, percent) {   
+function darken (color, percent) {
   let f = parseInt(color.slice(1),16),
       t = (percent < 0) ? 0:255,
       p = (percent < 0) ? percent * -1 : percent,
@@ -12,8 +13,13 @@ function darken(color, percent) {
   return "#"+(0x1000000+(Math.round((t-R)*p)+R)*0x10000+(Math.round((t-G)*p)+G)*0x100+(Math.round((t-B)*p)+B)).toString(16).slice(1);
 }
 
+function getRandomColor () {
+  return '#' + Math.random().toString(16).substr(-6)
+}
+
 let colors = {
-  seat: '#d3d3d3'
+  default: '#d3d3d3',
+  cache: null
 }
 
 export default {
@@ -72,7 +78,8 @@ export default {
         height: 0,
         zoomMax: this.zoomMax,
         zoomMin: this.zoomMin,
-        scale: 1
+        scale: 1,
+        initialScale: 1
       },
       /**
        * svg objects will divide 4 types
@@ -85,7 +92,7 @@ export default {
        * Booking amount for limitation
        */
       amount: 0,
-      tooltip:{
+      tooltip: {
         content: "",
         active: false,
         left: 0,
@@ -119,144 +126,14 @@ export default {
        * select a color of tmp to set into seat's fill attr
        * current color & category
        */
-      color: '#000',
+      color: getRandomColor(),
       category: this.categories[0],
       /**
        * Status for loader
        */
       loading: true,
-      faild: null
+      failed: null
     }
-  },
-  computed: {
-    viewboxString () {
-      const minX = this.viewBox.x || 0 - this.viewBox.x
-      const minY = this.viewBox.y || 0 - this.viewBox.y
-      const width = this.viewBox.width
-      const height = this.viewBox.height
-
-      return `${minX} ${minY} ${width} ${height}`
-    },
-    diff () {
-      return this.seats.some(function (seat) {
-        return seat.category
-      })
-    },
-    styles () {
-      return {
-        edge: {
-          width: isNaN(+this.width) ? '100%' : `${this.width}px`,
-          height: isNaN(+this.height) ? '100%' : `${this.height}px`
-        },
-        tooltip: {
-          left: `${this.tooltip.left}px`,
-          top: `${this.tooltip.top}px`
-        },
-        around: {
-          left: `${this.around.x}px`,
-          top: `${this.around.y}px`,
-          width: `${this.around.width}px`,
-          height: `${this.around.height}px`,
-          display: this.seats.some(function (seat) {
-            return seat.picked
-          }) ? 'block' : 'none'
-        }
-      }
-    }
-  },
-  watch: {
-    picking: {
-      handler: function (val, oldVal) {
-        let vm = this
-        this.seats = this.seats.map(function (seat) {
-          let center = {
-            x: seat.x + seat.width / 2,
-            y: seat.y + seat.height / 2
-          }
-
-          let picked = ((center.x >= val.x) && 
-                       (center.x <= val.x + val.width * vm.viewBox.scale) && 
-                       (center.y >= val.y) && 
-                       (center.y <= val.y + val.height * vm.viewBox.scale))
-           
-          return Object.assign({}, seat, {
-            picked: picked
-          })
-        })
-
-        this.$nextTick(this.updateDottedAround)
-      },
-      deep: true
-    }
-  },
-  created () {
-    let vm = this
-
-    vm.$http.get(`/spots/${vm.sourceId}`, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('_x_t')}`
-      }
-    })
-    .then(res => {
-      vm.stages = res.data.objects
-        .filter(obj => obj.type === 'stage')
-        .map(function (stage) {
-          return Object.assign({}, stage)
-        })
-      vm.facilities = res.data.objects
-        .filter(obj => obj.type === 'facility')
-        .map(function (facility) {
-          return Object.assign({}, facility)
-        })
-      // vm.disabilities = res.data.objects.filter(obj => obj.type === 'disability')
-      vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
- 
-      vm.svg.width = res.data.svg.width
-      vm.svg.height = res.data.svg.height
-
-      // For calculate responsive of viewport
-      let ratio = this.getInitialRatio()
-
-      // Base on longer axis to calculate for responsive.
-      // if (isNaN(+vm.viewport.width)) {
-      //   vm.viewport.width = Math.floor(vm.$el.getBoundingClientRect().width)
-      // }
-
-      // if (isNaN(+vm.viewport.height)) {
-      //   vm.viewport.height = Math.floor(vm.$el.getBoundingClientRect().height)
-      // }
-
-      // if (res.data.svg.width > res.data.svg.height) {
-      //   ratio = vm.viewport.width / vm.svg.width
-      // } else {  
-      //   ratio = vm.viewport.height / vm.svg.height
-      // }
-
-      vm.viewport.width = Math.floor(vm.svg.width * ratio)
-      vm.viewport.height = Math.floor(vm.svg.height * ratio)
-      vm.viewBox.width = vm.viewport.width * (1 / ratio)
-      vm.viewBox.height = vm.viewport.height * (1 / ratio)
-      vm.viewBox.scale = (1 / ratio)
-
-      vm.seats = vm.seats.map(function (seat) {
-        return Object.assign({}, seat, {
-          // x: seat.x * ratio,
-          // y: seat.y * ratio,
-          // width: seat.width * ratio,
-          // height: seat.height * ratio,
-          fill: colors.seat,
-          reserved: false,
-          /* For picking to set seat */
-          picked: false
-        })
-      })
-
-      vm.loading = false
-    })
-    .catch( error => {
-      vm.faild = 'API request faild, Try to relaod please.'
-      console.log('error', error)
-    })
   },
   methods: {
     getToken () {
@@ -285,6 +162,12 @@ export default {
       }
       return ratio
     },
+    refreshColor(category){
+      let categoryIndex = this.categoriesColor.findIndex( (item) => {
+        return item.category === category
+      })
+      this.color = this.categoriesColor[categoryIndex].color
+    },
     showTooltip (seat){
       this.tooltip.active = true
       this.tooltip.content = seat.label
@@ -297,18 +180,16 @@ export default {
       // Update point base on current transform matrix
       point = point.matrixTransform(svgCanvas.getScreenCTM())
 
-      // Offset point base svg translate x,y
+      // Offset point base svg translate x, y
       this.tooltip.left = point.x - svgCanvas.parentElement.getBoundingClientRect().left
-      this.tooltip.top =  (point.y + (seat.height + 5) / this.viewBox.scale) - svgCanvas.parentElement.getBoundingClientRect().top
+      this.tooltip.top = (point.y + (seat.height + 5) / this.viewBox.scale) - svgCanvas.parentElement.getBoundingClientRect().top
     },
     reset () {
       this.viewBox.x = 0
       this.viewBox.y = 0
-      // this.viewport.width = Math.floor(this.svg.width * ratio)
-      // this.viewport.height = Math.floor(this.svg.height * ratio)
-      this.viewBox.width = this.viewport.width * (1 / this.getInitialRatio())
-      this.viewBox.height = this.viewport.height * (1 / this.getInitialRatio())
-      this.viewBox.scale = this.getInitialRatio()
+      this.viewBox.width = this.svg.width
+      this.viewBox.height = this.svg.height
+      this.viewBox.scale = this.viewBox.initialScale
     },
     zoom (effect) {
       let svgCanvas = document.getElementById('svg-canvas')
@@ -320,13 +201,13 @@ export default {
       let scale = this.viewBox.scale
       if (effect === 'out') {
         scale += 0.1
-        if (scale >= this.viewBox.zoomMax) {
-          scale = this.viewBox.zoomMax
+        if (scale >= this.viewBox.zoomMax * this.viewBox.initialScale ) {
+          scale = this.viewBox.zoomMax * this.viewBox.initialScale
         }
       } else if(effect === 'in') {
         scale -= 0.1
-        if (scale <= this.viewBox.zoomMin) {
-          scale = this.viewBox.zoomMin
+        if (scale <= this.viewBox.zoomMin * this.viewBox.initialScale) {
+          scale = this.viewBox.zoomMin * this.viewBox.initialScale
         }
       }
 
@@ -395,10 +276,10 @@ export default {
         let el = document.querySelector('.dotted-around')
         let begin = svg.createSVGPoint()
         let moveTo = svg.createSVGPoint()
-        begin.x = left.x - 4
+        begin.x = left.x - 4    // for around space insode
         begin.y = top.y - 4
         moveTo.x = right.x + right.width
-        moveTo.y = bottom.y + bottom.width
+        moveTo.y = bottom.y + bottom.height
         begin = begin.matrixTransform(svg.getScreenCTM())
         moveTo = moveTo.matrixTransform(svg.getScreenCTM())
         this.around.x = begin.x - svg.parentElement.getBoundingClientRect().left
@@ -424,7 +305,7 @@ export default {
         options['clean'] = false
       }
 
-      let changedColor = options.clean ? colors.seat : vm.color
+      let changedColor = options.clean ? colors.default : vm.color
       let category = options.clean ? null : vm.category
 
       this.seats = this.seats.map(function (seat) {
@@ -440,6 +321,119 @@ export default {
     save () {
       // TODO: Save by calling API
     }
+  },
+  computed: {
+    viewboxString () {
+      const minX = this.viewBox.x || 0 - this.viewBox.x
+      const minY = this.viewBox.y || 0 - this.viewBox.y
+      const width = this.viewBox.width
+      const height = this.viewBox.height
+
+      return `${minX} ${minY} ${width} ${height}`
+    },
+    categoriesColor () {
+      return this.categories.map((category) => {
+        return {category: category, color: getRandomColor()}
+      })
+    },
+    diff () {
+      return this.seats.some(function (seat) {
+        return seat.category
+      })
+    },
+    styles () {
+      return {
+        edge: {
+          width: isNaN(+this.width) ? '100%' : `${this.width}px`,
+          height: isNaN(+this.height) ? '100%' : `${this.height}px`
+        },
+        tooltip: {
+          left: `${this.tooltip.left}px`,
+          top: `${this.tooltip.top}px`
+        },
+        around: {
+          left: `${this.around.x}px`,
+          top: `${this.around.y}px`,
+          width: `${this.around.width}px`,
+          height: `${this.around.height}px`,
+          display: this.seats.some(function (seat) {
+            return seat.picked
+          }) ? 'block' : 'none'
+        }
+      }
+    }
+  },
+  watch: {
+    picking: {
+      handler: function (val, oldVal) {
+          let vm = this
+          this.seats = this.seats.map(function (seat) {
+            let center = {
+              x: seat.x + seat.width / 2,
+              y: seat.y + seat.height / 2
+            }
+            
+            let picked = ((center.x >= val.x) && 
+                        (center.x <= val.x + val.width * vm.viewBox.scale) && 
+                        (center.y >= val.y) && 
+                        (center.y <= val.y + val.height * vm.viewBox.scale))
+            
+            return Object.assign({}, seat, {
+              picked: picked
+            })
+          })
+
+        this.$nextTick(this.updateDottedAround)
+      },
+      deep: true
+    }
+  },
+  created () {
+    let vm = this
+
+    vm.$http.get(`/spots/${vm.sourceId}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('_x_t')}`
+      }
+    })
+    .then(res => {
+
+      vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
+      vm.stages = res.data.objects.filter(obj => obj.type === 'stage')
+      vm.facilities = res.data.objects.filter(obj => obj.type === 'facilities')
+      vm.disabilities = res.data.objects.filter(obj => obj.type === 'disabilities')
+
+      vm.svg.width = res.data.svg.width
+      vm.svg.height = res.data.svg.height
+
+      // For calculate responsive of viewport
+      let ratio = this.getInitialRatio()         // ratio is for viewport
+      vm.viewBox.initialScale = ( 1 / ratio )    //  scale is for viewBox, larger value with smaller svg view
+
+      vm.viewport.width = Math.floor(vm.svg.width * ratio)
+      vm.viewport.height = Math.floor(vm.svg.height * ratio)
+
+      vm.viewBox.scale = vm.viewBox.initialScale
+      vm.viewBox.width = vm.svg.width
+      vm.viewBox.height = vm.svg.height
+
+      vm.seats = vm.seats.map(function (seat) {
+
+        return Object.assign({}, seat, {
+          fill: colors.default,
+          reserved: false,
+          /* For picking to set seat */
+          picked: false
+        })
+      })
+
+      vm.loading = false
+
+    })
+    .catch( error => {
+      vm.failed = 'API request failed, Try to reload please.'
+      console.log('error', error)
+    })
   },
   render (createElement) {
     let vm = this
@@ -465,16 +459,16 @@ export default {
           class: 'loader-figure'
         },
         style: {
-          display: vm.faild ? 'none' : 'block'
+          display: vm.failed ? 'none' : 'block'
         }
       }),
       createElement('p', {
         class: {
           'loader-label': true,
-          'animate': !vm.faild,
-          'error': vm.faild
+          'animate': !vm.failed,
+          'error': vm.failed
         }
-      }, vm.faild || 'LOADING')
+      }, vm.failed || 'LOADING')
     ])
 
     /**
@@ -504,21 +498,30 @@ export default {
         attrs: {
           id: 'svg-canvas',
           viewBox: vm.viewboxString,
-          
         },
         style: vm.styles.edge,
         directives: [
           directive
         ]
       }, [
-        /* TODO: Adjust stage proportion */
         vm.stages.map(function (stage) {
-          return createElement('svg', {
-            attrs: {
-              width: '100%'
-            },
+          return createElement('g', {
             domProps: {
               innerHTML: stage.html
+            }
+          })
+        }),
+        vm.facilities.map(function (facility) {
+          return createElement('g', {
+            domProps: {
+              innerHTML: facility.html
+            }
+          })
+        }),
+        vm.disabilities.map(function (disability) {
+          return createElement('g', {
+            domProps: {
+              innerHTML: disability.html
             }
           })
         }),
@@ -578,6 +581,20 @@ export default {
       createElement('div', {
         attrs: {
           class: 'manipulate'
+        },
+        on: {
+          mousedown: function (e) {
+            e.stopPropagation()
+          },
+          mousemove: function (e) {
+            e.stopPropagation()
+          },
+          mouseup: function (e) {
+            e.stopPropagation()
+          },
+          click: function (e) {
+            e.stopPropagation()
+          }
         }
       }, [
         createElement('button', {
@@ -715,13 +732,18 @@ export default {
         },
         on: {
           'before-enter': function () {
-            vm.color = '#' + ((1 << 24) * Math.random() | 0).toString(16)
+            vm.refreshColor(vm.category)
           }
         }
       }, [
         createElement('div', {
           attrs: {
             class: 'setup-panel'
+          },
+          on: {
+            mouseup: function (e) {
+              e.stopPropagation()
+            }
           },
           directives: [
             {
@@ -735,7 +757,7 @@ export default {
           createElement('div', {
             attrs: {
               class: 'pickers'
-            }
+            },
           }, [
             createElement('input', {
               attrs: {
@@ -755,6 +777,11 @@ export default {
             createElement('div', {
               attrs: {
                 class: 'select-container'
+              },
+              on: {
+                mouseup: function (e) {
+                  e.stopPropagation()
+                }
               }
             }, [
               createElement('select', {
@@ -762,7 +789,11 @@ export default {
                   value: vm.category
                 },
                 on: {
+                  mouseup: function (e) {
+                    e.stopPropagation()
+                  },
                   change: function (e) {
+                    vm.refreshColor(e.target.value)
                     vm.category = e.target.value
                     vm.$emit('change', e.target.value)
                   }
@@ -782,7 +813,12 @@ export default {
             },
             on: {
               click: function (e) {
+                e.preventDefault()
+                e.stopPropagation()
                 return vm.setCategory()
+              },
+              mouseup: function (e) {
+                e.stopPropagation()
               }
             }
           }, 'Confirm'),
@@ -792,6 +828,8 @@ export default {
             },
             on: {
               click: function (e) {
+                e.preventDefault()
+                e.stopPropagation()
                 return vm.setCategory({
                   clean: true
                 })
@@ -810,7 +848,7 @@ export default {
     user-select: none;
     -moz-user-select: none;
     -webkit-user-select: none;
-    transation: all .3s ease;
+    transition: all .3s ease;
     background-color: transparent;
     position: relative;
     z-index: 9;
