@@ -1,5 +1,7 @@
 <template>
-  <div class="container">
+  <div class="container"
+  :style="styles.edge"
+  >
     <div class="loader"
     v-if="loading"
     >
@@ -28,12 +30,23 @@
         :fill="seat.fill"
         class="seat"
         @click.prevent.stop="book(seat)"
-        @touchend="book(seat)"
         @mousedown.prevent.stop="() => {tooltip.active = false}"
         @mouseover.prevent.stop="showTooltip(seat)"
         @mouseout.prevent="() => {tooltip.active = false}"
         />
       </g>
+      <g
+      v-for="stage in stages"
+      v-html="stage.html"
+      ></g>
+      <g
+      v-for="facility in facilities"
+      v-html="facility.html"
+      ></g>
+      <g
+      v-for="disability in disabilities"
+      v-html="disability.html"
+      ></g>
     </svg>
     <span
     :style="styles.tooltip"
@@ -126,7 +139,11 @@ export default {
         zoomMax: this.zoomMax,
         zoomMin: this.zoomMin,
         scale: 1,
-        initialScale: 1
+        initialScale: 1,
+        scaleRange: {
+          maxScale: 1,         // larger scale means smaller figure
+          minScale: 1          // smaller scale means larger figure
+        }
       },
       /**
        * svg objects will divide 4 types
@@ -171,7 +188,8 @@ export default {
       return {
         edge: {
           width: isNaN(+this.width) ? '100%' : `${this.width}px`,
-          height: isNaN(+this.height) ? '100%' : `${this.height}px`
+          height: isNaN(+this.height) ? '100%' : `${this.height}px`,
+          maxHeight: '100%'
         },
         tooltip: {
           left: `${this.tooltip.left}px`,
@@ -193,25 +211,39 @@ export default {
       vm.facilities = res.data.objects.filter(obj => obj.type === 'facilities')
       vm.disabilities = res.data.objects.filter(obj => obj.type === 'disabilities')
       
-      vm.svg.width = res.data.svg.width
+    vm.svg.width = res.data.svg.width
       vm.svg.height = res.data.svg.height
 
-      // For calculate responsive of viewport
-      let ratio = this.getInitialRatio()  //  ratio is for viewport
-      vm.viewBox.initialScale = ( 1 / ratio )    //  scale is for viewBox, larger value with smaller svg view
+      // adjust viewport according to user config
+      if (isNaN(+vm.viewport.width) === false && vm.viewport.height === 'auto') {
+        vm.viewport.height = Math.floor(this.$el.getBoundingClientRect().height)
+      }
+      
+      if (isNaN(+vm.viewport.height) === false && vm.viewport.width === 'auto') {
+        if (Math.floor(this.$el.getBoundingClientRect().height < vm.viewport.height)) {
+          vm.viewport.height = Math.floor(this.$el.getBoundingClientRect().height)
+        }
+        vm.viewport.width = Math.floor(this.$el.getBoundingClientRect().width)
+      }
+
+      let ratio = Math.min((vm.viewport.width / vm.svg.width), (vm.viewport.height / vm.svg.height))
+
+      // ratio is for viewport, scale is for viewbox.
+      // larger scale means smaller figure
+      vm.viewBox.scale = vm.viewBox.initialScale = ( 1 / ratio )
+
+      vm.viewBox.width = vm.svg.width
+      vm.viewBox.height = vm.svg.height
+
+      // calculated the max and min range of scale to zoom
+      vm.viewBox.scaleRange.maxScale = (1 / vm.viewBox.zoomMin) * vm.viewBox.initialScale
+      vm.viewBox.scaleRange.minScale = (1 / vm.viewBox.zoomMax) * vm.viewBox.initialScale
+
       // TODO:這裡是接從 API 過來的資料
       let colors = {
         seat: '#d3d3d3'   // res.data.objects.fill
       }
 
-      vm.viewport.width = Math.floor(vm.svg.width * ratio)
-      vm.viewport.height = Math.floor(vm.svg.height * ratio)
-      vm.viewBox.scale = vm.viewBox.initialScale
-      vm.viewBox.width = vm.svg.width
-      vm.viewBox.height = vm.svg.height
-
-
-      // TODO: 這段到時候應該可以移除
       vm.seats = vm.seats.map( seat => {
         return Object.assign({}, seat, {
           // x: seat.x * ratio,
@@ -281,13 +313,13 @@ export default {
 
       if (effect === 'out') {
         scale += 0.1
-        if (scale >= this.viewBox.zoomMax * this.viewBox.initialScale) {
-          scale = this.viewBox.zoomMax * this.viewBox.initialScale
+        if (scale >= this.viewBox.scaleRange.maxScale) {
+          scale = this.viewBox.scaleRange.maxScale
         }
       } else if(effect === 'in') {
         scale -= 0.1
-        if (scale <= this.viewBox.zoomMin * this.viewBox.initialScale) {
-          scale = this.viewBox.zoomMin * this.viewBox.initialScale
+        if (scale <= this.viewBox.scaleRange.minScale) {
+          scale = this.viewBox.scaleRange.minScale
         }
       }
       /**
@@ -313,6 +345,7 @@ export default {
       svgCanvas.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${viewport.width * scale} ${viewport.height * scale}`)
     },
     book (seat) {
+      console.log('touchend')
       if (!seat.reserved) {
         if (this.amount + 1 <= this.amountMax) {
           seat.reserved = !seat.reserved
@@ -325,27 +358,6 @@ export default {
         seat.fill = seat.cache
         this.amount--
       }
-    },
-    getInitialRatio(){
-      // For calculate responsive of viewport
-      let ratio
-
-      // Base on longer axis to calculate for responsive.
-      if (isNaN(+this.viewport.width)) {
-        this.viewport.width = Math.floor(this.$el.getBoundingClientRect().width)
-      }
-
-      if (isNaN(+this.viewport.height)) {
-        this.viewport.height = Math.floor(this.$el.getBoundingClientRect().height)
-      }
-
-      if (this.svg.width > this.svg.height) {
-        ratio = this.viewport.width / this.svg.width
-      } else {  
-        ratio = this.viewport.height / this.svg.height
-      }
-
-      return ratio
     }
   }
 }
