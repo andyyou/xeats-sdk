@@ -24,11 +24,19 @@
     rect {
       -moz-user-select: none;
     }
+    @media screen and (max-width: 480px){
+      .rwd-container {
+        height: 480px;
+        outline: 1px solid green;
+      }
+    }
   </style>
 </head>
 <body>
   <div style="height: 500px;">A</div>
-  <div id="seat-map"></div>
+  <div class="rwd-container">
+    <div id="seat-map"></div>
+  </div>
   <script src="dist/sdk.js"></script>
   <script>
     (function () {
@@ -43,10 +51,10 @@
             categories: ['A', 'B', 'C', 'D']
           }
         },
-        zoomMax: 2,
+        zoomMax: 4,
         zoomMin: 0.5,
         width: 'auto',    // For responsive set value to `auto`
-        height: 800,
+        height: 800,      // Height can not set to auto
         amountMax: 4,     // Limit selection amount
         amountMin: 1
       })

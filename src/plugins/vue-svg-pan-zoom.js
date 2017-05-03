@@ -5,11 +5,8 @@ export default {
   install (Vue, options) {
     let onZoom, onPinchEnd, onPanStart, onPanMove, onPanEnd
     let mc
-
     Vue.directive('pan-zoom', {
       bind (el, binding, vnode, oldVnode) {
-        // TODO: 利用 $emit 把資料傳回 vm
-
         let panning, startViewBox
         let svgElement = el
 
@@ -53,6 +50,7 @@ export default {
 
             let moveToViewBox = `${movement.x} ${movement.y} ${startViewBox[2]} ${startViewBox[3]}`
             svgElement.setAttribute('viewBox', moveToViewBox)
+
             vnode.context[binding.expression].x = movement.x
             vnode.context[binding.expression].y = movement.y
           }
@@ -87,32 +85,27 @@ export default {
             height: svgElement.getBoundingClientRect().height
           }
 
-          let zoomRange = {
-            // Transform zoomMax for viewport into SVG Scale
-            maxSize: (1 / vnode.context[binding.expression].zoomMax) * vnode.context[binding.expression].initialScale,
-            minSize: (1 / vnode.context[binding.expression].zoomMin) * vnode.context[binding.expression].initialScale
-          }
-
+          let scaleRange = vnode.context[binding.expression].scaleRange
           startScale = vnode.context[binding.expression].scale
           if (e.type === 'wheel') {
             currentScale = startScale + (e.deltaY / 100)
 
-            if (currentScale >= zoomRange.minSize) {
-              currentScale = zoomRange.minSize
-            }
-            if (currentScale <= zoomRange.maxSize) {
-              currentScale = zoomRange.maxSize
+            if (currentScale >= scaleRange.maxScale) {
+              currentScale = scaleRange.maxScale
+            } else if (currentScale <= scaleRange.minScale) {
+              currentScale = scaleRange.minScale
             }
             vnode.context[binding.expression].scale = currentScale
           } else if (e.type === 'pinchmove') {
             currentScale = startScale * (1 / e.scale)
 
-            if (currentScale >= zoomRange.minSize) {
-              currentScale = zoomRange.minSize
+            if (currentScale >= scaleRange.minSize) {
+              currentScale = scaleRange.minSize
+            } else if (currentScale <= scaleRange.maxSize) {
+              currentScale = scaleRange.maxSize
             }
-            if (currentScale <= zoomRange.maxSize) {
-              currentScale = zoomRange.maxSize
-            }
+          } else {
+            console.warn('not handle event')
           }
 
           svgElement.setAttribute('viewBox', `${startViewBox[0]} ${startViewBox[1]} ${viewport.width * currentScale} ${viewport.height * currentScale}`)
