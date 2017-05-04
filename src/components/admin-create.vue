@@ -1,5 +1,4 @@
 <script>
-// cSpell:ignore viewbox rect touchend mousedown mouseover mouseout mousemove nowrap keyframes curr mouseup substr
 import _ from 'lodash'
 
 function darken (color, percent) {
@@ -17,9 +16,10 @@ function getRandomColor () {
   return '#' + Math.random().toString(16).substr(-6)
 }
 
-let colors = {
-  default: '#d3d3d3',
-  cache: null
+let seatsDefault = {
+  color: '#d3d3d3',
+  reserved: false,
+  picked: false
 }
 
 export default {
@@ -79,7 +79,11 @@ export default {
         zoomMax: this.zoomMax,
         zoomMin: this.zoomMin,
         scale: 1,
-        initialScale: 1
+        initialScale: 1,
+        scaleRange: {
+          maxScale: Number,     // maxScale means smaller figure
+          minScale: Number      // minScale means larger figure
+        }
       },
       /**
        * svg objects will divide 4 types
@@ -126,8 +130,14 @@ export default {
        * select a color of tmp to set into seat's fill attr
        * current color & category
        */
-      color: getRandomColor(),
+      color: '#333333',
       category: this.categories[0],
+      categoryItems: this.categories.map(function (category) {
+        return {
+          name: category,
+          color: getRandomColor()
+        }
+      }),
       /**
        * Status for loader
        */
@@ -142,31 +152,11 @@ export default {
     setToken () {
       return this.$parent.setToken.call(this)
     },
-    getInitialRatio () {
-      // For calculate responsive of viewport
-      let ratio
-
-      // Base on longer axis to calculate for responsive.
-      if (isNaN(+this.viewport.width)) {
-        this.viewport.width = Math.floor(this.$el.getBoundingClientRect().width)
-      }
-
-      if (isNaN(+this.viewport.height)) {
-        this.viewport.height = Math.floor(this.$el.getBoundingClientRect().height)
-      }
-
-      if (this.svg.width > this.svg.height) {
-        ratio = this.viewport.width / this.svg.width
-      } else {  
-        ratio = this.viewport.height / this.svg.height
-      }
-      return ratio
-    },
     refreshColor(category){
-      let categoryIndex = this.categoriesColor.findIndex( (item) => {
-        return item.category === category
+      let categoryIndex = this.categoryItems.findIndex( (item) => {
+        return item.name === category
       })
-      this.color = this.categoriesColor[categoryIndex].color
+      this.color = this.categoryItems[categoryIndex].color
     },
     showTooltip (seat){
       this.tooltip.active = true
@@ -201,13 +191,13 @@ export default {
       let scale = this.viewBox.scale
       if (effect === 'out') {
         scale += 0.1
-        if (scale >= this.viewBox.zoomMax * this.viewBox.initialScale ) {
-          scale = this.viewBox.zoomMax * this.viewBox.initialScale
+        if (scale >= this.viewBox.scaleRange.maxScale ) {
+          scale = this.viewBox.scaleRange.maxScale
         }
       } else if(effect === 'in') {
         scale -= 0.1
-        if (scale <= this.viewBox.zoomMin * this.viewBox.initialScale) {
-          scale = this.viewBox.zoomMin * this.viewBox.initialScale
+        if (scale <= this.viewBox.scaleRange.minScale) {
+          scale = this.viewBox.scaleRange.minScale
         }
       }
 
@@ -276,7 +266,7 @@ export default {
         let el = document.querySelector('.dotted-around')
         let begin = svg.createSVGPoint()
         let moveTo = svg.createSVGPoint()
-        begin.x = left.x - 4    // for around space insode
+        begin.x = left.x - 4    // for around space inside
         begin.y = top.y - 4
         moveTo.x = right.x + right.width
         moveTo.y = bottom.y + bottom.height
@@ -305,7 +295,7 @@ export default {
         options['clean'] = false
       }
 
-      let changedColor = options.clean ? colors.default : vm.color
+      let changedColor = options.clean ? seatsDefault.color : vm.color
       let category = options.clean ? null : vm.category
 
       this.seats = this.seats.map(function (seat) {
@@ -331,11 +321,6 @@ export default {
 
       return `${minX} ${minY} ${width} ${height}`
     },
-    categoriesColor () {
-      return this.categories.map((category) => {
-        return {category: category, color: getRandomColor()}
-      })
-    },
     diff () {
       return this.seats.some(function (seat) {
         return seat.category
@@ -345,7 +330,8 @@ export default {
       return {
         edge: {
           width: isNaN(+this.width) ? '100%' : `${this.width}px`,
-          height: isNaN(+this.height) ? '100%' : `${this.height}px`
+          height: isNaN(+this.height) ? '100%' : `${this.height}px`,
+          maxHeight: '100%'   // 在沒有設定外層容器高的時候，這會無效
         },
         tooltip: {
           left: `${this.tooltip.left}px`,
@@ -406,24 +392,38 @@ export default {
       vm.svg.width = res.data.svg.width
       vm.svg.height = res.data.svg.height
 
-      // For calculate responsive of viewport
-      let ratio = this.getInitialRatio()         // ratio is for viewport
-      vm.viewBox.initialScale = ( 1 / ratio )    //  scale is for viewBox, larger value with smaller svg view
+      // adjust viewport according to user config
+      if (isNaN(+vm.viewport.width) === false && vm.viewport.height === 'auto') {
+        vm.viewport.height = Math.floor(this.$el.getBoundingClientRect().height)
+      }
+      
+      if (isNaN(+vm.viewport.height) === false && vm.viewport.width === 'auto') {
+        if (Math.floor(this.$el.getBoundingClientRect().height < vm.viewport.height)) {
+          vm.viewport.height = Math.floor(this.$el.getBoundingClientRect().height)
+        }
+        vm.viewport.width = Math.floor(this.$el.getBoundingClientRect().width)
+      }
 
-      vm.viewport.width = Math.floor(vm.svg.width * ratio)
-      vm.viewport.height = Math.floor(vm.svg.height * ratio)
+      let ratio = Math.min((vm.viewport.width / vm.svg.width), (vm.viewport.height / vm.svg.height))
 
-      vm.viewBox.scale = vm.viewBox.initialScale
+      // ratio is for viewport, scale is for viewbox.
+      // larger scale means smaller figure
+      vm.viewBox.scale = vm.viewBox.initialScale = ( 1 / ratio )
+
       vm.viewBox.width = vm.svg.width
       vm.viewBox.height = vm.svg.height
+
+      // calculated the max and min range of scale to zoom
+      vm.viewBox.scaleRange.maxScale = (1 / vm.viewBox.zoomMin) * vm.viewBox.initialScale
+      vm.viewBox.scaleRange.minScale = (1 / vm.viewBox.zoomMax) * vm.viewBox.initialScale
 
       vm.seats = vm.seats.map(function (seat) {
 
         return Object.assign({}, seat, {
-          fill: colors.default,
-          reserved: false,
+          fill: seatsDefault.color,
+          reserved: seatsDefault.reserved,
           /* For picking to set seat */
-          picked: false
+          picked: seatsDefault.picked
         })
       })
 
@@ -477,7 +477,8 @@ export default {
     return createElement('div', {
       attrs: {
         class: 'container'
-      }
+      },
+      style: vm.styles.edge
     }, [
       vm.loading ? loader : null,
       createElement('div', {

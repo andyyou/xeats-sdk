@@ -1,173 +1,157 @@
-import { Observable } from 'rxjs/Observable'
-import 'rxjs/add/observable/fromEvent'
-import 'rxjs/add/observable/empty'
-import 'rxjs/add/observable/merge'
-import 'rxjs/add/operator/map'
-import 'rxjs/add/operator/switch'
-import 'rxjs/add/operator/observeOn'
-import 'rxjs/add/operator/takeUntil'
-import { animationFrame } from 'rxjs/scheduler/animationFrame'
-
 import Hammer from 'hammerjs'
 import hammertime from 'hammer-timejs'
 
 export default {
   install (Vue, options) {
-    /**
-     * elements of svg moving ability
-     */
-    
-    let subDrag, subZoom
-
+    let onZoom, onPinchEnd, onPanStart, onPanMove, onPanEnd
+    let mc
     Vue.directive('pan-zoom', {
       bind (el, binding, vnode, oldVnode) {
-        /**
-         * Draggable svg
-         */
-        const mousedown = Observable.fromEvent(el, 'mousedown')
-        const mousemove = Observable.fromEvent(el, 'mousemove')
-        const mouseup = Observable.fromEvent(document, 'mouseup')
+        let panning, startViewBox
+        let svgElement = el
 
-        const touchstart = Observable.fromEvent(el, 'touchstart')
-        const touchmove = Observable.fromEvent(el, 'touchmove')
-        const touchcancel = Observable.fromEvent(el, 'touchcancel')
-        const touchend = Observable.fromEvent(document, 'touchend')
+        let startScale
+        let currentScale
 
-        const dragStart = Observable.merge(mousedown, touchstart)
-        const dragMove = Observable.merge(mousemove, touchmove)
-        const dragEnd = Observable.merge(mouseup, touchcancel, touchend)
+        // Create Manager
+        mc = new Hammer.Manager(svgElement)
 
-        let svg = el
+        // Create Recognizer
+        const pinch = new Hammer.Pinch({domEvents: true})
+        const pan = new Hammer.Pan({domEvents: true})
+        pinch.requireFailure(pan)
 
-        const drag = dragStart.map((e) => {
-          e.preventDefault()
-          e.stopPropagation()
+        mc.add([pinch, pan])
 
-          // If click on elements in svg do NOT handle
-          if (e.currentTarget.tagName !== 'svg') {
-            return Observable.empty()
-          }
+        onPanStart = function () {
+          panning = true
+          console.log('onPanStart')
+          startViewBox = svgElement.getAttribute('viewBox').split(' ').map(n => parseFloat(n))
+        }
 
-          // Only handle one touch
-          if (e.touches && e.touches.length > 1) {
-            return Observable.empty()
-          }
+        onPanMove = function (e) {
+          if (panning) {
+            let startPoint = svgElement.createSVGPoint()
+            let ctm = svgElement.getScreenCTM()
 
-          /**
-           * Current Transformation Matrix
-           *
-           * http://stackoverflow.com/questions/10298658/mouse-position-inside-autoscaled-svg
-           */
+            startPoint.x = e.changedPointers[0].clientX
+            startPoint.y = e.changedPointers[0].clientY
+            startPoint = startPoint.matrixTransform(ctm.inverse())
 
-          let startPoint = svg.createSVGPoint()
-          let ctm = svg.getScreenCTM()
-          const prevPoint = {
-            x: vnode.context[binding.expression].x,
-            y: vnode.context[binding.expression].y
-          }
-
-          // Mouse point of browser window
-          if (e.touches) {
-            startPoint.x = e.touches[0].clientX
-            startPoint.y = e.touches[0].clientY
-          } else {
-            startPoint.x = e.clientX
-            startPoint.y = e.clientY
-          }
-
-          startPoint = startPoint.matrixTransform(ctm.inverse())
-
-          return dragMove.observeOn(animationFrame).map((e) => {
-            let moveToPoint = svg.createSVGPoint()
-
-            if (e.touches) {
-              moveToPoint.x = e.changedTouches[0].clientX
-              moveToPoint.y = e.changedTouches[0].clientY
-            } else {
-              moveToPoint.x = e.clientX
-              moveToPoint.y = e.clientY
-            }
+            let moveToPoint = svgElement.createSVGPoint()
+            moveToPoint.x = e.changedPointers[0].clientX + e.deltaX
+            moveToPoint.y = e.changedPointers[0].clientY + e.deltaY
             moveToPoint = moveToPoint.matrixTransform(ctm.inverse())
 
-            return {
-              x: prevPoint.x + (startPoint.x - moveToPoint.x),
-              y: prevPoint.y + (startPoint.y - moveToPoint.y)
-            }
-          }).takeUntil(dragEnd)
-        }).switch()
-
-        subDrag = drag.subscribe((p) => {
-          vnode.context[binding.expression].x = p.x
-          vnode.context[binding.expression].y = p.y
-        })
-
-        /**
-         * Zoom in out
-         */
-        const wheel = 'onwheel' in document ? 'wheel' : 'mousewheel'
-        const zoom = Observable.fromEvent(el, wheel)
-
-        subZoom = zoom.subscribe((e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          requestAnimationFrame(() => {
-            let viewport = {
-              width: svg.getBoundingClientRect().width,
-              height: svg.getBoundingClientRect().height
-            }
-            let scale = vnode.context[binding.expression].scale
-            let tmp = scale + (e.deltaY / 100)
-            if (tmp >= vnode.context[binding.expression].zoomMax * vnode.context[binding.expression].initialScale) {
-              tmp = vnode.context[binding.expression].zoomMax * vnode.context[binding.expression].initialScale
-            }
-            if (tmp <= vnode.context[binding.expression].zoomMin * vnode.context[binding.expression].initialScale) {
-              tmp = vnode.context[binding.expression].zoomMin * vnode.context[binding.expression].initialScale
-            }
-            scale = tmp
-            vnode.context[binding.expression].scale = scale
-
-            // Mouse or touch point
-            let offsetPoint = svg.createSVGPoint()
-            let ctm = svg.getScreenCTM()
-
-            if (e.touches && e.touches.length > 1) {
-              offsetPoint.x = e.changedTouches[0].clientX
-              offsetPoint.y = e.changedTouches[0].clientY
-            } else {
-              offsetPoint.x = e.clientX
-              offsetPoint.y = e.clientY
-            }
-
-            // Get svgOffsetPoint position，mouse or touch point relative to origin point of SVG
-            let svgOffsetPoint = offsetPoint.matrixTransform(ctm.inverse())
-            svg.setAttribute('viewBox', `${vnode.context[binding.expression].x} ${vnode.context[binding.expression].y} ${viewport.width * scale} ${viewport.height * scale}`)
-            vnode.context[binding.expression].width = viewport.width * scale
-            vnode.context[binding.expression].height = viewport.height * scale
-
-            /**
-             * svgScaledPoint: The same point but different unit
-             * mains will get scaled unit in svg
-             */
-            let svgScaledPoint = offsetPoint.matrixTransform(svg.getScreenCTM().inverse())
-            let viewBox = svg.getAttribute('viewBox').split(' ').map(n => parseFloat(n))
             let movement = {
-              x: viewBox[0] + (svgOffsetPoint.x - svgScaledPoint.x),
-              y: viewBox[1] + (svgOffsetPoint.y - svgScaledPoint.y)
+              x: startViewBox[0] + (startPoint.x - moveToPoint.x),
+              y: startViewBox[1] + (startPoint.y - moveToPoint.y)
             }
-            svg.setAttribute('viewBox', `${movement.x} ${movement.y} ${viewport.width * scale} ${viewport.height * scale}`)
+
+            let moveToViewBox = `${movement.x} ${movement.y} ${startViewBox[2]} ${startViewBox[3]}`
+            svgElement.setAttribute('viewBox', moveToViewBox)
 
             vnode.context[binding.expression].x = movement.x
             vnode.context[binding.expression].y = movement.y
-          })
-        })
+          }
+        }
 
-        /**
-         * TODO: touch for Zoom in out
-         */
+        onPanEnd = function () {
+          console.log('panend')
+          panning = false
+        }
+
+        onZoom = function (e) {
+          e.preventDefault()
+
+          startViewBox = svgElement.getAttribute('viewBox').split(' ').map(n => parseFloat(n))
+          let startPoint = svgElement.createSVGPoint()
+          let ctm = svgElement.getScreenCTM()
+
+          if (e.type === 'wheel') {
+            startPoint.x = e.clientX
+            startPoint.y = e.clientY
+          } else if (e.type === 'pinchmove') {
+            startPoint.x = e.center.x
+            startPoint.y = e.center.y
+          } else {
+            console.warn('event not support')
+          }
+          let svgStartPoint = startPoint.matrixTransform(ctm.inverse())
+
+          // Scaled
+          let viewport = {
+            width: svgElement.getBoundingClientRect().width,
+            height: svgElement.getBoundingClientRect().height
+          }
+
+          let scaleRange = vnode.context[binding.expression].scaleRange
+          startScale = vnode.context[binding.expression].scale
+          if (e.type === 'wheel') {
+            currentScale = startScale + (e.deltaY / 100)
+
+            if (currentScale >= scaleRange.maxScale) {
+              currentScale = scaleRange.maxScale
+            } else if (currentScale <= scaleRange.minScale) {
+              currentScale = scaleRange.minScale
+            }
+            vnode.context[binding.expression].scale = currentScale
+          } else if (e.type === 'pinchmove') {
+            currentScale = startScale * (1 / e.scale)
+
+            if (currentScale >= scaleRange.minSize) {
+              currentScale = scaleRange.minSize
+            } else if (currentScale <= scaleRange.maxSize) {
+              currentScale = scaleRange.maxSize
+            }
+          } else {
+            console.warn('not handle event')
+          }
+
+          svgElement.setAttribute('viewBox', `${startViewBox[0]} ${startViewBox[1]} ${viewport.width * currentScale} ${viewport.height * currentScale}`)
+          vnode.context[binding.expression].width = viewport.width * currentScale
+          vnode.context[binding.expression].height = viewport.height * currentScale
+
+          // moveBack
+          ctm = svgElement.getScreenCTM()
+          let svgScaledPoint = startPoint.matrixTransform(ctm.inverse())
+          let scaledViewBox = svgElement.getAttribute('viewBox').split(' ').map(n => parseFloat(n))
+
+          let movement = {
+            x: scaledViewBox[0] + (svgStartPoint.x - svgScaledPoint.x),
+            y: scaledViewBox[1] + (svgStartPoint.y - svgScaledPoint.y)
+          }
+
+          svgElement.setAttribute('viewBox', `${movement.x} ${movement.y} ${scaledViewBox[2]} ${scaledViewBox[3]}`)
+          vnode.context[binding.expression].x = movement.x
+          vnode.context[binding.expression].y = movement.y
+        }
+
+        onPinchEnd = function (e) {
+          vnode.context[binding.expression].scale = currentScale
+          mc.off('pan')
+          setTimeout(mc.on('pan'), 500)
+          console.log('pinchend')
+        }
+
+        mc.on('pinchstart', () => { console.log('pinchstart', el) })
+        mc.on('pinchmove', onZoom)
+        mc.on('pinchend', onPinchEnd)
+        mc.on('panstart', onPanStart)
+        mc.on('panmove', onPanMove)
+        mc.on('panend', onPanEnd)
+        el.addEventListener('wheel', onZoom, false)
       },
-      unbind () {
-        subDrag.unsubscribe()
-        subZoom.unsubscribe()
+      unbind (el, binding, vnode, oldVnode) {
+        mc.off('pinchstart', () => { console.log('pinchstart', el) })
+        mc.off('pinchmove', onZoom)
+        mc.off('pinchend', onPinchEnd)
+        mc.off('panstart', onPanStart)
+        mc.off('panmove', onPanMove)
+        mc.off('panend', onPanEnd)
+        mc.off('pan')
+        mc.off('pinch')
+        el.removeEventListener('wheel', onZoom)
       }
     })
   }
