@@ -345,7 +345,6 @@ export default {
       svgCanvas.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${viewport.width * scale} ${viewport.height * scale}`)
     },
     book (seat) {
-      console.log('touchend')
       if (!seat.reserved) {
         if (this.amount + 1 <= this.amountMax) {
           seat.reserved = !seat.reserved
