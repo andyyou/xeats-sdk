@@ -28,6 +28,8 @@
         :width="seat.width"
         :height="seat.height"
         :fill="seat.fill"
+        stroke="#444"
+        stroke-width="2"
         class="seat"
         @click.prevent.stop="book(seat)"
         @mousedown.prevent.stop="() => {tooltip.active = false}"
@@ -92,7 +94,7 @@ export default {
       type: [String, Number],
       required: true
     },
-    sourceId: {
+    seatsId: {
       type: String
     },
     zoomMax: {
@@ -101,17 +103,11 @@ export default {
     zoomMin: {
       type: Number
     },
-    token: {
-      type: String
-    },
     amountMax: {
       type: Number
     },
     amountMin: {
       type: Number
-    },
-    categories: {
-      type: Array
     }
   },
   data () {
@@ -200,7 +196,8 @@ export default {
   },
   created () {
     let vm = this
-    vm.$http.get(`/spots/${vm.sourceId}`, {
+
+    vm.$http.get(`/seats/${vm.seatsId}`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('_x_t')}`
       }
@@ -211,7 +208,7 @@ export default {
       vm.facilities = res.data.objects.filter(obj => obj.type === 'facilities')
       vm.disabilities = res.data.objects.filter(obj => obj.type === 'disabilities')
       
-    vm.svg.width = res.data.svg.width
+      vm.svg.width = res.data.svg.width
       vm.svg.height = res.data.svg.height
 
       // adjust viewport according to user config
@@ -228,14 +225,14 @@ export default {
 
       let ratio = Math.min((vm.viewport.width / vm.svg.width), (vm.viewport.height / vm.svg.height))
 
-      // ratio is for viewport, scale is for viewbox.
+      // ratio is for viewport, scale is for viewbox
       // larger scale means smaller figure
       vm.viewBox.scale = vm.viewBox.initialScale = ( 1 / ratio )
 
       vm.viewBox.width = vm.svg.width
       vm.viewBox.height = vm.svg.height
 
-      // calculated the max and min range of scale to zoom
+      // calculate the max and min range of scale to zoom
       vm.viewBox.scaleRange.maxScale = (1 / vm.viewBox.zoomMin) * vm.viewBox.initialScale
       vm.viewBox.scaleRange.minScale = (1 / vm.viewBox.zoomMax) * vm.viewBox.initialScale
 
@@ -244,6 +241,11 @@ export default {
         seat: '#d3d3d3'   // res.data.objects.fill
       }
 
+      vm.seats.forEach(seat => {
+        seat.fill = (seat.status === 1 ) ? seat.fill : this.darken(seat.fill, +0.8)
+        seat.picked = false
+      })
+      /*
       vm.seats = vm.seats.map( seat => {
         return Object.assign({}, seat, {
           // x: seat.x * ratio,
@@ -254,6 +256,7 @@ export default {
           reserved: false,      // TODO: 這裡要根據 API 代入資料
         })
       })
+      */
 
       vm.loading = false
 
@@ -345,15 +348,15 @@ export default {
       svgCanvas.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${viewport.width * scale} ${viewport.height * scale}`)
     },
     book (seat) {
-      if (!seat.reserved) {
+      if (!seat.picked) {
         if (this.amount + 1 <= this.amountMax) {
-          seat.reserved = !seat.reserved
+          seat.picked = !seat.picked
           seat.cache = seat.fill
           seat.fill = this.darken(seat.fill, -0.2)
           this.amount++
         }
       } else {
-        seat.reserved = !seat.reserved
+        seat.picked = !seat.picked
         seat.fill = seat.cache
         this.amount--
       }

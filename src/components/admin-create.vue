@@ -19,7 +19,7 @@ function getRandomColor () {
 
 let seatsDefault = {
   color: '#d3d3d3',
-  reserved: false,
+  status: 1,  // 0: unavailable, 1: available, 2: reserved, 3: manually/others.
   picked: false
 }
 
@@ -338,6 +338,7 @@ export default {
 
       this.seats = this.seats.map(function (seat) {
         let fill = seat.picked ? changedColor : seat.fill
+        let category = seat.picked ? vm.category : seat.category 
         
         return Object.assign({}, seat, {
           fill: fill,
@@ -348,33 +349,32 @@ export default {
     },
     save () {
       // TODO: Save by calling API
-      console.log(this.seats)
+
       this.mode = null
       this.seatsInfo.beforeSave = true
-      
+
       let vm = this
+
+      // console.log('seats', vm.seats)
 
       
       vm.$http.post('/seats/', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('_x_t')}`
-        },
-        data: {
           source_id: vm.sourceId,
           seats: vm.seats,
           name: vm.seatsInfo.name,
           comment: vm.seatsInfo.comment,
-          start_at: vm.seatsInfo.startAt,
-          end_at: vm.seatsInfo.endAt
-        }
-
-      })
+          start_at: new Date(vm.seatsInfo.startAt).toISOString(),
+          end_at: new Date(vm.seatsInfo.endAt).toISOString()
+      }, {headers: {
+          'Authorization': `Bearer ${localStorage.getItem('_x_t')}`,
+        }})
       .then(response => {
-
+        console.log('response', response)
       })
       .catch(error => {
-
+        console.log('error', error)
       })
+      
       
 
     }
@@ -488,7 +488,7 @@ export default {
 
         return Object.assign({}, seat, {
           fill: seatsDefault.color,
-          reserved: seatsDefault.reserved,
+          status: seatsDefault.status,
           /* For picking to set seat */
           picked: seatsDefault.picked
         })
@@ -843,6 +843,10 @@ export default {
               on: {
                 change: function (e) {
                   vm.color = e.target.value
+                  vm.categoryItems.find( category => {
+                    return category.name === vm.category
+                  }).color = e.target.value
+
                   vm.$emit('change', e.target.value)
                 }
               }
