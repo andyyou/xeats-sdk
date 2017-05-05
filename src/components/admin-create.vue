@@ -1,5 +1,6 @@
 <script>
 import _ from 'lodash'
+import datePicker from './date-picker.vue'
 
 function darken (color, percent) {
   let f = parseInt(color.slice(1),16),
@@ -18,7 +19,7 @@ function getRandomColor () {
 
 let seatsDefault = {
   color: '#d3d3d3',
-  reserved: false,
+  status: 1,  // 0: unavailable, 1: available, 2: reserved, 3: manually/others.
   picked: false
 }
 
@@ -92,6 +93,13 @@ export default {
       stages: [],
       facilities: [],
       disabilities: [],
+      seatsInfo: {
+        name: '',
+        comment: '',
+        startAt: '',
+        endAt: '',
+        beforeSave: false
+      },
       /**
        * Booking amount for limitation
        */
@@ -142,10 +150,40 @@ export default {
        * Status for loader
        */
       loading: true,
-      failed: null
+      failed: null,
+      componentStyles: {
+        
+        inputStyle: {
+          'border': '1px solid #CCC',
+          'background-color': 'white',
+          'border-radius': '3px',
+          'align-self': 'flex-end',
+          'padding': '5px 8px',
+          'margin-top': '5px',
+          'cursor': 'pointer',
+          'color': 'rgba(0, 0, 0, 0.65)',
+          'font-weight': '500',
+          'font-size': '12px',
+          'line-height': '1.5em',
+          'transition': 'all .3s ease',
+          'display': 'block',
+          'box-sizing': 'border-box',
+          'width': '100%'
+        }
+        
+      }
     }
   },
+  components: {
+    'date-picker': datePicker
+  },
   methods: {
+    getStartAt (value) {
+      this.seatsInfo.startAt = value
+    },
+    getEndAt (value) {
+      this.seatsInfo.endAt = value
+    },
     getToken () {
       return this.$parent.getToken.call(this)
     },
@@ -300,6 +338,7 @@ export default {
 
       this.seats = this.seats.map(function (seat) {
         let fill = seat.picked ? changedColor : seat.fill
+        let category = seat.picked ? vm.category : seat.category 
         
         return Object.assign({}, seat, {
           fill: fill,
@@ -310,6 +349,34 @@ export default {
     },
     save () {
       // TODO: Save by calling API
+
+      this.mode = null
+      this.seatsInfo.beforeSave = true
+
+      let vm = this
+
+      // console.log('seats', vm.seats)
+
+      
+      vm.$http.post('/seats/', {
+          source_id: vm.sourceId,
+          seats: vm.seats,
+          name: vm.seatsInfo.name,
+          comment: vm.seatsInfo.comment,
+          start_at: new Date(vm.seatsInfo.startAt).toISOString(),
+          end_at: new Date(vm.seatsInfo.endAt).toISOString()
+      }, {headers: {
+          'Authorization': `Bearer ${localStorage.getItem('_x_t')}`,
+        }})
+      .then(response => {
+        console.log('response', response)
+      })
+      .catch(error => {
+        console.log('error', error)
+      })
+      
+      
+
     }
   },
   computed: {
@@ -421,7 +488,7 @@ export default {
 
         return Object.assign({}, seat, {
           fill: seatsDefault.color,
-          reserved: seatsDefault.reserved,
+          status: seatsDefault.status,
           /* For picking to set seat */
           picked: seatsDefault.picked
         })
@@ -608,6 +675,7 @@ export default {
               e.preventDefault()
               e.stopPropagation()
               vm.mode = 'pan-zoom'
+              vm.seatsInfo.beforeSave = false
             }
           }
         }, [
@@ -627,6 +695,7 @@ export default {
               e.preventDefault()
               e.stopPropagation()
               vm.mode = 'picking'
+              vm.seatsInfo.beforeSave = false
             }
           }
         }, [
@@ -644,7 +713,8 @@ export default {
             click: function (e) {
               e.preventDefault()
               e.stopPropagation()
-              vm.save()
+              vm.mode = null
+              vm.seatsInfo.beforeSave = true
             }
           }
         }, [
@@ -655,6 +725,7 @@ export default {
           })
         ])
       ]),
+      // zoom button
       createElement('transition', {
         props: {
           name: 'fade'
@@ -727,8 +798,9 @@ export default {
           ])
         ])
       ]),
+      // setup-panel-for-category
       createElement('transition', {
-        props: {
+        attrs: {
           name: 'fade'
         },
         on: {
@@ -771,6 +843,10 @@ export default {
               on: {
                 change: function (e) {
                   vm.color = e.target.value
+                  vm.categoryItems.find( category => {
+                    return category.name === vm.category
+                  }).color = e.target.value
+
                   vm.$emit('change', e.target.value)
                 }
               }
@@ -837,6 +913,101 @@ export default {
               }
             }
           }, 'Clean')
+        ])
+      ]),
+      // setup-panel-for-save
+      createElement('transition', {
+        props: {
+          name: 'fade'
+        }
+      }, [
+        createElement('div', {
+          attrs: {
+            class: 'setup-panel'
+          },
+          on: {
+            mouseup: function (e) {
+              e.stopPropagation()
+            }
+          },
+          directives: [
+            {
+              name: 'show',
+              value: vm.seatsInfo.beforeSave === true
+            }
+          ]
+        }, [
+            createElement('div', {
+              attrs: {
+                class: 'save'
+              }
+            }, [
+                createElement('input', {
+                  attrs: {
+                    type: 'text',
+                    placeholder: 'Seats Name',
+                    value: vm.seatsInfo.name,
+                  },
+                  on: {
+                    change: function (e) {
+                      vm.seatsInfo.name = e.target.value
+                    }
+                  }
+                }),
+                createElement('input', {
+                  attrs: {
+                    type: 'text',
+                    placeholder: 'Seats Comment',
+                    value: vm.seatsInfo.comment,
+                  },
+                  on: {
+                    change: function (e) {
+                      vm.seatsInfo.comment = e.target.value
+                    }
+                  }
+                }),
+                createElement('date-picker',{
+                  props: {
+                    'input-style': vm.componentStyles.inputStyle
+                  },
+                  on: {
+                    'get-date': vm.getStartAt
+                  }
+                }),
+                createElement('date-picker', {
+                  props: {
+                    'input-style': vm.componentStyles.inputStyle
+                  },
+                  on: {
+                    'get-date': vm.getEndAt
+                  }
+                })
+              ]),
+            createElement('button', {
+              attrs: {
+                class: 'btn-primary'
+              },
+              on: {
+                click: function (e) {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  vm.save()
+                }
+              }
+            }, 'Confirm'),
+            createElement('button', {
+              attrs: {
+                class: 'btn-danger'
+              },
+              on: {
+                click: function (e) {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  vm.seatsInfo.beforeSave = false
+                  vm.mode='pan-zoom'
+                }
+              }
+            }, 'Clean')
         ])
       ])
     ])
@@ -952,8 +1123,8 @@ export default {
     position: absolute;
     display: flex;
     flex-direction: column;
-    justify-content: around-between;
-    z-index: 10;
+    justify-content: space-between;
+    z-index: 12;
     top: 80px;
     left: 30px;
     border: 1px solid #CCC;
@@ -961,6 +1132,34 @@ export default {
     background-color: white;
     box-shadow: 0 1px 2px #DDD;
     padding: 5px;
+    
+    .save {
+      input {
+        border: 1px solid #CCC;
+        background-color: white;
+        border-radius: 3px;
+        align-self: flex-end;
+        padding: 5px 8px;
+        margin-top: 5px;
+        cursor: pointer;
+        color: rgba(0, 0, 0, 0.65);
+        font-weight: 500;
+        font-size: 12px;
+        line-height: 1.5em;
+        transition: all .3s ease;
+        display: block;
+        box-sizing: border-box;
+        width: 100%;
+      }
+
+      input[type='text'] {
+        
+
+        &::placeholder {
+          color: #BBB;
+        }
+      }
+    }
 
     .pickers {
       display: flex;

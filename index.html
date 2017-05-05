@@ -38,15 +38,18 @@
     <div id="seat-map"></div>
   </div>
   <script src="dist/sdk.js"></script>
+
+
   <script>
+    /*
     (function () {
       var xeat = new Xeat({
         el: '#seat-map',
         accessKey: '70abb94c-0a4e-4b60-b228-d3e17f2eb4ad',
         secret: '2a669a9ec56ae69bd0be2de0c3c81b79',
         component: {
-          name: 'user-booking', // admin-create | admin-edit | user-booking
-          sourceId: '58fdaf8861941c0032ea4012',
+          name: 'admin-create', // admin-create | admin-edit | user-booking
+          sourceId: '58fdaf8861941c0032ea4012', // fill in sourceId if for admin-create
           data: {
             categories: ['A', 'B', 'C', 'D']
           }
@@ -59,6 +62,29 @@
         amountMin: 1
       })
     })()
+    */
+    
+    
+    (function () {
+      var xeat = new Xeat({
+        el: '#seat-map',
+        accessKey: '70abb94c-0a4e-4b60-b228-d3e17f2eb4ad',
+        secret: '2a669a9ec56ae69bd0be2de0c3c81b79',
+        component: {
+          name: 'user-booking',       // admin-create | admin-edit | user-booking
+          seatsId: '590c3b43221bb800329bd8c5'  // fill in seatsId if for user-booking
+        },
+        zoomMax: 4,
+        zoomMin: 0.5,
+        width: 'auto',    // For responsive set value to `auto`
+        height: 800,      // Height can not set to auto
+        amountMax: 4,     // Limit selection amount
+        amountMin: 1
+      })
+    })()
+    
+    
   </script>
+
 </body>
 </html>
