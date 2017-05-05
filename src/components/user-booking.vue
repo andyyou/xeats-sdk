@@ -94,7 +94,7 @@ export default {
       type: [String, Number],
       required: true
     },
-    seatsId: {
+    sourceId: {
       type: String
     },
     zoomMax: {
@@ -197,7 +197,7 @@ export default {
   created () {
     let vm = this
 
-    vm.$http.get(`/seats/${vm.seatsId}`, {
+    vm.$http.get(`/seats/${vm.sourceId}`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('_x_t')}`
       }
@@ -352,7 +352,7 @@ export default {
         if (this.amount + 1 <= this.amountMax) {
           seat.picked = !seat.picked
           seat.cache = seat.fill
-          seat.fill = this.darken(seat.fill, -0.2)
+          seat.fill = this.darken(seat.fill, -0.4)
           this.amount++
         }
       } else {

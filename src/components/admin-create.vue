@@ -1,6 +1,6 @@
 <script>
 import _ from 'lodash'
-import datePicker from './date-picker.vue'
+import datePicker from '@/components/date-picker.vue'
 
 function darken (color, percent) {
   let f = parseInt(color.slice(1),16),
