@@ -43,7 +43,6 @@ class Xeat {
                 width: options.width,
                 height: options.height,
                 sourceId: options.component.sourceId,
-                seatsId: options.component.seatsId,
                 zoomMax: options.zoomMax,
                 zoomMin: options.zoomMin,
                 amountMax: options.amountMax,
