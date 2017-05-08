@@ -3,12 +3,9 @@ import axios from 'axios'
 import VuePanZoom from '@/plugins/vue-svg-pan-zoom'
 import VuePicking from '@/plugins/vue-picking'
 import '@/stylesheets/sdk'
-axios.defaults.baseURL = 'https://xeats.herokuapp.com/v1.0'
+axios.defaults.baseURL = 'https://xeats.io/v1.0'
 Vue.prototype.$http = axios
 
-var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
-                            window.webkitRequestAnimationFrame || window.msRequestAnimationFrame
-window.requestAnimationFrame = requestAnimationFrame
 Vue.use(VuePanZoom)
 Vue.use(VuePicking)
 
@@ -31,7 +28,7 @@ class Xeat {
         secret: options.secret
       })
       .then(function (res) {
-        window.localStorage.setItem('_x_t', res.data.token)
+        localStorage.setItem('_x_t', res.data.token)
         return res.data.token
       })
       .then(function (token) {
@@ -66,5 +63,4 @@ class Xeat {
   }
 }
 
-window.Xeat = Xeat
 export default Xeat

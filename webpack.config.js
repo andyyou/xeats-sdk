@@ -8,12 +8,14 @@ function resolve (dir) {
 module.exports = {
   context: path.resolve(__dirname, 'src'),
   entry: {
-    sdk: './index'
+    'xeats-sdk': './index'
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: '[name].js',
-    publicPath: '/dist'
+    publicPath: '/dist',
+    libraryTarget: 'umd',
+    library: 'Xeat'
   },
   resolve: {
     extensions: ['.js', '.vue', '.json', '.css'],
