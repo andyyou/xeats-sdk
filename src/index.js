@@ -14,7 +14,7 @@ Vue.use(VuePicking)
  */
 class Xeat {
   constructor (options) {
-    const componentNames = ['admin-create', 'admin-edit', 'user-booking']
+    const componentNames = ['management', 'user-booking']
 
     if (!options.el && !/([^\r\n,{}]+)(,(?=[^}]*{)|\s*{)/g.test(options.el)) {
       throw new Error('el attribute has no setting')

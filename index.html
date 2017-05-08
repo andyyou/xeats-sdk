@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>SDK Development</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
   <style>
     body {
       background-color: rgba(0, 0, 0, .2);
@@ -43,11 +44,24 @@
     (function () {
       var xeat = new Xeat.default({
         el: '#seat-map',
-        accessKey: '70abb94c-0a4e-4b60-b228-d3e17f2eb4ad',
-        secret: '2a669a9ec56ae69bd0be2de0c3c81b79',
+        accessKey: 'ff5c1d60-ef8d-4284-82c1-35e8be350e34',
+        secret: '61b4311e47a8dfce2c0819e95100e95f',
         component: {
-          name: 'user-booking', // admin-create | admin-edit | user-booking
-          sourceId: '590c3b43221bb800329bd8c5', // fill in sourceId if for admin-create
+          /**
+           * `name` is the naem of component.
+           * We provide few compoents that use in different case.
+           * componnet-names as follow:
+           *  * management
+           *  * user-booking
+           */
+          name: 'management',
+          /**
+           * The unique key for create a seats.
+           * You can name it as hash or event name.
+           * NOTE: it decide which seats you use.
+           *  Each time you make a new name will create another seats.
+           */
+          seatsKey: 'com.wavinfo.sandbox',
           data: {
             categories: ['A', 'B', 'C', 'D']
           }
