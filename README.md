@@ -17,7 +17,7 @@ xeats.io sdk
 <script src="dist/sdk.js"></script>
 <script>
   (function () {
-    var xeat = new Xeat({
+    var xeat = new Xeat.default({
       el: '#seat-map',
       accessKey: 'ff5c1d60-ef8d-4284-82c1-35e8be350e34',
       secret: '61b4311e47a8dfce2c0819e95100e95f',
