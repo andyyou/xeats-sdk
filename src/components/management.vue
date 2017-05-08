@@ -33,7 +33,7 @@ export default {
       type: [String, Number],
       required: true
     },
-    sourceId: {
+    seatsKey: {
       type: String
     },
     zoomMax: {

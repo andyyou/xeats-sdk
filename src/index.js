@@ -39,7 +39,7 @@ class Xeat {
               props: {
                 width: options.width,
                 height: options.height,
-                sourceId: options.component.sourceId,
+                seatsKey: options.component.seatsKey,
                 zoomMax: options.zoomMax,
                 zoomMin: options.zoomMin,
                 amountMax: options.amountMax,
