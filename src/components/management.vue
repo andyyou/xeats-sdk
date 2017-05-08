@@ -33,7 +33,7 @@ export default {
       type: [String, Number],
       required: true
     },
-    sourceId: {
+    seatsKey: {
       type: String
     },
     zoomMax: {
@@ -152,7 +152,6 @@ export default {
       loading: true,
       failed: null,
       componentStyles: {
-        
         inputStyle: {
           'border': '1px solid #CCC',
           'background-color': 'white',
@@ -398,7 +397,7 @@ export default {
         edge: {
           width: isNaN(+this.width) ? '100%' : `${this.width}px`,
           height: isNaN(+this.height) ? '100%' : `${this.height}px`,
-          maxHeight: '100%'   // 在沒有設定外層容器高的時候，這會無效
+          maxHeight: '100%'   // No effect if NO any container's height outter of svg
         },
         tooltip: {
           left: `${this.tooltip.left}px`,
@@ -444,13 +443,12 @@ export default {
   created () {
     let vm = this
 
-    vm.$http.get(`/spots/${vm.sourceId}`, {
+    vm.$http.get(`/seats/${vm.seatsKey}`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('_x_t')}`
       }
     })
     .then(res => {
-
       vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
       vm.stages = res.data.objects.filter(obj => obj.type === 'stage')
       vm.facilities = res.data.objects.filter(obj => obj.type === 'facilities')

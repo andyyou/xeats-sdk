@@ -14,7 +14,7 @@ Vue.use(VuePicking)
  */
 class Xeat {
   constructor (options) {
-    const componentNames = ['admin-create', 'admin-edit', 'user-booking']
+    const componentNames = ['management', 'user-booking']
 
     if (!options.el && !/([^\r\n,{}]+)(,(?=[^}]*{)|\s*{)/g.test(options.el)) {
       throw new Error('el attribute has no setting')
@@ -39,7 +39,7 @@ class Xeat {
               props: {
                 width: options.width,
                 height: options.height,
-                sourceId: options.component.sourceId,
+                seatsKey: options.component.seatsKey,
                 zoomMax: options.zoomMax,
                 zoomMin: options.zoomMin,
                 amountMax: options.amountMax,
