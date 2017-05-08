@@ -1,0 +1,24 @@
+{
+  "name": "xeats-sdk",
+  "description": "xeats API system client sdk",
+  "main": "dist/xeats-sdk.js",
+  "authors": [
+    "WAVINFO"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "xeats",
+    "map",
+    "tickets",
+    "seats",
+    "svg"
+  ],
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
