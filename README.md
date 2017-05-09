@@ -22,16 +22,29 @@ xeats.io sdk
       accessKey: 'ff5c1d60-ef8d-4284-82c1-35e8be350e34',
       secret: '61b4311e47a8dfce2c0819e95100e95f',
       component: {
-        name: 'admin-create', // admin-create | admin-edit | user-booking
-        sourceId: '58ef43548095d200324f7e66',
+        /**
+          * `name` is the name of component.
+          * We provide few components that use in different case.
+          * components-names as follow:
+          *  * management
+          *  * user-booking
+          */
+        name: 'management',
+        /**
+          * The unique key for create a seats.
+          * You can name it as hash or event name.
+          * NOTE: it decide which seats you use.
+          *  Each time you make a new name will create another seats.
+          */
+        seatsKey: 'sandbox',
         data: {
           categories: ['A', 'B', 'C', 'D']
         }
       },
-      zoomMax: 2,
+      zoomMax: 4,
       zoomMin: 0.5,
       width: 'auto',    // For responsive set value to `auto`
-      height: 800,
+      height: 800,      // Height can not set to auto
       amountMax: 4,     // Limit selection amount
       amountMin: 1
     })

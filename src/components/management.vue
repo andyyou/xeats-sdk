@@ -163,6 +163,10 @@ export default {
        */
       loading: true,
       failed: null,
+      /**
+       * Status for save
+       */
+      diff: false
     }
   },
   components: {
@@ -359,6 +363,7 @@ export default {
         }})
       .then(response => {
         vm.loading = false
+        vm.diff = false
         vm.mode = 'pan-zoom'
         vm.seatsInfo.beforeSave = false
         console.log('response', response)
@@ -366,9 +371,6 @@ export default {
       .catch(error => {
         console.log('error', error)
       })
-      
-      
-
     }
   },
   computed: {
@@ -380,17 +382,12 @@ export default {
 
       return `${minX} ${minY} ${width} ${height}`
     },
-    diff () {
-      return this.seats.some(function (seat) {
-        return seat.category
-      })
-    },
     styles () {
       return {
         edge: {
           width: isNaN(+this.width) ? '100%' : `${this.width}px`,
           height: isNaN(+this.height) ? '100%' : `${this.height}px`,
-          maxHeight: '100%'   // No effect if NO any container's height outter of svg
+          maxHeight: '100%'   // No effect if NO any container's height outer of svg
         },
         tooltip: {
           left: `${this.tooltip.left}px`,
@@ -912,6 +909,7 @@ export default {
               click: function (e) {
                 e.preventDefault()
                 e.stopPropagation()
+                vm.diff = true
                 return vm.setCategory()
               },
               mouseup: function (e) {
