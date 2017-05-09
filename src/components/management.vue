@@ -18,9 +18,14 @@ function getRandomColor () {
 }
 
 let seatsDefault = {
-  color: '#d3d3d3',
-  status: 1,  // 0: unavailable, 1: available, 2: reserved, 3: manually/others.
-  picked: false
+  color: '#d3d3d3'
+}
+
+let seatStatus = {
+  unavailable: 0,
+  available: 1,
+  reserved: 2,
+  other: 3
 }
 
 export default {
@@ -57,6 +62,13 @@ export default {
   },
   data () {
     return {
+      /**
+       * seatsId from API
+       */
+      seatsId: '',
+      /**
+       * Custom set viewport
+       */
       viewport: {
         width: this.width,
         height: this.height
@@ -151,26 +163,6 @@ export default {
        */
       loading: true,
       failed: null,
-      componentStyles: {
-        inputStyle: {
-          'border': '1px solid #CCC',
-          'background-color': 'white',
-          'border-radius': '3px',
-          'align-self': 'flex-end',
-          'padding': '5px 8px',
-          'margin-top': '5px',
-          'cursor': 'pointer',
-          'color': 'rgba(0, 0, 0, 0.65)',
-          'font-weight': '500',
-          'font-size': '12px',
-          'line-height': '1.5em',
-          'transition': 'all .3s ease',
-          'display': 'block',
-          'box-sizing': 'border-box',
-          'width': '100%'
-        }
-        
-      }
     }
   },
   components: {
@@ -333,41 +325,42 @@ export default {
       }
 
       let changedColor = options.clean ? seatsDefault.color : vm.color
-      let category = options.clean ? null : vm.category
+      let changeCategory = options.clean ? null : vm.category
+      let changeStatus = options.clean ? seatStatus.unavailable : seatStatus.available
 
       this.seats = this.seats.map(function (seat) {
         let fill = seat.picked ? changedColor : seat.fill
-        let category = seat.picked ? vm.category : seat.category 
-        
+        let category = seat.picked ? changeCategory : seat.category
+        let status = seat.picked ? changeStatus : seat.status
+
         return Object.assign({}, seat, {
           fill: fill,
           category: category,
+          status: status,
           picked: false
         })
       })
     },
     save () {
-      // TODO: Save by calling API
-
       this.mode = null
       this.seatsInfo.beforeSave = true
+      this.loading = true
 
       let vm = this
-
-      // console.log('seats', vm.seats)
-
       
-      vm.$http.post('/seats/', {
-          source_id: vm.sourceId,
-          seats: vm.seats,
+      vm.$http.put(`/seats/${vm.seatsId}`, {
+          objects: vm.seats,
           name: vm.seatsInfo.name,
           comment: vm.seatsInfo.comment,
-          start_at: new Date(vm.seatsInfo.startAt).toISOString(),
-          end_at: new Date(vm.seatsInfo.endAt).toISOString()
+          start_at: new Date(vm.seatsInfo.startAt).toISOString().split('.')[0]+"Z",
+          end_at: new Date(vm.seatsInfo.endAt).toISOString().split('.')[0]+"Z"
       }, {headers: {
           'Authorization': `Bearer ${localStorage.getItem('_x_t')}`,
         }})
       .then(response => {
+        vm.loading = false
+        vm.mode = 'pan-zoom'
+        vm.seatsInfo.beforeSave = false
         console.log('response', response)
       })
       .catch(error => {
@@ -411,6 +404,25 @@ export default {
           display: this.seats.some(function (seat) {
             return seat.picked
           }) ? 'block' : 'none'
+        },
+        componentStyles: {
+          inputStyle: {
+            'border': '1px solid #CCC',
+            'background-color': 'white',
+            'border-radius': '3px',
+            'align-self': 'flex-end',
+            'padding': '5px 8px',
+            'margin-top': '5px',
+            'cursor': 'pointer',
+            'color': 'rgba(0, 0, 0, 0.65)',
+            'font-weight': '500',
+            'font-size': '12px',
+            'line-height': '1.5em',
+            'transition': 'all .3s ease',
+            'display': 'block',
+            'box-sizing': 'border-box',
+            'width': '100%'
+          }
         }
       }
     }
@@ -449,11 +461,22 @@ export default {
       }
     })
     .then(res => {
+      // set seatsId in vm
+      vm.seatsId = res.data._id
+
+      vm.seatsInfo = {
+        name: res.data.name,
+        comment: res.data.comment,
+        startAt: res.data.start_at,
+        endAt: res.data.end_at
+      }
+
       vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
       vm.stages = res.data.objects.filter(obj => obj.type === 'stage')
       vm.facilities = res.data.objects.filter(obj => obj.type === 'facilities')
       vm.disabilities = res.data.objects.filter(obj => obj.type === 'disabilities')
 
+      // set svg width, height in vm
       vm.svg.width = res.data.svg.width
       vm.svg.height = res.data.svg.height
 
@@ -483,12 +506,11 @@ export default {
       vm.viewBox.scaleRange.minScale = (1 / vm.viewBox.zoomMax) * vm.viewBox.initialScale
 
       vm.seats = vm.seats.map(function (seat) {
-
         return Object.assign({}, seat, {
-          fill: seatsDefault.color,
-          status: seatsDefault.status,
+          fill: seat.fill || seatsDefault.color,
+          status: seat.status || seatStatus.unavailable,
           /* For picking to set seat */
-          picked: seatsDefault.picked
+          picked: false
         })
       })
 
@@ -533,7 +555,7 @@ export default {
           'animate': !vm.failed,
           'error': vm.failed
         }
-      }, vm.failed || 'LOADING')
+      }, vm.failed || 'UPDATING')
     ])
 
     /**
@@ -966,7 +988,8 @@ export default {
                 }),
                 createElement('date-picker',{
                   props: {
-                    'input-style': vm.componentStyles.inputStyle
+                    'input-style': vm.styles.componentStyles.inputStyle,
+                    'set-date': vm.seatsInfo.startAt
                   },
                   on: {
                     'get-date': vm.getStartAt
@@ -974,7 +997,8 @@ export default {
                 }),
                 createElement('date-picker', {
                   props: {
-                    'input-style': vm.componentStyles.inputStyle
+                    'input-style': vm.styles.componentStyles.inputStyle,
+                    'set-date': vm.seatsInfo.endAt
                   },
                   on: {
                     'get-date': vm.getEndAt
@@ -992,7 +1016,7 @@ export default {
                   vm.save()
                 }
               }
-            }, 'Confirm'),
+            }, 'Save'),
             createElement('button', {
               attrs: {
                 class: 'btn-danger'
@@ -1005,7 +1029,7 @@ export default {
                   vm.mode='pan-zoom'
                 }
               }
-            }, 'Clean')
+            }, 'Cancel')
         ])
       ])
     ])
