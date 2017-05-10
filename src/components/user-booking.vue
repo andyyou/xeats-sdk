@@ -94,7 +94,7 @@ export default {
       type: [String, Number],
       required: true
     },
-    sourceId: {
+    seatsKey: {
       type: String
     },
     zoomMax: {
@@ -172,7 +172,6 @@ export default {
   },
   computed: {
     viewboxString () {
-      // TODO: remove `0 - this.viewBox.x`
       const minX = this.viewBox.x || 0 - this.viewBox.x
       const minY = this.viewBox.y || 0 - this.viewBox.y
       const width = this.viewBox.width
@@ -197,7 +196,7 @@ export default {
   created () {
     let vm = this
 
-    vm.$http.get(`/seats/${vm.sourceId}`, {
+    vm.$http.get(`/seats/${vm.seatsKey}`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('_x_t')}`
       }
@@ -374,7 +373,7 @@ export default {
     transition: all .3s ease;
     background-color: transparent;
     position: relative;
-    z-index: 9;
+    z-index: 1;
   }
 
   .container {
@@ -391,7 +390,7 @@ export default {
 
   .manipulate {
     position: absolute;
-    z-index: 10;
+    z-index: 2;
     top: 30px;
     left: 30px;
     cursor: pointer;
@@ -443,13 +442,13 @@ export default {
     position: absolute;
     left: 0;
     top: 0;
-    z-index: 10;
+    z-index: 2;
     white-space: nowrap;
   }
 
   .loader, .loader-figure {
     position: absolute;
-    z-index: 11;
+    z-index: 3;
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
