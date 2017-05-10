@@ -6,7 +6,7 @@
     :min="options.minYear + '-01-01'"
     :max="options.maxYear + '-12-31'"
     :value="pickDate"
-    @change="setDate($event)"
+    @change="splitAndSetDate($event)"
     >
 
     <div
@@ -64,6 +64,9 @@ export default {
     },
     inputStyle: {
       type: Object
+    },
+    setDate: {
+      type: [String, Object]
     }
   },
   data () {
@@ -81,16 +84,23 @@ export default {
       useNative: true
     }
   },
+  watch: {
+    // This is for update setDate for props
+    setDate (value) {
+      let date = value.split('T')[0]
+      this.year = date.split('-')[0]
+      this.month = date.split('-')[1]
+      this.day = date.split('-')[2]
+    }
+  },
   computed: {
     pickDate () {
-      let date = `${this.year}-${this.month}-${this.day}`
-      console.log('emit')
-      this.$emit('get-date', date)
-      return date
+        let date = `${this.year}-${this.month}-${this.day}`
+        this.$emit('get-date', date)
+        return date
     },
     dayOptions: {
       get () {
-        console.log('computed dayOptions')
         let dayOptions = []
         let dayNumber
         let month = this.month
@@ -121,8 +131,7 @@ export default {
     }
   },
   methods: {
-    setDate (event) {
-      console.log('event', event.target.value)
+    splitAndSetDate (event) {
       if (event.target.value) {
         let pickDay = event.target.value.split('-')
         this.year = pickDay[0]
@@ -140,7 +149,7 @@ export default {
 
     this.options.today = today.toISOString().split('T')[0]
 
-    // 將今天設為預設值
+    // 如果沒有指定日期，則預設顯示今天
     this.year = this.options.today.split('-')[0]
     this.month = this.options.today.split('-')[1]
     this.day = this.options.today.split('-')[2]
