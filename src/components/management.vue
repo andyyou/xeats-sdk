@@ -1,6 +1,7 @@
 <script>
 import _ from 'lodash'
 import datePicker from '@/components/date-picker.vue'
+import spotsList from '@/components/spots-list.vue'
 
 function darken (color, percent) {
   let f = parseInt(color.slice(1),16),
@@ -110,7 +111,7 @@ export default {
         comment: '',
         startAt: '',
         endAt: '',
-        beforeSave: false
+        mode: '' // save | reset
       },
       /**
        * Booking amount for limitation
@@ -170,14 +171,90 @@ export default {
     }
   },
   components: {
-    'date-picker': datePicker
+    'date-picker': datePicker,
+    'spots-list': spotsList
   },
   methods: {
-    getStartAt (value) {
+    seatsInitialize (vm, res) {
+      console.log('seatsInitialize')
+
+      vm.seatsInfo.name = res.data.name
+      vm.seatsInfo.comment = res.data.comment
+      vm.seatsInfo.startAt = res.data.start_at || vm.seatsInfo.startAt
+      vm.seatsInfo.endAt = res.data.end_at || vm.seatsInfo.endAt
+
+      vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
+      vm.stages = res.data.objects.filter(obj => obj.type === 'stage')
+      vm.facilities = res.data.objects.filter(obj => obj.type === 'facilities')
+      vm.disabilities = res.data.objects.filter(obj => obj.type === 'disabilities')
+
+      // set svg width, height in vm
+      vm.svg.width = res.data.svg.width
+      vm.svg.height = res.data.svg.height
+
+      // adjust viewport according to user config
+      if (isNaN(+vm.viewport.width) === false && vm.viewport.height === 'auto') {
+        vm.viewport.height = Math.floor(this.$el.getBoundingClientRect().height)
+      }
+
+      if (isNaN(+vm.viewport.height) === false && vm.viewport.width === 'auto') {
+        if (Math.floor(this.$el.getBoundingClientRect().height < vm.viewport.height)) {
+          vm.viewport.height = Math.floor(this.$el.getBoundingClientRect().height)
+        }
+        vm.viewport.width = Math.floor(this.$el.getBoundingClientRect().width)
+      }
+
+      let ratio = Math.min((vm.viewport.width / vm.svg.width), (vm.viewport.height / vm.svg.height))
+
+      // ratio is for viewport, scale is for viewbox.
+      // larger scale means smaller figure
+      vm.viewBox.scale = vm.viewBox.initialScale = (1 / ratio)
+
+      vm.viewBox.width = vm.svg.width
+      vm.viewBox.height = vm.svg.height
+
+      // calculated the max and min range of scale to zoom
+      vm.viewBox.scaleRange.maxScale = (1 / vm.viewBox.zoomMin) * vm.viewBox.initialScale
+      vm.viewBox.scaleRange.minScale = (1 / vm.viewBox.zoomMax) * vm.viewBox.initialScale
+
+      vm.seats = vm.seats.map(function(seat) {
+        return Object.assign({}, seat, {
+          fill: seat.fill || seatsDefault.color,
+          status: seat.status || seatStatus.unavailable,
+          /* For picking to set seat */
+          picked: false
+        })
+      })
+    },
+    resetSeats (spotId) {
+      console.log('get spot id', spotId)
+      this.loading = true
+      let vm = this
+
+      vm.$http.get(`/spots/${spotId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('_x_t')}`
+        }
+      })
+      .then( res => {
+        console.log('get reset spot data')
+
+        vm.seatsInitialize(vm, res)
+
+
+        console.log('seat reset finish')
+        vm.loading = false
+        vm.mode = 'pan-zoom'
+        vm.seatsInfo.mode = null
+      })
+    },
+    refreshStartAt (value) {
+      console.log('refreshStartAt', value)
       this.seatsInfo.startAt = value
     },
-    getEndAt (value) {
-      this.seatsInfo.endAt = value
+    refreshEndAt (value) {
+      console.log('refreshEndAt', value)
+     this.seatsInfo.endAt = value
     },
     getToken () {
       return this.$parent.getToken.call(this)
@@ -347,7 +424,7 @@ export default {
     },
     save () {
       this.mode = null
-      this.seatsInfo.beforeSave = true
+      this.seatsInfo.mode = 'save'
       this.loading = true
 
       let vm = this
@@ -365,7 +442,7 @@ export default {
         vm.loading = false
         vm.diff = false
         vm.mode = 'pan-zoom'
-        vm.seatsInfo.beforeSave = false
+        vm.seatsInfo.mode = null
         console.log('response', response)
       })
       .catch(error => {
@@ -401,25 +478,6 @@ export default {
           display: this.seats.some(function (seat) {
             return seat.picked
           }) ? 'block' : 'none'
-        },
-        componentStyles: {
-          inputStyle: {
-            'border': '1px solid #CCC',
-            'background-color': 'white',
-            'border-radius': '3px',
-            'align-self': 'flex-end',
-            'padding': '5px 8px',
-            'margin-top': '5px',
-            'cursor': 'pointer',
-            'color': 'rgba(0, 0, 0, 0.65)',
-            'font-weight': '500',
-            'font-size': '12px',
-            'line-height': '1.5em',
-            'transition': 'all .3s ease',
-            'display': 'block',
-            'box-sizing': 'border-box',
-            'width': '100%'
-          }
         }
       }
     }
@@ -451,65 +509,17 @@ export default {
   },
   created () {
     let vm = this
-
+    //TODO: POST `/seats/${vm.seatsKey}`/get_or_create
     vm.$http.get(`/seats/${vm.seatsKey}`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('_x_t')}`
       }
     })
     .then(res => {
+      console.log('get seats data')
       // set seatsId in vm
       vm.seatsId = res.data._id
-
-      vm.seatsInfo = {
-        name: res.data.name,
-        comment: res.data.comment,
-        startAt: res.data.start_at,
-        endAt: res.data.end_at
-      }
-
-      vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
-      vm.stages = res.data.objects.filter(obj => obj.type === 'stage')
-      vm.facilities = res.data.objects.filter(obj => obj.type === 'facilities')
-      vm.disabilities = res.data.objects.filter(obj => obj.type === 'disabilities')
-
-      // set svg width, height in vm
-      vm.svg.width = res.data.svg.width
-      vm.svg.height = res.data.svg.height
-
-      // adjust viewport according to user config
-      if (isNaN(+vm.viewport.width) === false && vm.viewport.height === 'auto') {
-        vm.viewport.height = Math.floor(this.$el.getBoundingClientRect().height)
-      }
-      
-      if (isNaN(+vm.viewport.height) === false && vm.viewport.width === 'auto') {
-        if (Math.floor(this.$el.getBoundingClientRect().height < vm.viewport.height)) {
-          vm.viewport.height = Math.floor(this.$el.getBoundingClientRect().height)
-        }
-        vm.viewport.width = Math.floor(this.$el.getBoundingClientRect().width)
-      }
-
-      let ratio = Math.min((vm.viewport.width / vm.svg.width), (vm.viewport.height / vm.svg.height))
-
-      // ratio is for viewport, scale is for viewbox.
-      // larger scale means smaller figure
-      vm.viewBox.scale = vm.viewBox.initialScale = ( 1 / ratio )
-
-      vm.viewBox.width = vm.svg.width
-      vm.viewBox.height = vm.svg.height
-
-      // calculated the max and min range of scale to zoom
-      vm.viewBox.scaleRange.maxScale = (1 / vm.viewBox.zoomMin) * vm.viewBox.initialScale
-      vm.viewBox.scaleRange.minScale = (1 / vm.viewBox.zoomMax) * vm.viewBox.initialScale
-
-      vm.seats = vm.seats.map(function (seat) {
-        return Object.assign({}, seat, {
-          fill: seat.fill || seatsDefault.color,
-          status: seat.status || seatStatus.unavailable,
-          /* For picking to set seat */
-          picked: false
-        })
-      })
+      vm.seatsInitialize(vm, res)
 
       vm.loading = false
 
@@ -685,6 +695,28 @@ export default {
           }
         }
       }, [
+        // TODO: reset button
+        createElement('button', {
+          class: {
+            active: vm.seatsInfo.mode === 'reset',
+            btn: true
+          },
+          on: {
+            click: function (e) {
+              e.preventDefault()
+              e.stopPropagation()
+              vm.mode = null
+              vm.seatsInfo.mode = 'reset'
+            }
+          }
+        }, [
+          createElement('i', {
+            attrs: {
+              class: 'icon-th'
+            }
+          })
+        ]),
+        // pan-zoom button
         createElement('button', {
           class: {
             active: vm.mode === 'pan-zoom',
@@ -695,7 +727,7 @@ export default {
               e.preventDefault()
               e.stopPropagation()
               vm.mode = 'pan-zoom'
-              vm.seatsInfo.beforeSave = false
+              vm.seatsInfo.mode = null
             }
           }
         }, [
@@ -715,7 +747,7 @@ export default {
               e.preventDefault()
               e.stopPropagation()
               vm.mode = 'picking'
-              vm.seatsInfo.beforeSave = false
+              vm.seatsInfo.mode = null
             }
           }
         }, [
@@ -725,6 +757,7 @@ export default {
             }
           })
         ]),
+        // save button
         createElement('button', {
           class: {
             diff: vm.diff
@@ -734,7 +767,7 @@ export default {
               e.preventDefault()
               e.stopPropagation()
               vm.mode = null
-              vm.seatsInfo.beforeSave = true
+              vm.seatsInfo.mode = 'save'
             }
           }
         }, [
@@ -954,7 +987,7 @@ export default {
           directives: [
             {
               name: 'show',
-              value: vm.seatsInfo.beforeSave === true
+              value: vm.seatsInfo.mode === 'save'
             }
           ]
         }, [
@@ -989,20 +1022,18 @@ export default {
                 }),
                 createElement('date-picker',{
                   props: {
-                    'input-style': vm.styles.componentStyles.inputStyle,
-                    'set-date': vm.seatsInfo.startAt
+                    'date-picker-option': vm.seatsInfo.startAt
                   },
                   on: {
-                    'get-date': vm.getStartAt
+                    'refresh-date': vm.refreshStartAt
                   }
                 }),
                 createElement('date-picker', {
                   props: {
-                    'input-style': vm.styles.componentStyles.inputStyle,
-                    'set-date': vm.seatsInfo.endAt
+                    'date-picker-option': vm.seatsInfo.endAt
                   },
                   on: {
-                    'get-date': vm.getEndAt
+                    'refresh-date': vm.refreshEndAt
                   }
                 })
               ]),
@@ -1026,7 +1057,84 @@ export default {
                 click: function (e) {
                   e.preventDefault()
                   e.stopPropagation()
-                  vm.seatsInfo.beforeSave = false
+                  vm.seatsInfo.mode = null
+                  vm.mode='pan-zoom'
+                }
+              }
+            }, 'Cancel')
+        ])
+      ]),
+      // setup-panel-for-reset-seats
+      createElement('transition', {
+        props: {
+          name: 'fade'
+        }
+      }, [
+        createElement('spots-list', {
+          attrs: {
+            class: 'setup-panel'
+          },
+          on: {
+            'reset-spot-id': vm.resetSeats
+          },
+          directives: [
+            {
+              name: 'show',
+              value: vm.seatsInfo.mode === 'reset'
+            }
+          ]
+        }, [
+            createElement('div', {
+              attrs: {
+                class: 'save'
+              }
+            }, [
+                createElement('input', {
+                  attrs: {
+                    type: 'text',
+                    placeholder: 'Seats Name',
+                    value: vm.seatsInfo.name,
+                  },
+                  on: {
+                    change: function (e) {
+                      vm.seatsInfo.name = e.target.value
+                    }
+                  }
+                }),
+                createElement('input', {
+                  attrs: {
+                    type: 'text',
+                    placeholder: 'Seats Comment',
+                    value: vm.seatsInfo.comment,
+                  },
+                  on: {
+                    change: function (e) {
+                      vm.seatsInfo.comment = e.target.value
+                    }
+                  }
+                })
+              ]),
+            createElement('button', {
+              attrs: {
+                class: 'btn-primary'
+              },
+              on: {
+                click: function (e) {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  vm.save()
+                }
+              }
+            }, 'Save'),
+            createElement('button', {
+              attrs: {
+                class: 'btn-danger'
+              },
+              on: {
+                click: function (e) {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  vm.seatsInfo.mode = null
                   vm.mode='pan-zoom'
                 }
               }
