@@ -14,7 +14,12 @@ export default {
         let currentScale
 
         // Create Manager
-        mc = new Hammer.Manager(svgElement)
+        if (binding.modifiers.vframe) {
+          mc = new Hammer.Manager(document.querySelector('#vframe').contentWindow.document.body)
+        } else {
+          mc = new Hammer.Manager(svgElement)
+        }
+        
 
         // Create Recognizer
         const pinch = new Hammer.Pinch({domEvents: true})

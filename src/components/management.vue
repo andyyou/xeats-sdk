@@ -195,7 +195,7 @@ export default {
       this.tooltip.active = true
       this.tooltip.content = seat.label
 
-      let svgCanvas = document.getElementById('svg-canvas')
+      let svgCanvas = this.$el.querySelector('#svg-canvas')
       let point = svgCanvas.createSVGPoint()
       point.x = seat.x
       point.y = seat.y
@@ -215,7 +215,7 @@ export default {
       this.viewBox.scale = this.viewBox.initialScale
     },
     zoom (effect) {
-      let svgCanvas = document.getElementById('svg-canvas')
+      let svgCanvas = this.$el.querySelector('#svg-canvas')
       let point = svgCanvas.createSVGPoint()
       // Viewport is equal to width & height of svg el.
       let viewport = svgCanvas.getBoundingClientRect()
@@ -295,8 +295,8 @@ export default {
         /**
           * Calculate dotted around
           */
-        let svg = document.querySelector('#svg-canvas')
-        let el = document.querySelector('.dotted-around')
+        let svg = this.$el.querySelector('#svg-canvas')
+        let el = this.$el.querySelector('.dotted-around')
         let begin = svg.createSVGPoint()
         let moveTo = svg.createSVGPoint()
         begin.x = left.x - 4    // for around space inside
@@ -530,7 +530,10 @@ export default {
     let directive = {
       /* mode is directive name */
       name: vm.mode, 
-      expression: expressions[vm.mode]
+      expression: expressions[vm.mode],
+      modifiers: {
+        vframe: true
+      }
     }
 
     let loader = createElement('div', {
@@ -1036,6 +1039,9 @@ export default {
 </script>
 
 <style lang="sass" scoped>
+  /* _xeats_: Do Not remove this for import in vframe */
+  ._xeats_ {position: static;}
+
   svg {
     user-select: none;
     -moz-user-select: none;
