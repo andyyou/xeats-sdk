@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Vue</title>
+  <style>
+    
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script src="https://unpkg.com/vue@2.3.3"></script>
+  <script>
+    (function () {
+
+      var Vframe = Vue.component('vframe', {
+        beforeUpdate () {
+          console.log('beforeUpdate', this.$slots.default)
+          this.app.children = Object.freeze(this.$slots.default)
+        },
+        created () {
+          console.log('created', this.$el)
+        },
+        beforeMount () {
+          console.log('beforeMount', this.$el)
+        },
+        mounted () {
+          console.log('mounted', this.$el)
+        },
+        beforeUpdate () {
+          console.log('beforeUpdate', this.$el)
+        },
+        updated () {
+          console.log('beforeUpdate', this.$el)
+        },
+        methods: {
+          update () {
+            // console.log('slots', this.$slots.default)
+            console.log('load', this.$el)
+
+            const children = this.$slots.default
+            const body = this.$el.contentDocument.body      
+            const el = document.createElement('div') // we will mount or nested app to this element
+            body.appendChild(el)
+
+            const app = new Vue({
+              name: 'app',
+              data: { 
+                children: Object.freeze(children) 
+              }, 
+              render(h) {
+                return h('div', this.children)
+              },
+            })
+
+            app.$mount(el) // mount into iframe
+
+            this.app = app // cache instance for later updates
+          }
+        },
+        render (createElement) {
+          return createElement('iframe', {
+            on: {
+              load: this.update
+            }
+          })
+        }
+      })
+
+      Vue.component('foobar', {
+        render (createElement) {
+          return createElement('div', 'Hello World')
+        }
+      })
+
+      Vue.component('container', {
+        render (createElement) {
+          return createElement('div', this.$slots.default)
+        }
+      })
+
+      new Vue({
+        el: '#app',
+        render (_c) {
+          return _c('div',[_c('vframe',[_c('foobar')],1)],1)
+        }
+      })
+
+
+    })()
+  </script>
+
+</body>
+</html>

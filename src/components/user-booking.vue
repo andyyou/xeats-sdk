@@ -81,7 +81,6 @@
 </template>
 
 <script>
-// cSpell:ignore viewbox rect touchend mousedown mouseover mouseout nowrap keyframes
 import _ from 'lodash'
 
 export default {
@@ -94,7 +93,7 @@ export default {
       type: [String, Number],
       required: true
     },
-    sourceId: {
+    seatsKey: {
       type: String
     },
     zoomMax: {
@@ -172,7 +171,6 @@ export default {
   },
   computed: {
     viewboxString () {
-      // TODO: remove `0 - this.viewBox.x`
       const minX = this.viewBox.x || 0 - this.viewBox.x
       const minY = this.viewBox.y || 0 - this.viewBox.y
       const width = this.viewBox.width
@@ -197,7 +195,7 @@ export default {
   created () {
     let vm = this
 
-    vm.$http.get(`/seats/${vm.sourceId}`, {
+    vm.$http.get(`/seats/${vm.seatsKey}`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('_x_t')}`
       }
@@ -236,7 +234,7 @@ export default {
       vm.viewBox.scaleRange.maxScale = (1 / vm.viewBox.zoomMin) * vm.viewBox.initialScale
       vm.viewBox.scaleRange.minScale = (1 / vm.viewBox.zoomMax) * vm.viewBox.initialScale
 
-      // TODO:這裡是接從 API 過來的資料
+      // TODO: 這裡是接從 API 過來的資料
       let colors = {
         seat: '#d3d3d3'   // res.data.objects.fill
       }
@@ -245,6 +243,7 @@ export default {
         seat.fill = (seat.status === 1 ) ? seat.fill : this.darken(seat.fill, +0.8)
         seat.picked = false
       })
+
       /*
       vm.seats = vm.seats.map( seat => {
         return Object.assign({}, seat, {
@@ -259,7 +258,6 @@ export default {
       */
 
       vm.loading = false
-
     })
     .catch( error => {
       vm.failed = 'API request failed, Try to reload please.'
@@ -286,7 +284,7 @@ export default {
       this.tooltip.active = true
       this.tooltip.content = seat.label
       
-      let svgCanvas = document.getElementById('svg-canvas')
+      let svgCanvas = this.$el.querySelector('#svg-canvas')
       let point = svgCanvas.createSVGPoint()
       point.x = seat.x
       point.y = seat.y
@@ -306,7 +304,7 @@ export default {
       this.viewBox.scale = this.viewBox.initialScale
     },
     zoom (effect) {
-      let svgCanvas = document.getElementById('svg-canvas')
+      let svgCanvas = this.$el.querySelector('#svg-canvas')
       let point = svgCanvas.createSVGPoint()
       // Viewport is equal to width & height of svg el.
       let viewport = svgCanvas.getBoundingClientRect()
@@ -366,7 +364,9 @@ export default {
 
 </script>
 
-<style lang="sass" scoped>
+<style lang="sass" scoped id="xeats">
+  /* _xeats_: Do Not remove this for import in vframe */
+
   svg {
     user-select: none;
     -moz-user-select: none;
@@ -374,7 +374,7 @@ export default {
     transition: all .3s ease;
     background-color: transparent;
     position: relative;
-    z-index: 9;
+    z-index: 1;
   }
 
   .container {
@@ -391,7 +391,7 @@ export default {
 
   .manipulate {
     position: absolute;
-    z-index: 10;
+    z-index: 2;
     top: 30px;
     left: 30px;
     cursor: pointer;
@@ -443,13 +443,13 @@ export default {
     position: absolute;
     left: 0;
     top: 0;
-    z-index: 10;
+    z-index: 2;
     white-space: nowrap;
   }
 
   .loader, .loader-figure {
     position: absolute;
-    z-index: 11;
+    z-index: 3;
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
