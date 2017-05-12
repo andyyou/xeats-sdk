@@ -19,7 +19,6 @@ export default {
         } else {
           mc = new Hammer.Manager(svgElement)
         }
-        
 
         // Create Recognizer
         const pinch = new Hammer.Pinch({domEvents: true})
