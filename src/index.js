@@ -37,7 +37,11 @@ class Xeat {
         return new Vue({
           el: options.el,
           render (createElement) {
-            return createElement('div', [
+            return createElement('div', {
+              style: {
+                height: '100%'
+              }
+            }, [
               createElement('vframe', {
                 props: {
                   width: options.width,

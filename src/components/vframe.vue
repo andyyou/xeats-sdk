@@ -2,6 +2,7 @@
 
   <iframe
     @load="deliver"
+    id="vframe"
     scrolling="no"
     src="about:blank"
     allowfullscreen=""
@@ -44,7 +45,6 @@ export default {
   methods: {
     deliver () {
       const children = this.$slots.default
-      console.log(this.$el.contentDocument)
 
       const d = this.$el.contentDocument
       const el = document.createElement('div')
@@ -57,7 +57,7 @@ export default {
         if (style) {
           if (style.textContent.indexOf('_xeats_') > -1) {
             d.body.appendChild(style)
-          }  
+          }
         }
       })
 

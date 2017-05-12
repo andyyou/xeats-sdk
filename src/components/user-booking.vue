@@ -18,7 +18,7 @@
     <svg id="svg-canvas"
     :viewBox="viewboxString"
     :style="styles.edge"
-    v-pan-zoom="viewBox"
+    v-pan-zoom.vframe="viewBox"
     >
       <g>
         <rect
@@ -194,7 +194,6 @@ export default {
   },
   created () {
     let vm = this
-
     vm.$http.get(`/seats/${vm.seatsKey}`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('_x_t')}`
@@ -364,8 +363,9 @@ export default {
 
 </script>
 
-<style lang="sass" scoped id="xeats">
+<style lang="sass" scoped>
   /* _xeats_: Do Not remove this for import in vframe */
+  ._xeats_ {position: static;}
 
   svg {
     user-select: none;

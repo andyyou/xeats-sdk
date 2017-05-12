@@ -78,12 +78,22 @@ export default {
         el.addEventListener('mousedown', onDragStart)
         el.addEventListener('mousemove', onDragMove)
         pickzone.addEventListener('mousemove', onDragMove)
-        document.addEventListener('mouseup', onDragEnd)
+        if (binding.modifiers.vframe) {
+          document.querySelector('#vframe').contentWindow.document.addEventListener('mouseup', onDragEnd)
+        } else {
+          document.addEventListener('mouseup', onDragEnd)
+        }
+        
       },
       unbind (el, binding, vnode, oldVnode) {
         el.removeEventListener('mousedown', onDragStart)
         el.removeEventListener('mousemove', onDragMove)
-        document.removeEventListener('mouseup', onDragEnd)
+        if (binding.modifiers.vframe) {
+          document.querySelector('#vframe').contentWindow.document.removeEventListener('mouseup', onDragEnd)
+        } else {
+          document.removeEventListener('mouseup', onDragEnd)
+        }
+        
         vnode.context[binding.expression].x = 0
         vnode.context[binding.expression].y = 0
         vnode.context[binding.expression].width = 0

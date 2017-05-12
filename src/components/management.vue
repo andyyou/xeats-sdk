@@ -1,6 +1,6 @@
 <script>
 import _ from 'lodash'
-import datePicker from '@/components/date-picker.vue'
+import spotsList from '@/components/spots-list.vue'
 
 function darken (color, percent) {
   let f = parseInt(color.slice(1),16),
@@ -110,7 +110,7 @@ export default {
         comment: '',
         startAt: '',
         endAt: '',
-        beforeSave: false
+        mode: '' // save | reset
       },
       /**
        * Booking amount for limitation
@@ -170,14 +170,85 @@ export default {
     }
   },
   components: {
-    'date-picker': datePicker
+    'spots-list': spotsList
   },
   methods: {
-    getStartAt (value) {
-      this.seatsInfo.startAt = value
+    seatsInitialize (vm, res) {
+      console.log('seatsInitialize')
+      console.log('res.data.name', res.data.name)
+      vm.seatsInfo.name = res.data.name
+      vm.seatsInfo.comment = res.data.comment
+      vm.seatsInfo.startAt = res.data.start_at
+      vm.seatsInfo.endAt = res.data.end_at
+
+      vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
+      vm.stages = res.data.objects.filter(obj => obj.type === 'stage')
+      vm.facilities = res.data.objects.filter(obj => obj.type === 'facilities')
+      vm.disabilities = res.data.objects.filter(obj => obj.type === 'disabilities')
+
+      // set svg width, height in vm
+      vm.svg.width = res.data.svg.width
+      vm.svg.height = res.data.svg.height
+
+      // adjust viewport according to user config
+      if (isNaN(+vm.viewport.width) === false && vm.viewport.height === 'auto') {
+        vm.viewport.height = Math.floor(this.$el.getBoundingClientRect().height)
+      }
+
+      if (isNaN(+vm.viewport.height) === false && vm.viewport.width === 'auto') {
+        if (Math.floor(this.$el.getBoundingClientRect().height < vm.viewport.height)) {
+          vm.viewport.height = Math.floor(this.$el.getBoundingClientRect().height)
+        }
+        vm.viewport.width = Math.floor(this.$el.getBoundingClientRect().width)
+      }
+
+      let ratio = Math.min((vm.viewport.width / vm.svg.width), (vm.viewport.height / vm.svg.height))
+
+      // ratio is for viewport, scale is for viewbox.
+      // larger scale means smaller figure
+      vm.viewBox.scale = vm.viewBox.initialScale = (1 / ratio)
+
+      vm.viewBox.width = vm.svg.width
+      vm.viewBox.height = vm.svg.height
+
+      // calculated the max and min range of scale to zoom
+      vm.viewBox.scaleRange.maxScale = (1 / vm.viewBox.zoomMin) * vm.viewBox.initialScale
+      vm.viewBox.scaleRange.minScale = (1 / vm.viewBox.zoomMax) * vm.viewBox.initialScale
+
+      vm.seats = vm.seats.map(function(seat) {
+        return Object.assign({}, seat, {
+          fill: seat.fill || seatsDefault.color,
+          status: seat.status || seatStatus.unavailable,
+          /* For picking to set seat */
+          picked: false
+        })
+      })
     },
-    getEndAt (value) {
-      this.seatsInfo.endAt = value
+    resetSeats (spotId) {
+      console.log('get spot id', spotId)
+      this.loading = true
+      let vm = this
+
+      vm.$http.get(`/spots/${spotId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('_x_t')}`
+        }
+      })
+      .then( res => {
+        console.log('get reset spot data')
+
+        vm.seatsInitialize(vm, res)
+
+        vm.seatsInfo.name = null
+        vm.seatsInfo.comment = null
+        vm.seatsInfo.startAt = null
+        vm.seatsInfo.endAt = null
+
+        console.log('seat reset finish')
+        vm.loading = false
+        vm.mode = 'pan-zoom'
+        vm.seatsInfo.mode = null
+      })
     },
     getToken () {
       return this.$parent.getToken.call(this)
@@ -195,7 +266,7 @@ export default {
       this.tooltip.active = true
       this.tooltip.content = seat.label
 
-      let svgCanvas = document.getElementById('svg-canvas')
+      let svgCanvas = this.$el.querySelector('#svg-canvas')
       let point = svgCanvas.createSVGPoint()
       point.x = seat.x
       point.y = seat.y
@@ -215,7 +286,7 @@ export default {
       this.viewBox.scale = this.viewBox.initialScale
     },
     zoom (effect) {
-      let svgCanvas = document.getElementById('svg-canvas')
+      let svgCanvas = this.$el.querySelector('#svg-canvas')
       let point = svgCanvas.createSVGPoint()
       // Viewport is equal to width & height of svg el.
       let viewport = svgCanvas.getBoundingClientRect()
@@ -295,8 +366,8 @@ export default {
         /**
           * Calculate dotted around
           */
-        let svg = document.querySelector('#svg-canvas')
-        let el = document.querySelector('.dotted-around')
+        let svg = this.$el.querySelector('#svg-canvas')
+        let el = this.$el.querySelector('.dotted-around')
         let begin = svg.createSVGPoint()
         let moveTo = svg.createSVGPoint()
         begin.x = left.x - 4    // for around space inside
@@ -347,17 +418,16 @@ export default {
     },
     save () {
       this.mode = null
-      this.seatsInfo.beforeSave = true
+      this.seatsInfo.mode = 'save'
       this.loading = true
 
       let vm = this
       
+      console.log('send', vm.seatsInfo.name)
       vm.$http.put(`/seats/${vm.seatsId}`, {
           objects: vm.seats,
           name: vm.seatsInfo.name,
-          comment: vm.seatsInfo.comment,
-          start_at: new Date(vm.seatsInfo.startAt).toISOString().split('.')[0]+"Z",
-          end_at: new Date(vm.seatsInfo.endAt).toISOString().split('.')[0]+"Z"
+          comment: vm.seatsInfo.comment
       }, {headers: {
           'Authorization': `Bearer ${localStorage.getItem('_x_t')}`,
         }})
@@ -365,7 +435,7 @@ export default {
         vm.loading = false
         vm.diff = false
         vm.mode = 'pan-zoom'
-        vm.seatsInfo.beforeSave = false
+        vm.seatsInfo.mode = null
         console.log('response', response)
       })
       .catch(error => {
@@ -401,25 +471,6 @@ export default {
           display: this.seats.some(function (seat) {
             return seat.picked
           }) ? 'block' : 'none'
-        },
-        componentStyles: {
-          inputStyle: {
-            'border': '1px solid #CCC',
-            'background-color': 'white',
-            'border-radius': '3px',
-            'align-self': 'flex-end',
-            'padding': '5px 8px',
-            'margin-top': '5px',
-            'cursor': 'pointer',
-            'color': 'rgba(0, 0, 0, 0.65)',
-            'font-weight': '500',
-            'font-size': '12px',
-            'line-height': '1.5em',
-            'transition': 'all .3s ease',
-            'display': 'block',
-            'box-sizing': 'border-box',
-            'width': '100%'
-          }
         }
       }
     }
@@ -451,65 +502,17 @@ export default {
   },
   created () {
     let vm = this
-
+    //TODO: POST `/seats/${vm.seatsKey}`/get_or_create
     vm.$http.get(`/seats/${vm.seatsKey}`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('_x_t')}`
       }
     })
     .then(res => {
+      console.log('get seats data')
       // set seatsId in vm
       vm.seatsId = res.data._id
-
-      vm.seatsInfo = {
-        name: res.data.name,
-        comment: res.data.comment,
-        startAt: res.data.start_at,
-        endAt: res.data.end_at
-      }
-
-      vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
-      vm.stages = res.data.objects.filter(obj => obj.type === 'stage')
-      vm.facilities = res.data.objects.filter(obj => obj.type === 'facilities')
-      vm.disabilities = res.data.objects.filter(obj => obj.type === 'disabilities')
-
-      // set svg width, height in vm
-      vm.svg.width = res.data.svg.width
-      vm.svg.height = res.data.svg.height
-
-      // adjust viewport according to user config
-      if (isNaN(+vm.viewport.width) === false && vm.viewport.height === 'auto') {
-        vm.viewport.height = Math.floor(this.$el.getBoundingClientRect().height)
-      }
-      
-      if (isNaN(+vm.viewport.height) === false && vm.viewport.width === 'auto') {
-        if (Math.floor(this.$el.getBoundingClientRect().height < vm.viewport.height)) {
-          vm.viewport.height = Math.floor(this.$el.getBoundingClientRect().height)
-        }
-        vm.viewport.width = Math.floor(this.$el.getBoundingClientRect().width)
-      }
-
-      let ratio = Math.min((vm.viewport.width / vm.svg.width), (vm.viewport.height / vm.svg.height))
-
-      // ratio is for viewport, scale is for viewbox.
-      // larger scale means smaller figure
-      vm.viewBox.scale = vm.viewBox.initialScale = ( 1 / ratio )
-
-      vm.viewBox.width = vm.svg.width
-      vm.viewBox.height = vm.svg.height
-
-      // calculated the max and min range of scale to zoom
-      vm.viewBox.scaleRange.maxScale = (1 / vm.viewBox.zoomMin) * vm.viewBox.initialScale
-      vm.viewBox.scaleRange.minScale = (1 / vm.viewBox.zoomMax) * vm.viewBox.initialScale
-
-      vm.seats = vm.seats.map(function (seat) {
-        return Object.assign({}, seat, {
-          fill: seat.fill || seatsDefault.color,
-          status: seat.status || seatStatus.unavailable,
-          /* For picking to set seat */
-          picked: false
-        })
-      })
+      vm.seatsInitialize(vm, res)
 
       vm.loading = false
 
@@ -530,7 +533,10 @@ export default {
     let directive = {
       /* mode is directive name */
       name: vm.mode, 
-      expression: expressions[vm.mode]
+      expression: expressions[vm.mode],
+      modifiers: {
+        vframe: true
+      }
     }
 
     let loader = createElement('div', {
@@ -682,6 +688,28 @@ export default {
           }
         }
       }, [
+        // TODO: reset button
+        createElement('button', {
+          class: {
+            active: vm.seatsInfo.mode === 'reset',
+            btn: true
+          },
+          on: {
+            click: function (e) {
+              e.preventDefault()
+              e.stopPropagation()
+              vm.mode = null
+              vm.seatsInfo.mode = 'reset'
+            }
+          }
+        }, [
+          createElement('i', {
+            attrs: {
+              class: 'icon-th'
+            }
+          })
+        ]),
+        // pan-zoom button
         createElement('button', {
           class: {
             active: vm.mode === 'pan-zoom',
@@ -692,7 +720,7 @@ export default {
               e.preventDefault()
               e.stopPropagation()
               vm.mode = 'pan-zoom'
-              vm.seatsInfo.beforeSave = false
+              vm.seatsInfo.mode = null
             }
           }
         }, [
@@ -712,7 +740,7 @@ export default {
               e.preventDefault()
               e.stopPropagation()
               vm.mode = 'picking'
-              vm.seatsInfo.beforeSave = false
+              vm.seatsInfo.mode = null
             }
           }
         }, [
@@ -722,6 +750,7 @@ export default {
             }
           })
         ]),
+        // save button
         createElement('button', {
           class: {
             diff: vm.diff
@@ -731,7 +760,7 @@ export default {
               e.preventDefault()
               e.stopPropagation()
               vm.mode = null
-              vm.seatsInfo.beforeSave = true
+              vm.seatsInfo.mode = 'save'
             }
           }
         }, [
@@ -951,7 +980,7 @@ export default {
           directives: [
             {
               name: 'show',
-              value: vm.seatsInfo.beforeSave === true
+              value: vm.seatsInfo.mode === 'save'
             }
           ]
         }, [
@@ -983,24 +1012,6 @@ export default {
                       vm.seatsInfo.comment = e.target.value
                     }
                   }
-                }),
-                createElement('date-picker',{
-                  props: {
-                    'input-style': vm.styles.componentStyles.inputStyle,
-                    'set-date': vm.seatsInfo.startAt
-                  },
-                  on: {
-                    'get-date': vm.getStartAt
-                  }
-                }),
-                createElement('date-picker', {
-                  props: {
-                    'input-style': vm.styles.componentStyles.inputStyle,
-                    'set-date': vm.seatsInfo.endAt
-                  },
-                  on: {
-                    'get-date': vm.getEndAt
-                  }
                 })
               ]),
             createElement('button', {
@@ -1023,12 +1034,30 @@ export default {
                 click: function (e) {
                   e.preventDefault()
                   e.stopPropagation()
-                  vm.seatsInfo.beforeSave = false
+                  vm.seatsInfo.mode = null
                   vm.mode='pan-zoom'
                 }
               }
             }, 'Cancel')
         ])
+      ]),
+      // setup-panel-for-reset-seats
+      createElement('transition', {
+        props: {
+          name: 'fade'
+        }
+      }, [
+        createElement('spots-list', {
+          on: {
+            'reset-spot-id': vm.resetSeats
+          },
+          directives: [
+            {
+              name: 'show',
+              value: vm.seatsInfo.mode === 'reset'
+            }
+          ]
+        })
       ])
     ])
   }
@@ -1036,6 +1065,9 @@ export default {
 </script>
 
 <style lang="sass" scoped>
+  /* _xeats_: Do Not remove this for import in vframe */
+  ._xeats_ {position: static;}
+
   svg {
     user-select: none;
     -moz-user-select: none;
