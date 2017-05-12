@@ -120,6 +120,10 @@ export default {
     amountMin: {
       type: Number
     },
+    /**
+     * For generate form fields out of iframe
+     * Administrator panel no need to use form-post (optional)
+     */
     generateFormFields: {
       type: Function
     }
@@ -430,7 +434,6 @@ export default {
 
   .container {
     position: relative;
-    border: 1px solid #EEE;
     background-size: 20px 20px;
     background-color: white;
     background-image: linear-gradient(to right, #EEE 1px, transparent 1px), linear-gradient(to bottom, #EEE 1px, transparent 1px);

@@ -6,6 +6,8 @@
     scrolling="no"
     src="about:blank"
     allowfullscreen=""
+    marginwidth="0"
+    marginheight="0"
     :style="[styles.frame]"
     frameborder="0" height="470px" width="100%"
     sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation"

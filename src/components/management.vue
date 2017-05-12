@@ -13,15 +13,12 @@ function darken (color, percent) {
   return "#"+(0x1000000+(Math.round((t-R)*p)+R)*0x10000+(Math.round((t-G)*p)+G)*0x100+(Math.round((t-B)*p)+B)).toString(16).slice(1);
 }
 
-function getRandomColor () {
-  return '#' + Math.random().toString(16).substr(-6)
+const DEFAULT_COLORS = {
+  seatFillColor: '#d3d3d3',
+  applyToSeatColor: '#d3d3d3'
 }
 
-let seatsDefault = {
-  color: '#d3d3d3'
-}
-
-let seatStatus = {
+const SEAT_STATUS = {
   unavailable: 0,
   available: 1,
   reserved: 2,
@@ -58,14 +55,17 @@ export default {
     },
     categories: {
       type: Array
+    },
+    /**
+     * For generate form fields out of iframe
+     * Administrator panel no need to use form-post (optional)
+     */
+    generateFormFields: {
+      type: Function
     }
   },
   data () {
     return {
-      /**
-       * seatsId from API
-       */
-      seatsId: '',
       /**
        * Custom set viewport
        */
@@ -105,12 +105,13 @@ export default {
       stages: [],
       facilities: [],
       disabilities: [],
-      seatsInfo: {
+      /**
+       * data for Mongodb document model
+       */
+      seatsDocument: {
+        _id: '',
         name: '',
-        comment: '',
-        startAt: '',
-        endAt: '',
-        mode: '' // save | reset
+        comment: ''
       },
       /**
        * Booking amount for limitation
@@ -147,22 +148,24 @@ export default {
         height: 0
       },
       /** 
-       * select a color of tmp to set into seat's fill attr
-       * current color & category
+       * select a color for apply to seats object's fill
+       * show in setup-panel-category e.g. current color & category
        */
-      color: '#333333',
+      applyToSeatColor: DEFAULT_COLORS.applyToSeatColor,
       category: this.categories[0],
       categoryItems: this.categories.map(function (category) {
         return {
           name: category,
-          color: getRandomColor()
+          color: (function () {
+            return '#' + Math.random().toString(16).substr(-6)
+          })()
         }
       }),
       /**
        * Status for loader
        */
       loading: true,
-      failed: null,
+      ajaxFailed: null,
       /**
        * Status for save
        */
@@ -173,13 +176,11 @@ export default {
     'spots-list': spotsList
   },
   methods: {
-    seatsInitialize (vm, res) {
-      console.log('seatsInitialize')
-      console.log('res.data.name', res.data.name)
-      vm.seatsInfo.name = res.data.name
-      vm.seatsInfo.comment = res.data.comment
-      vm.seatsInfo.startAt = res.data.start_at
-      vm.seatsInfo.endAt = res.data.end_at
+    initialize (vm, res) {
+      vm.seatsDocument = Object.assign({}, vm.seatsDocument, {
+        name: res.data.name,
+        comment: res.data.comment
+      })
 
       vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
       vm.stages = res.data.objects.filter(obj => obj.type === 'stage')
@@ -217,15 +218,17 @@ export default {
 
       vm.seats = vm.seats.map(function(seat) {
         return Object.assign({}, seat, {
-          fill: seat.fill || seatsDefault.color,
-          status: seat.status || seatStatus.unavailable,
+          fill: seat.fill || DEFAULT_COLORS.seatFillColor,
+          status: seat.status || SEAT_STATUS.unavailable,
           /* For picking to set seat */
           picked: false
         })
       })
     },
+    /**
+     * For change/reset spot
+     */
     resetSeats (spotId) {
-      console.log('get spot id', spotId)
       this.loading = true
       let vm = this
 
@@ -235,19 +238,13 @@ export default {
         }
       })
       .then( res => {
-        console.log('get reset spot data')
+        vm.initialize(vm, res)
 
-        vm.seatsInitialize(vm, res)
+        vm.seatsDocument.name = null
+        vm.seatsDocument.comment = null
 
-        vm.seatsInfo.name = null
-        vm.seatsInfo.comment = null
-        vm.seatsInfo.startAt = null
-        vm.seatsInfo.endAt = null
-
-        console.log('seat reset finish')
         vm.loading = false
         vm.mode = 'pan-zoom'
-        vm.seatsInfo.mode = null
       })
     },
     getToken () {
@@ -256,11 +253,11 @@ export default {
     setToken () {
       return this.$parent.setToken.call(this)
     },
-    refreshColor(category){
+    updateCategoryColor(category){
       let categoryIndex = this.categoryItems.findIndex( (item) => {
         return item.name === category
       })
-      this.color = this.categoryItems[categoryIndex].color
+      this.applyToSeatColor = this.categoryItems[categoryIndex].color
     },
     showTooltip (seat){
       this.tooltip.active = true
@@ -399,9 +396,9 @@ export default {
         options['clean'] = false
       }
 
-      let changedColor = options.clean ? seatsDefault.color : vm.color
+      let changedColor = options.clean ? DEFAULT_COLORS.seatFillColor : vm.applyToSeatColor
       let changeCategory = options.clean ? null : vm.category
-      let changeStatus = options.clean ? seatStatus.unavailable : seatStatus.available
+      let changeStatus = options.clean ? SEAT_STATUS.unavailable : SEAT_STATUS.available
 
       this.seats = this.seats.map(function (seat) {
         let fill = seat.picked ? changedColor : seat.fill
@@ -417,26 +414,25 @@ export default {
       })
     },
     save () {
-      this.mode = null
-      this.seatsInfo.mode = 'save'
+      this.mode = 'save'
       this.loading = true
 
       let vm = this
-      
-      console.log('send', vm.seatsInfo.name)
-      vm.$http.put(`/seats/${vm.seatsId}`, {
+
+      vm.$http.put(`/seats/${vm.seatsDocument._id}`, {
           objects: vm.seats,
-          name: vm.seatsInfo.name,
-          comment: vm.seatsInfo.comment
+          name: vm.seatsDocument.name,
+          comment: vm.seatsDocument.comment
       }, {headers: {
           'Authorization': `Bearer ${localStorage.getItem('_x_t')}`,
         }})
       .then(response => {
         vm.loading = false
         vm.diff = false
+        /**
+         * After save back to pan-zoom mode
+         */
         vm.mode = 'pan-zoom'
-        vm.seatsInfo.mode = null
-        console.log('response', response)
       })
       .catch(error => {
         console.log('error', error)
@@ -509,35 +505,44 @@ export default {
       }
     })
     .then(res => {
-      console.log('get seats data')
-      // set seatsId in vm
-      vm.seatsId = res.data._id
-      vm.seatsInitialize(vm, res)
+      vm.seatsDocument = Object.assign({}, vm.seatsDocument, {
+        _id: res.data._id
+      })
+      vm.initialize(vm, res)
 
       vm.loading = false
 
     })
     .catch( error => {
-      vm.failed = 'API request failed, Try to reload please.'
+      vm.ajaxFailed = 'API request failed, Try to reload please.'
       console.log('error', error)
     })
   },
   render (createElement) {
     let vm = this
 
-    let expressions = {
-      'pan-zoom': 'viewBox',
-      'picking': 'picking'
-    }
-
-    let directive = {
-      /* mode is directive name */
-      name: vm.mode, 
-      expression: expressions[vm.mode],
-      modifiers: {
-        vframe: true
+    /**
+     * Prepare directive e.g. v-pan-zoom, v-picking
+     */
+    let directives, directive, expressions
+    if (vm.mode === 'pan-zoom' || vm.mode === 'picking') {
+      expressions = {
+        'pan-zoom': 'viewBox',
+        'picking': 'picking'
       }
-    }
+
+      directive = {
+        /* mode is directive name */
+        name: vm.mode, 
+        expression: expressions[vm.mode],
+        modifiers: {
+          vframe: true
+        }
+      }
+
+      directives = [directive]
+    } 
+    
 
     let loader = createElement('div', {
       attrs: {
@@ -549,16 +554,16 @@ export default {
           class: 'loader-figure'
         },
         style: {
-          display: vm.failed ? 'none' : 'block'
+          display: vm.ajaxFailed ? 'none' : 'block'
         }
       }),
       createElement('p', {
         class: {
           'loader-label': true,
-          'animate': !vm.failed,
-          'error': vm.failed
+          'animate': !vm.ajaxFailed,
+          'error': vm.ajaxFailed
         }
-      }, vm.failed || 'UPDATING')
+      }, vm.ajaxFailed || 'UPDATING')
     ])
 
     /**
@@ -591,9 +596,7 @@ export default {
           viewBox: vm.viewboxString,
         },
         style: vm.styles.edge,
-        directives: [
-          directive
-        ]
+        directives: directives
       }, [
         vm.stages.map(function (stage) {
           return createElement('g', {
@@ -688,18 +691,17 @@ export default {
           }
         }
       }, [
-        // TODO: reset button
+        // reset button
         createElement('button', {
           class: {
-            active: vm.seatsInfo.mode === 'reset',
+            active: vm.mode === 'reset',
             btn: true
           },
           on: {
             click: function (e) {
               e.preventDefault()
               e.stopPropagation()
-              vm.mode = null
-              vm.seatsInfo.mode = 'reset'
+              vm.mode = 'reset'
             }
           }
         }, [
@@ -720,7 +722,6 @@ export default {
               e.preventDefault()
               e.stopPropagation()
               vm.mode = 'pan-zoom'
-              vm.seatsInfo.mode = null
             }
           }
         }, [
@@ -730,6 +731,7 @@ export default {
             }
           })
         ]),
+        // picking button
         createElement('button', {
           class: {
             active: vm.mode === 'picking',
@@ -740,7 +742,6 @@ export default {
               e.preventDefault()
               e.stopPropagation()
               vm.mode = 'picking'
-              vm.seatsInfo.mode = null
             }
           }
         }, [
@@ -753,14 +754,15 @@ export default {
         // save button
         createElement('button', {
           class: {
+            active: vm.mode === 'save',
+            btn: true,
             diff: vm.diff
           },
           on: {
             click: function (e) {
               e.preventDefault()
               e.stopPropagation()
-              vm.mode = null
-              vm.seatsInfo.mode = 'save'
+              vm.mode = 'save'
             }
           }
         }, [
@@ -851,7 +853,7 @@ export default {
         },
         on: {
           'before-enter': function () {
-            vm.refreshColor(vm.category)
+            vm.updateCategoryColor(vm.category)
           }
         }
       }, [
@@ -884,11 +886,11 @@ export default {
                 class: 'color-cube'
               },
               domProps: {
-                value: vm.color
+                value: vm.applyToSeatColor
               },
               on: {
                 change: function (e) {
-                  vm.color = e.target.value
+                  vm.applyToSeatColor = e.target.value
                   vm.categoryItems.find( category => {
                     return category.name === vm.category
                   }).color = e.target.value
@@ -916,7 +918,7 @@ export default {
                     e.stopPropagation()
                   },
                   change: function (e) {
-                    vm.refreshColor(e.target.value)
+                    vm.updateCategoryColor(e.target.value)
                     vm.category = e.target.value
                     vm.$emit('change', e.target.value)
                   }
@@ -980,7 +982,7 @@ export default {
           directives: [
             {
               name: 'show',
-              value: vm.seatsInfo.mode === 'save'
+              value: vm.mode === 'save'
             }
           ]
         }, [
@@ -993,11 +995,11 @@ export default {
                   attrs: {
                     type: 'text',
                     placeholder: 'Seats Name',
-                    value: vm.seatsInfo.name,
+                    value: vm.seatsDocument.name,
                   },
                   on: {
                     change: function (e) {
-                      vm.seatsInfo.name = e.target.value
+                      vm.seatsDocument.name = e.target.value
                     }
                   }
                 }),
@@ -1005,11 +1007,11 @@ export default {
                   attrs: {
                     type: 'text',
                     placeholder: 'Seats Comment',
-                    value: vm.seatsInfo.comment,
+                    value: vm.seatsDocument.comment,
                   },
                   on: {
                     change: function (e) {
-                      vm.seatsInfo.comment = e.target.value
+                      vm.seatsDocument.comment = e.target.value
                     }
                   }
                 })
@@ -1034,7 +1036,6 @@ export default {
                 click: function (e) {
                   e.preventDefault()
                   e.stopPropagation()
-                  vm.seatsInfo.mode = null
                   vm.mode='pan-zoom'
                 }
               }
@@ -1054,7 +1055,7 @@ export default {
           directives: [
             {
               name: 'show',
-              value: vm.seatsInfo.mode === 'reset'
+              value: vm.mode === 'reset'
             }
           ]
         })
@@ -1080,7 +1081,6 @@ export default {
 
   .container {
     position: relative;
-    border: 1px solid #EEE;
     background-size: 20px 20px;
     background-color: white;
     background-image: linear-gradient(to right, #EEE 1px, transparent 1px), linear-gradient(to bottom, #EEE 1px, transparent 1px);
