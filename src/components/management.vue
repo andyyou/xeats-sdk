@@ -1048,9 +1048,6 @@ export default {
         }
       }, [
         createElement('spots-list', {
-          attrs: {
-            class: 'setup-panel'
-          },
           on: {
             'reset-spot-id': vm.resetSeats
           },
@@ -1060,63 +1057,7 @@ export default {
               value: vm.seatsInfo.mode === 'reset'
             }
           ]
-        }, [
-            createElement('div', {
-              attrs: {
-                class: 'save'
-              }
-            }, [
-                createElement('input', {
-                  attrs: {
-                    type: 'text',
-                    placeholder: 'Seats Name',
-                    value: vm.seatsInfo.name,
-                  },
-                  on: {
-                    change: function (e) {
-                      vm.seatsInfo.name = e.target.value
-                    }
-                  }
-                }),
-                createElement('input', {
-                  attrs: {
-                    type: 'text',
-                    placeholder: 'Seats Comment',
-                    value: vm.seatsInfo.comment,
-                  },
-                  on: {
-                    change: function (e) {
-                      vm.seatsInfo.comment = e.target.value
-                    }
-                  }
-                })
-              ]),
-            createElement('button', {
-              attrs: {
-                class: 'btn-primary'
-              },
-              on: {
-                click: function (e) {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  vm.save()
-                }
-              }
-            }, 'Save'),
-            createElement('button', {
-              attrs: {
-                class: 'btn-danger'
-              },
-              on: {
-                click: function (e) {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  vm.seatsInfo.mode = null
-                  vm.mode='pan-zoom'
-                }
-              }
-            }, 'Cancel')
-        ])
+        })
       ])
     ])
   }
