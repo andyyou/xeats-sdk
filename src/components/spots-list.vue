@@ -55,6 +55,9 @@ export default {
 
 <style lang="sass" scoped>
 
+  /* _xeats_: Do Not remove this for import in vframe */
+  ._xeats_ {position: static;}
+  
   .spots-list-panel {
     position: absolute;
     display: flex;
