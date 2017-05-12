@@ -1,6 +1,5 @@
 <script>
 import _ from 'lodash'
-import datePicker from '@/components/date-picker.vue'
 import spotsList from '@/components/spots-list.vue'
 
 function darken (color, percent) {
@@ -171,17 +170,16 @@ export default {
     }
   },
   components: {
-    'date-picker': datePicker,
     'spots-list': spotsList
   },
   methods: {
     seatsInitialize (vm, res) {
       console.log('seatsInitialize')
-
+      console.log('res.data.name', res.data.name)
       vm.seatsInfo.name = res.data.name
       vm.seatsInfo.comment = res.data.comment
-      vm.seatsInfo.startAt = res.data.start_at || vm.seatsInfo.startAt
-      vm.seatsInfo.endAt = res.data.end_at || vm.seatsInfo.endAt
+      vm.seatsInfo.startAt = res.data.start_at
+      vm.seatsInfo.endAt = res.data.end_at
 
       vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
       vm.stages = res.data.objects.filter(obj => obj.type === 'stage')
@@ -247,14 +245,6 @@ export default {
         vm.mode = 'pan-zoom'
         vm.seatsInfo.mode = null
       })
-    },
-    refreshStartAt (value) {
-      console.log('refreshStartAt', value)
-      this.seatsInfo.startAt = value
-    },
-    refreshEndAt (value) {
-      console.log('refreshEndAt', value)
-     this.seatsInfo.endAt = value
     },
     getToken () {
       return this.$parent.getToken.call(this)
@@ -429,12 +419,11 @@ export default {
 
       let vm = this
       
+      console.log('send', vm.seatsInfo.name)
       vm.$http.put(`/seats/${vm.seatsId}`, {
           objects: vm.seats,
-          name: vm.seatsInfo.name,
-          comment: vm.seatsInfo.comment,
-          start_at: new Date(vm.seatsInfo.startAt).toISOString().split('.')[0]+"Z",
-          end_at: new Date(vm.seatsInfo.endAt).toISOString().split('.')[0]+"Z"
+          name: vm.seatsInfo.name || " ",         //  如果使用者沒填，則傳送空字串
+          comment: vm.seatsInfo.comment || " ",
       }, {headers: {
           'Authorization': `Bearer ${localStorage.getItem('_x_t')}`,
         }})
@@ -1018,22 +1007,6 @@ export default {
                     change: function (e) {
                       vm.seatsInfo.comment = e.target.value
                     }
-                  }
-                }),
-                createElement('date-picker',{
-                  props: {
-                    'date-picker-option': vm.seatsInfo.startAt
-                  },
-                  on: {
-                    'refresh-date': vm.refreshStartAt
-                  }
-                }),
-                createElement('date-picker', {
-                  props: {
-                    'date-picker-option': vm.seatsInfo.endAt
-                  },
-                  on: {
-                    'refresh-date': vm.refreshEndAt
                   }
                 })
               ]),
