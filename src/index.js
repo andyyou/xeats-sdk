@@ -34,14 +34,47 @@ class Xeat {
         return res.data.token
       })
       .then(function (token) {
+
+        // Vue instance
         return new Vue({
           el: options.el,
+          data: {
+            fields: []
+          },
+          methods: {
+            generateFormFields (data) {
+              this.fields = data
+            }
+          },
           render (createElement) {
             return createElement('div', {
               style: {
                 height: '100%'
               }
             }, [
+              this.fields.map(function (field) {
+                /**
+                 * field should has properties:
+                 * * type
+                 * * row
+                 * * column
+                 * * _id
+                 * * node_id
+                 * * label
+                 */
+                return createElement('input', {
+                  attrs: {
+                    value: field.node_id,
+                    id: field._id,
+                    type: 'hidden',
+                    name: 'xeats[]',
+                    'data-type': field.type,
+                    'data-row': field.row,
+                    'data-column': field.column,
+                    'data-label': field.label
+                  }
+                })
+              }),
               createElement('vframe', {
                 props: {
                   width: options.width,
@@ -57,12 +90,25 @@ class Xeat {
                     zoomMin: options.zoomMin,
                     amountMax: options.amountMax,
                     amountMin: options.amountMin,
-                    categories: options.component.data && options.component.data.categories
-                  }
+                    categories: options.component.data && options.component.data.categories,
+                    /**
+                     * When use vframe 
+                     * Please make sure your component need to place data
+                     * outside of iframe for form-post.
+                     */
+                    generateFormFields: this.generateFormFields
+                  },
                 })
               ])
             ])
-             
+            
+            /**
+             * Wrap in iframe will cause console has nothing.
+             * The snippet as follow provide for dev.
+             * 
+             * NOTE: v-pan-zoom, v-picking will have modifier when use vframe
+             * e.g. v-pan-zoom.vframe
+             */
             // return createElement('app', {
             //   props: {
             //     width: options.width,

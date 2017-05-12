@@ -6,6 +6,8 @@
     scrolling="no"
     src="about:blank"
     allowfullscreen=""
+    marginwidth="0"
+    marginheight="0"
     :style="[styles.frame]"
     frameborder="0" height="470px" width="100%"
     sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation"
@@ -15,6 +17,16 @@
 </template>
 
 <script>
+/**
+ * vframe is a wrapper for component
+ * If you use vframe with v-pan-zoom, v-picking
+ * PLEASE add modifier e.g. v-pan-zoom.vframe=""
+ * 
+ * For import style to ifrmae this component use a tricky
+ * Put `._xeats_` in css or style that will import to iframe
+ *
+ * ex https://jsfiddle.net/andyyu0920/rfz9rbLs/
+ */
 import Vue from 'vue'
 
 export default {
@@ -51,7 +63,7 @@ export default {
       const styles = document.querySelectorAll('style')
 
       /**
-       * Only import style has _xeats_ comment.
+       * Only import style has ._xeats_ class.
        */
       Array.prototype.forEach.call(styles, function (style) {
         if (style) {

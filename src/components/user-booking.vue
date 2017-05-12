@@ -2,6 +2,18 @@
   <div class="container"
   :style="styles.edge"
   >
+    
+    <input type="hidden" 
+      v-for="seat in booked" 
+      :value="seat.node_id"
+      :id="seat._id"
+      name="xeats[]"
+      :data-type="seat.type"
+      :data-row="seat.row"
+      :data-column="seat.column"
+      :data-label="seat.label"
+      >
+   
     <div class="loader"
     v-if="loading"
     >
@@ -22,7 +34,7 @@
     >
       <g>
         <rect
-        v-for="seat in seats"
+        v-for="(seat, index) in seats"
         :x="seat.x"
         :y="seat.y"
         :width="seat.width"
@@ -31,7 +43,7 @@
         stroke="#444"
         stroke-width="2"
         class="seat"
-        @click.prevent.stop="book(seat)"
+        @click.prevent.stop="book(seat, index)"
         @mousedown.prevent.stop="() => {tooltip.active = false}"
         @mouseover.prevent.stop="showTooltip(seat)"
         @mouseout.prevent="() => {tooltip.active = false}"
@@ -107,6 +119,13 @@ export default {
     },
     amountMin: {
       type: Number
+    },
+    /**
+     * For generate form fields out of iframe
+     * Administrator panel no need to use form-post (optional)
+     */
+    generateFormFields: {
+      type: Function
     }
   },
   data () {
@@ -159,10 +178,6 @@ export default {
         timer: null
       },
       /**
-       * `pan-zoom` mode is the directive name 
-       */
-      mode: 'pan-zoom',
-      /**
        * Status for loader
        */
       loading: true,
@@ -177,6 +192,28 @@ export default {
       const height = this.viewBox.height
 
       return `${minX} ${minY} ${width} ${height}`
+    },
+    booked () {
+      let result = this.seats
+        .filter(function (s) {
+          return s.picked && 
+            s.status === 1 &&
+            /^:[\w]+-[\d]+-[\d]+$/.test(s.node_id)
+        })
+        .map(function (s) {
+          // e.g. [`:seat-1-2`, `seat`, `1`, `2`]
+          let args = s.node_id.match(/^:([\w]+)-([\d]+)-([\d]+)$/)
+
+          return {
+            type: args[1],
+            row: args[2],
+            column: args[3],
+            _id: s._id,
+            node_id: s.node_id,
+            label: s.label
+          }
+        })
+      return result
     },
     styles () {
       return {
@@ -204,7 +241,7 @@ export default {
       vm.stages = res.data.objects.filter(obj => obj.type === 'stage')
       vm.facilities = res.data.objects.filter(obj => obj.type === 'facilities')
       vm.disabilities = res.data.objects.filter(obj => obj.type === 'disabilities')
-      
+
       vm.svg.width = res.data.svg.width
       vm.svg.height = res.data.svg.height
 
@@ -233,15 +270,22 @@ export default {
       vm.viewBox.scaleRange.maxScale = (1 / vm.viewBox.zoomMin) * vm.viewBox.initialScale
       vm.viewBox.scaleRange.minScale = (1 / vm.viewBox.zoomMax) * vm.viewBox.initialScale
 
-      // TODO: 這裡是接從 API 過來的資料
-      let colors = {
-        seat: '#d3d3d3'   // res.data.objects.fill
-      }
-
-      vm.seats.forEach(seat => {
-        seat.fill = (seat.status === 1 ) ? seat.fill : this.darken(seat.fill, +0.8)
-        seat.picked = false
+      vm.seats = vm.seats.map(function (seat) {
+        let colors = ['#d3d3d3', seat.fill, vm.darken(seat.fill, -0.4), '#d3d3d3']
+        /**
+         * If color show black means something wrong
+         */
+        return Object.assign({}, seat, {
+          fill: colors[seat.status] || 'black',
+          picked: false
+        })
       })
+
+      // vm.seats.forEach(seat => {
+      //   console.log('seat.fill', seat.fill)
+      //   seat.fill = (seat.status === 1 ) ? seat.fill : this.darken(colors.seat, +0.8)
+      //   seat.picked = false
+      // })
 
       /*
       vm.seats = vm.seats.map( seat => {
@@ -344,19 +388,30 @@ export default {
       this.viewBox.scale = scale
       svgCanvas.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${viewport.width * scale} ${viewport.height * scale}`)
     },
-    book (seat) {
+    book (seat, index) {
+      if (seat.status !== 1) {
+        return
+      }
+      let vm = this
+
       if (!seat.picked) {
         if (this.amount + 1 <= this.amountMax) {
           seat.picked = !seat.picked
           seat.cache = seat.fill
-          seat.fill = this.darken(seat.fill, -0.4)
-          this.amount++
+          seat.fill = vm.darken(seat.fill, -0.4)
+          vm.amount++
+          vm.seats.splice(index, 1, seat)
         }
       } else {
         seat.picked = !seat.picked
         seat.fill = seat.cache
-        this.amount--
+        vm.amount--
+        vm.seats.splice(index, 1, seat)
       }
+      vm.$nextTick(function () {
+        vm.generateFormFields(this.booked)
+      })
+      
     }
   }
 }
@@ -379,7 +434,6 @@ export default {
 
   .container {
     position: relative;
-    border: 1px solid #EEE;
     background-size: 20px 20px;
     background-color: white;
     background-image: linear-gradient(to right, #EEE 1px, transparent 1px), linear-gradient(to bottom, #EEE 1px, transparent 1px);
