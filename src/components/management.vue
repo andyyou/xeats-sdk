@@ -239,6 +239,10 @@ export default {
 
         vm.seatsInitialize(vm, res)
 
+        vm.seatsInfo.name = null
+        vm.seatsInfo.comment = null
+        vm.seatsInfo.startAt = null
+        vm.seatsInfo.endAt = null
 
         console.log('seat reset finish')
         vm.loading = false
@@ -422,8 +426,8 @@ export default {
       console.log('send', vm.seatsInfo.name)
       vm.$http.put(`/seats/${vm.seatsId}`, {
           objects: vm.seats,
-          name: vm.seatsInfo.name || " ",         //  如果使用者沒填，則傳送空字串
-          comment: vm.seatsInfo.comment || " ",
+          name: vm.seatsInfo.name,
+          comment: vm.seatsInfo.comment
       }, {headers: {
           'Authorization': `Bearer ${localStorage.getItem('_x_t')}`,
         }})
