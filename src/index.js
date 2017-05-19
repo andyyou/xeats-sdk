@@ -46,60 +46,60 @@ class ManagerMap {
         
         render (createElement) {
           // NOTICE: This is for production
-          // return createElement('div', {
-          //   style: {
-          //     height: '100%'
-          //   }
-          // }, [
-          //   this.fields.map(function (field) {
-          //     /**
-          //      * field should has properties:
-          //      * * type
-          //      * * row
-          //      * * column
-          //      * * _id
-          //      * * node_id
-          //      * * label
-          //      */
-          //     return createElement('input', {
-          //       attrs: {
-          //         value: field.node_id,
-          //         id: field._id,
-          //         type: 'hidden',
-          //         name: 'xeats[]',
-          //         'data-type': field.type,
-          //         'data-row': field.row,
-          //         'data-column': field.column,
-          //         'data-label': field.label
-          //       }
-          //     })
-          //   }),
-          //   createElement('vframe', {
-          //     props: {
-          //       width: options.width,
-          //       height: options.height
-          //     }
-          //   }, [
-          //     createElement('app', {
-          //       props: {
-          //         width: options.width,
-          //         height: options.height,
-          //         seatsKey: options.seatsKey,
-          //         zoomMax: options.zoomMax,
-          //         zoomMin: options.zoomMin,
-          //         amountMax: options.amountMax,
-          //         amountMin: options.amountMin,
-          //         categories: options.categories,
-          //         /**
-          //          * When use vframe
-          //          * Please make sure your component need to place data
-          //          * outside of iframe for form-post.
-          //          */
-          //         generateFormFields: this.generateFormFields
-          //       }
-          //     })
-          //   ])
-          // ])
+          return createElement('div', {
+            style: {
+              height: '100%'
+            }
+          }, [
+            this.fields.map(function (field) {
+              /**
+               * field should has properties:
+               * * type
+               * * row
+               * * column
+               * * _id
+               * * node_id
+               * * label
+               */
+              return createElement('input', {
+                attrs: {
+                  value: field.node_id,
+                  id: field._id,
+                  type: 'hidden',
+                  name: 'xeats[]',
+                  'data-type': field.type,
+                  'data-row': field.row,
+                  'data-column': field.column,
+                  'data-label': field.label
+                }
+              })
+            }),
+            createElement('vframe', {
+              props: {
+                width: options.width,
+                height: options.height
+              }
+            }, [
+              createElement('app', {
+                props: {
+                  width: options.width,
+                  height: options.height,
+                  seatsKey: options.seatsKey,
+                  zoomMax: options.zoomMax,
+                  zoomMin: options.zoomMin,
+                  amountMax: options.amountMax,
+                  amountMin: options.amountMin,
+                  categories: options.categories,
+                  /**
+                   * When use vframe
+                   * Please make sure your component need to place data
+                   * outside of iframe for form-post.
+                   */
+                  generateFormFields: this.generateFormFields
+                }
+              })
+            ])
+          ])
 
           /**
            * Wrap in iframe will cause console has nothing.
@@ -108,18 +108,18 @@ class ManagerMap {
            * NOTE: v-pan-zoom, v-picking will have modifier when use vframe
            * e.g. v-pan-zoom.vframe
            */
-          return createElement('app', {
-            props: {
-              width: options.width,
-              height: options.height,
-              seatsKey: options.seatsKey,
-              zoomMax: options.zoomMax,
-              zoomMin: options.zoomMin,
-              amountMax: options.amountMax,
-              amountMin: options.amountMin,
-              categories: options.categories
-            }
-          })
+          // return createElement('app', {
+          //   props: {
+          //     width: options.width,
+          //     height: options.height,
+          //     seatsKey: options.seatsKey,
+          //     zoomMax: options.zoomMax,
+          //     zoomMin: options.zoomMin,
+          //     amountMax: options.amountMax,
+          //     amountMin: options.amountMin,
+          //     categories: options.categories
+          //   }
+          // })
         },
         components: {
           app,
@@ -153,73 +153,74 @@ class UserMap {
       },
       render (createElement) {
         // NOTICE: render element in iframe
-        // return createElement('div', {
-        //   style: {
-        //     height: '100%'
-        //   }
-        // }, [
-        //   this.fields.map(function (field) {
-        //     /**
-        //      * field should has properties:
-        //      * * type
-        //      * * row
-        //      * * column
-        //      * * _id
-        //      * * node_id
-        //      * * label
-        //      */
-        //     return createElement('input', {
-        //       attrs: {
-        //         value: field.node_id,
-        //         id: field._id,
-        //         type: 'hidden',
-        //         name: 'xeats[]',
-        //         'data-type': field.type,
-        //         'data-row': field.row,
-        //         'data-column': field.column,
-        //         'data-label': field.label
-        //       }
-        //     })
-        //   }),
-        //   createElement('vframe', {
-        //     props: {
-        //       width: options.width,
-        //       height: options.height
-        //     }
-        //   }, [
-        //     createElement('app', {
-        //       props: {
-        //         width: options.width,
-        //         height: options.height,
-        //         seatsKey: options.seatsKey,
-        //         zoomMax: options.zoomMax,
-        //         zoomMin: options.zoomMin,
-        //         amountMax: options.amountMax,
-        //         amountMin: options.amountMin,
-        //         /**
-        //          * When use vframe
-        //          * Please make sure your component need to place data
-        //          * outside of iframe for form-post.
-        //          */
-        //         generateFormFields: this.generateFormFields
-        //       }
-        //     })
-        //   ])
-        // ])
+        return createElement('div', {
+          style: {
+            height: '100%'
+          }
+        }, [
+          this.fields.map(function (field) {
+            /**
+             * field should has properties:
+             * * type
+             * * row
+             * * column
+             * * _id
+             * * node_id
+             * * label
+             */
+            return createElement('input', {
+              attrs: {
+                value: field.node_id,
+                id: field._id,
+                type: 'hidden',
+                name: 'xeats[]',
+                'data-type': field.type,
+                'data-row': field.row,
+                'data-column': field.column,
+                'data-label': field.label
+              }
+            })
+          }),
+          createElement('vframe', {
+            props: {
+              width: options.width,
+              height: options.height
+            }
+          }, [
+            createElement('app', {
+              props: {
+                width: options.width,
+                height: options.height,
+                seatsKey: options.seatsKey,
+                accessKey: options.accessKey,
+                zoomMax: options.zoomMax,
+                zoomMin: options.zoomMin,
+                amountMax: options.amountMax,
+                amountMin: options.amountMin,
+                /**
+                 * When use vframe
+                 * Please make sure your component need to place data
+                 * outside of iframe for form-post.
+                 */
+                generateFormFields: this.generateFormFields
+              }
+            })
+          ])
+        ])
 
         // NOTICE: This is for develope
-        return createElement('app', {
-          props: {
-            width: options.width,
-            height: options.height,
-            seatsKey: options.seatsKey,
-            accessKey: options.accessKey,
-            zoomMax: options.zoomMax,
-            zoomMin: options.zoomMin,
-            amountMax: options.amountMax,
-            amountMin: options.amountMin
-          }
-        })
+        // return createElement('app', {
+        //   props: {
+        //     width: options.width,
+        //     height: options.height,
+        //     seatsKey: options.seatsKey,
+        //     accessKey: options.accessKey,
+        //     zoomMax: options.zoomMax,
+        //     zoomMin: options.zoomMin,
+        //     amountMax: options.amountMax,
+        //     amountMin: options.amountMin
+        //   }
+        // })
       },
       components: {
         app,

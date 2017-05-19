@@ -30,9 +30,9 @@
     <svg id="svg-canvas"
     :viewBox="viewboxString"
     :style="styles.edge"
-    v-pan-zoom="viewBox"
+    v-pan-zoom.vframe="viewBox"
     >
-    <!--v-pan-zoom.vframe="viewBox"-->
+
       <g>
         <rect
         v-if="shape === 'rect'"

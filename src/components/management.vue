@@ -493,7 +493,7 @@ export default {
       this.loading = true
       
       let vm = this
-      
+
       vm.$http.post(`/seats/${vm.seatsDocument._id}`, {
           objects: vm.seats.concat(vm.stages, vm.facilities, vm.disabilities),
           name: vm.seatsDocument.name || null,
@@ -614,7 +614,7 @@ export default {
         name: vm.mode, 
         expression: expressions[vm.mode],
         modifiers: {
-          vframe: false
+          vframe: true
         }
       }
 
