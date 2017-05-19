@@ -493,7 +493,8 @@ export default {
       this.loading = true
       
       let vm = this
-      vm.$http.put(`/seats/${vm.seatsDocument._id}`, {
+      
+      vm.$http.post(`/seats/${vm.seatsDocument._id}`, {
           objects: vm.seats.concat(vm.stages, vm.facilities, vm.disabilities),
           name: vm.seatsDocument.name || null,
           shape: vm.seatsDocument.shape,
