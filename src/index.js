@@ -230,11 +230,6 @@ class UserMap {
   }
 }
 
-
-// NOTICE: 原本
-// export { ManagerMap, UserMap }
-
-
-// FIXME:
 export default { ManagerMap, UserMap }
-// module.exports = Xeats
+export { ManagerMap, UserMap }
+
