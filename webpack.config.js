@@ -15,7 +15,7 @@ module.exports = {
     filename: '[name].js',
     publicPath: '/dist',
     libraryTarget: 'umd',
-    library: 'Xeat'
+    library: 'Xeats'
   },
   resolve: {
     extensions: ['.js', '.vue', '.json', '.css'],
@@ -43,7 +43,7 @@ module.exports = {
       {
         test: /\.css$/,
         use: [
-          { 
+          {
             loader: 'style-loader',
             options: {
               attrs: {
@@ -51,8 +51,8 @@ module.exports = {
                 prefix: 'xeats-sdk'
               }
             }
-          }, 
-          { 
+          },
+          {
             loader: 'css-loader'
           }
         ]
