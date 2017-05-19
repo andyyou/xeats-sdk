@@ -5,9 +5,9 @@ xeats.io sdk
 
 1. Sign up in `https://xeats.io`.
 2. Use `email` and `password` to get `access_key` and `secret`. Visit [documents](https://xeats.io/documents/api) for more. NOTE: use this SDK require `access_key` and `secret`. 
-3. Put HTML into your page or watch [Demo](https://jsfiddle.net/5yuffu1y/2/) directly.
+3. Put HTML into your page or watch - [Demo (creating seats)](https://jsfiddle.net/pjchender/5yuffu1y/) and [Demo (booking seats)](https://jsfiddle.net/pjchender/vwrtsktr/) directly.
 
-```
+```html
 <div id="seat-map"></div>
 ```
 
@@ -16,39 +16,45 @@ xeats.io sdk
 ```html
 <script src="dist/sdk.js"></script>
 <script>
-  (function () {
-    var xeat = new Xeat.default({
-      el: '#seat-map',
-      accessKey: 'ff5c1d60-ef8d-4284-82c1-35e8be350e34',
-      secret: '61b4311e47a8dfce2c0819e95100e95f',
-      component: {
-        /**
-          * `name` is the name of component.
-          * We provide few components that use in different case.
-          * components-names as follow:
-          *  * management
-          *  * user-booking
-          */
-        name: 'management',
-        /**
-          * The unique key for create a seats.
-          * You can name it as hash or event name.
-          * NOTE: it decide which seats you use.
-          *  Each time you make a new name will create another seats.
-          */
-        seatsKey: 'sandbox',
-        data: {
-          categories: ['A', 'B', 'C', 'D']
-        }
-      },
-      zoomMax: 4,
-      zoomMin: 0.5,
-      width: 'auto',    // For responsive set value to `auto`
-      height: 800,      // Height can not set to auto
-      amountMax: 4,     // Limit selection amount
-      amountMin: 1
-    })
-  })()
+// NOTICE: For User to create Manager
+(function () {
+  var xeat = new Xeats.ManagerMap({
+    el: '#seat-map',
+    accessKey: '70abb94c-0a4e-4b60-b228-d3e17f2eb4ad',
+    secret: '2a669a9ec56ae69bd0be2de0c3c81b79',
+    /**
+     * The unique key for create a seats.
+     * You can name it as hash or event name.
+     * NOTE: it decide which seats you use.
+     * Each time you make a new name will create another seats.
+     */
+    seatsKey: 'create',
+    categories: ['A', 'B', 'C', 'D'],
+    zoomMax: 4,         // default is 2
+    zoomMin: 0.5,       // default is 0.5
+    width: 'auto',      // For responsive set value to `auto`
+    height: 800         // Height can not set to auto
+  })
+})()
+</script>
+```
+```html
+<script src="dist/sdk.js"></script>
+<script>
+// NOTICE:For user to book seats
+(function () {
+  var xeat = new Xeats.UserMap({
+    el: '#seat-map',
+    accessKey: '70abb94c-0a4e-4b60-b228-d3e17f2eb4ad',
+    seatsKey: 'create',
+    zoomMax: 4,
+    zoomMin: 0.5,
+    width: 'auto',    // For responsive set value to `auto`
+    height: 800,      // Height can not set to auto
+    amountMax: 4,     // Limit selection amount
+    amountMin: 1
+  })
+})()
 </script>
 ```
 
@@ -59,7 +65,7 @@ Or use ES2015+/Commonjs
 import Xeat from 'xeats-sdk'
 
 // Commonjs
-var Xeat = require('xeats-sdk').default
+const Xeat = require('xeats-sdk')
 ```
 
 # Development
@@ -72,6 +78,7 @@ $ npm run build
 
 # Changelog
 
+* `2017-05-19` Accomplish changing seats shape
 * `2017-05-03` Accomplish APIs with a document of API.(Alpha/Draft)
 * `2017-03-24` Accomplish v-pan-zoom.
 * `2017-03-21` Finish zoom in out and pick plugins.
