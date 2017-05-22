@@ -11,10 +11,16 @@ xeats.io sdk
 <div id="seat-map"></div>
 ```
 
-4. Add sdk and script as follow:
+4. Add sdk and scripts.
+```html
+<script src="https://unpkg.com/xeats-sdk/"></script>
+```
+
+### Use on the Web
+
+For User to Create Manager:
 
 ```html
-<script src="dist/sdk.js"></script>
 <script>
 // NOTICE: For User to create Manager
 (function () {
@@ -38,8 +44,10 @@ xeats.io sdk
 })()
 </script>
 ```
+
+For User to Book Seats:
+
 ```html
-<script src="dist/sdk.js"></script>
 <script>
 // NOTICE:For user to book seats
 (function () {
@@ -58,14 +66,22 @@ xeats.io sdk
 </script>
 ```
 
-Or use ES2015+/Commonjs
+### Use with Node
+
+```shell
+npm install --save xeats-sdk
+```
+We support using ES2015+/Commonjs
 
 ```js
 // ES 2015+
-import Xeat from 'xeats-sdk'
+import Xeats from 'xeats-sdk'
 
 // Commonjs
 const Xeat = require('xeats-sdk')
+
+new Xeats.ManagerMap({...})
+new Xeats.UserMap({...})
 ```
 
 # Development
@@ -75,8 +91,8 @@ Run `npm run build` to bundle a xeats-sdk.js for production.
 
 There are currently four VUE components in the package.
 - `user-booking`: This component will show the seats map and seats information for user to book the seat.
-- `management`: This component is for managements to choose spots, create seats, change seats staus, change seats shape, also to categorize seats.
-- `spots-list`: This component is embeded in `management` component, which will get the list of authorized spots for user to change current spots in `management`.
+- `management`: This component is for managers to choose spots, create seats, change seats status, change seats shape, also to categorize seats.
+- `spots-list`: This component is embeded in `management` component, which will get the list of authorized spots for user to change current spots.
 - `v-frame`: This component is for embeding other components in an iframe.
 
 
