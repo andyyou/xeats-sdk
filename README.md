@@ -70,11 +70,15 @@ const Xeat = require('xeats-sdk')
 
 # Development
 
-```bash
-$ npm run dev
+Run `npm run dev` to start the webpack-dev-server on your local device.
+Run `npm run build` to bundle a xeats-sdk.js for production.
 
-$ npm run build
-```
+There are currently four VUE components in the package.
+- `user-booking`: This component will show the seats map and seats information for user to book the seat.
+- `management`: This component is for managements to choose spots, create seats, change seats staus, change seats shape, also to categorize seats.
+- `spots-list`: This component is embeded in `management` component, which will get the list of authorized spots for user to change current spots in `management`.
+- `v-frame`: This component is for embeding other components in an iframe.
+
 
 # Changelog
 
