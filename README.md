@@ -1,7 +1,7 @@
 xeats.io sdk
 ===
 
-### Getting started
+# Getting started
 
 1. Sign up in `https://xeats.io`.
 2. Use `email` and `password` to get `access_key` and `secret`. Visit [documents](https://xeats.io/documents/api) for more. NOTE: use this SDK require `access_key` and `secret`. 
@@ -85,37 +85,36 @@ new Xeats.UserMap({...})
 ```
 # API
 
-### ManagerMap
+## ManagerMap
 
 ##### el
-Type: `String`
-Description: The Dom element ID for xeats to mount.
-Usage:
+- Type: `String`
+- Description: The Dom element ID for xeats to mount.
+- Usage:
 ```js
 el: '#seat-map',
 ```
 
 ##### accessKey
-Type: `String`
-Description: After registering on [xeats.io](http://xeats.io/), you can use xeats.io API to get the `accessKey`.
+- Type: `String`
+- Description: After registering on [xeats.io](http://xeats.io/), you can use xeats.io API to get the `accessKey`.
 
 ##### secrete
-Type: `String`
-Description: After registering on [xeats.io](http://xeats.io/), you can use xeats.io API to get the `secrete`.
+- Type: `String`
+- Description: After registering on [xeats.io](http://xeats.io/), you can use xeats.io API to get the `secrete`.
 
 ##### seatsKey
-Type: `String`
-Description:  The unique key for create a seats map. You can name it as hash or event name. This decides which seats you use. Each time you make a new name will create a new seats.
-Usage:
+- Type: `String`
+- Description:  The unique key for create a seats map. You can name it as hash or event name. This decides which seats you use. Each time you make a new name will create a new seats.
+- Usage:
 ```js
 seatsKey: 'sandbox',
 ```
 
 ##### categories
-Type: `Array`
-Description: Set seat related information, such as ticket type, ticketId, or ticket pirce.
-Usage: 
-Simply put an array of string to create different categories of seats:
+- Type: `Array`
+- Description: Set seat related information, such as ticket type, ticketId, or ticket pirce.
+- Usage: Simply put an array of string to create different categories of seats:
 ```js
 categories: ['Normal', 'Early Bird', 'Special', 'Free']
 ```
@@ -143,77 +142,77 @@ categories: [
 ]
 ```
 ##### zoomMax
-Type: `Number`
-Description: The maximum scale level to zoom in for the seats map. Larger value can scale in a lagrer level. Defaut is `2`.
+- Type: `Number`
+- Description: The maximum scale level to zoom in for the seats map. Larger value can scale in a lagrer level. Defaut is `2`.
 
 ##### zoomMin
-Type: `Number`
-Description: The minium scale level to zoom out for the seats map. Smaller value can scale in a smaller level. Defaut is `0.5`.
+- Type: `Number`
+- Description: The minium scale level to zoom out for the seats map. Smaller value can scale in a smaller level. Defaut is `0.5`.
 
 ##### width
-Type: `Number` | `String`
-Description: Set the width of the seats map to show. For responsive, set value to `auto`.
-Usage: 
+- Type: `Number` | `String`
+- Description: Set the width of the seats map to show. For responsive, set value to `auto`.
+- Usage: 
 ```js
 width: 'auto',
 // width: 720
 ```
 
 ##### height
-Type: `Number`
-Description: Set the height of the seats map to show. This value **can not** set to `auto`
+- Type: `Number`
+- Description: Set the height of the seats map to show. This value **can not** set to `auto`
 
 
-### UserMap
+## UserMap
 
 ##### el
-Type: `String`
-Description: The Dom element ID for xeats to mount.
-Usage:
+- Type: `String`
+- Description: The Dom element ID for xeats to mount.
+- Usage:
 ```js
 el: '#seat-map',
 ```
 
 ##### accessKey
-Type: `String`
-Description: After registering on [xeats.io](http://xeats.io/), you can use xeats.io API to get the `accessKey`.
+- Type: `String`
+- Description: After registering on [xeats.io](http://xeats.io/), you can use xeats.io API to get the `accessKey`.
 
 ##### seatsKey
-Type: `String`
-Description:  The unique key to get the seats map.
-Usage:
+- Type: `String`
+- Description:  The unique key to get the seats map.
+- Usage:
 ```js
 seatsKey: 'sandbox',
 ```
 
 ##### zoomMax
-Type: `Number`
-Description: The maximum scale level to zoom in for the seats map. Larger value can scale in a lagrer level. Defaut is `2`.
+- Type: `Number`
+- Description: The maximum scale level to zoom in for the seats map. Larger value can scale in a lagrer level. Defaut is `2`.
 
 ##### zoomMin
-Type: `Number`
-Description: The minium scale level to zoom out for the seats map. Smaller value can scale in a smaller level. Defaut is `0.5`.
+- Type: `Number`
+- Description: The minium scale level to zoom out for the seats map. Smaller value can scale in a smaller level. Defaut is `0.5`.
 
 ##### width
-Type: `Number` | `String`
-Description: Set the width of the seats map to show. For responsive, set value to `auto`.
-Usage: 
+- Type: `Number` | `String`
+- Description: Set the width of the seats map to show. For responsive, set value to `auto`.
+- Usage: 
 ```js
 width: 'auto',
 // width: 720
 ```
 
 ##### height
-Type: `Number`
-Description: Set the height of the seats map to show. This value **can not** set to `auto`
+- Type: `Number`
+- Description: Set the height of the seats map to show. This value **can not** set to `auto`
 
 ##### amountMax
-Type: `Number`
-Description: Maximum quantity of seats to book.
-##### amountMin
-Type: `Number`
-Description: Minimum quantity of seats to book.
+- Type: `Number`
+- Description: Maximum quantity of seats to book.
 
+##### amountMin
+- Type: `Number`
+- Description: Minimum quantity of seats to book.
 
 # Development
 
