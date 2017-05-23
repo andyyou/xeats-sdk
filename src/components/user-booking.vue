@@ -240,7 +240,9 @@ export default {
             column: args[3],
             _id: s._id,
             node_id: s.node_id,
-            label: s.label
+            label: s.label,
+            category: s.category,
+            info: s.info
           }
         })
       return result
