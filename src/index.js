@@ -43,7 +43,7 @@ class ManagerMap {
             this.fields = data
           }
         },
-        
+
         render (createElement) {
           // NOTICE: This is for production
           return createElement('div', {
@@ -108,19 +108,19 @@ class ManagerMap {
            * NOTE: v-pan-zoom, v-picking will have modifier when use vframe
            * e.g. v-pan-zoom.vframe
            */
-          // return createElement('app', {
-          //   props: {
-          //     width: options.width,
-          //     height: options.height,
-          //     seatsKey: options.seatsKey,
-          //     zoomMax: options.zoomMax,
-          //     zoomMin: options.zoomMin,
-          //     amountMax: options.amountMax,
-          //     amountMin: options.amountMin,
-          //     categories: options.categories
-          //   }
-          // })
-        },
+        //   return createElement('app', {
+        //     props: {
+        //       width: options.width,
+        //       height: options.height,
+        //       seatsKey: options.seatsKey,
+        //       zoomMax: options.zoomMax,
+        //       zoomMin: options.zoomMin,
+        //       amountMax: options.amountMax,
+        //       amountMin: options.amountMin,
+        //       categories: options.categories
+        //     }
+        //   })
+        // },
         components: {
           app,
           vframe

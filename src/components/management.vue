@@ -228,15 +228,16 @@ export default {
        * show in setup-panel-category e.g. current color & category
        */
       applyToSeatColor: DEFAULT_COLORS.applyToSeatColor,
-      category: this.categories[0],
-      categoryItems: this.categories.map(function (category, index, array) {
-        return {
-          name: category,
-          color: (function () {
-            // This function is to get random color
-            return hsl2hex(index * (360 / array.length) % 360, 55, 70)
-          })()
+      category: (typeof this.categories[0] === 'string') ? this.categories[0] : this.categories[0].name,
+      categoryItems: this.categories.map((category, index, array) => {
+        let categoryItem = {}
+        if (typeof category === 'string') {
+          categoryItem.name = category
+        } else {
+          categoryItem = Object.assign({}, category)
         }
+        categoryItem.color = hsl2hex(index * (360 / array.length) % 360, 55, 70)
+        return categoryItem
       }),
       /**
        * Status for loader
@@ -475,17 +476,24 @@ export default {
       let changeCategory = options.clean ? null : vm.category
       let changeStatus = options.clean ? SEAT_STATUS.unavailable : SEAT_STATUS.available
 
-      this.seats = this.seats.map(function (seat) {
-        let fill = seat.picked ? changedColor : seat.fill
-        let category = seat.picked ? changeCategory : seat.category
-        let status = seat.picked ? changeStatus : seat.status
-
-        return Object.assign({}, seat, {
-          fill: fill,
-          category: category,
-          status: status,
-          picked: false
-        })
+      vm.seats = vm.seats.map(seat => {
+        if (seat.picked) {
+          let index = vm.categoryItems.findIndex(item => {
+            return item.name === changeCategory
+          })
+          return Object.assign({}, seat, {
+            // 如果 vm.categoryItems[index] 不存在，表示使用者選擇 clean
+            fill: changedColor,
+            category: (vm.categoryItems[index]) ? vm.categoryItems[index].name : null,
+            info: (vm.categoryItems[index]) ? vm.categoryItems[index].info : null,
+            comment: (vm.categoryItems[index]) ? vm.categoryItems[index].comment : null,
+            sn: (vm.categoryItems[index]) ? vm.categoryItems[index].sn : null,
+            status: changeStatus,
+            picked: false
+          })
+        } else {
+          return seat
+        }
       })
     },
     save () {
@@ -614,7 +622,7 @@ export default {
         name: vm.mode, 
         expression: expressions[vm.mode],
         modifiers: {
-          vframe: true
+          vframe: false
         }
       }
 
@@ -994,13 +1002,15 @@ export default {
                     vm.$emit('change', e.target.value)
                   }
                 }
-              }, this.categories.map(function (category) {
-                return createElement('option', {
+              }, 
+              this.categoryItems.map( category => {
+                return createElement('option',{
                   domProps: {
-                    value: category
+                    value: category.name
                   }
-                }, category)
-              }))
+                }, category.name)
+              })
+              )
             ])
           ]),
           createElement('button', {
