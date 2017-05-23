@@ -148,7 +148,11 @@ class UserMap {
       },
       methods: {
         generateFormFields (data) {
-          this.fields = data
+          if (options.onPick instanceof Function) {
+            options.onPick(data)
+          } else {
+            this.fields = data
+          }
         }
       },
       render (createElement) {
@@ -232,4 +236,3 @@ class UserMap {
 
 export default { ManagerMap, UserMap }
 export { ManagerMap, UserMap }
-
