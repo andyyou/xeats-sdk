@@ -13,6 +13,58 @@ function darken (color, percent) {
   return "#"+(0x1000000+(Math.round((t-R)*p)+R)*0x10000+(Math.round((t-G)*p)+G)*0x100+(Math.round((t-B)*p)+B)).toString(16).slice(1);
 }
 
+function hsl2hex (h, s, l) {
+
+    var r, g, b, m, c, x
+
+    if (!isFinite(h)) h = 0
+    if (!isFinite(s)) s = 0
+    if (!isFinite(l)) l = 0
+
+    h /= 60
+    if (h < 0) h = 6 - (-h % 6)
+    h %= 6
+
+    s = Math.max(0, Math.min(1, s / 100))
+    l = Math.max(0, Math.min(1, l / 100))
+
+    c = (1 - Math.abs((2 * l) - 1)) * s
+    x = c * (1 - Math.abs((h % 2) - 1))
+
+    if (h < 1) {
+        r = c
+        g = x
+        b = 0
+    } else if (h < 2) {
+        r = x
+        g = c
+        b = 0
+    } else if (h < 3) {
+        r = 0
+        g = c
+        b = x
+    } else if (h < 4) {
+        r = 0
+        g = x
+        b = c
+    } else if (h < 5) {
+        r = x
+        g = 0
+        b = c
+    } else {
+        r = c
+        g = 0
+        b = x
+    }
+
+    m = l - c / 2
+    r = Math.round((r + m) * 255)
+    g = Math.round((g + m) * 255)
+    b = Math.round((b + m) * 255)
+
+    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
+
 const DEFAULT_COLORS = {
   seatFillColor: '#d3d3d3',
   applyToSeatColor: '#d3d3d3'
@@ -23,6 +75,34 @@ const SEAT_STATUS = {
   available: 1,
   reserved: 2,
   other: 3
+}
+
+const SEATS_SHAPE = {
+  rect: {
+    content: 'rectangle',
+    htmlAttr: function() {
+      return {
+        x: this.x,
+        y: this.y,
+        width: this.width,
+        height: this.height,
+        fill: this.picked ? darken(this.fill, -0.2) : this.fill,
+        'class': 'seat'
+      }
+    } 
+  },
+  circle: {
+    content: 'circle',
+    htmlAttr: function () {
+      return {
+        cx: this.x + this.width / 2,
+        cy: this.y + this.height / 2,
+        r: Math.min(this.width / 2, this.height / 2),
+        fill: this.picked ? darken(this.fill, -0.2) : this.fill,
+        class: 'seat'
+      }
+    }
+  }
 }
 
 export default {
@@ -36,25 +116,20 @@ export default {
       required: true
     },
     seatsKey: {
-      type: String
+      type: String,
+      required: true
     },
     zoomMax: {
-      type: Number
+      type: Number,
+      default: 2
     },
     zoomMin: {
-      type: Number
-    },
-    token: {
-      type: String
-    },
-    amountMax: {
-      type: Number
-    },
-    amountMin: {
-      type: Number
+      type: Number,
+      default: 0.5
     },
     categories: {
-      type: Array
+      type: Array,
+      required: true
     },
     /**
      * For generate form fields out of iframe
@@ -111,7 +186,8 @@ export default {
       seatsDocument: {
         _id: '',
         name: '',
-        comment: ''
+        comment: '',
+        shape: ''
       },
       /**
        * Booking amount for limitation
@@ -153,11 +229,12 @@ export default {
        */
       applyToSeatColor: DEFAULT_COLORS.applyToSeatColor,
       category: this.categories[0],
-      categoryItems: this.categories.map(function (category) {
+      categoryItems: this.categories.map(function (category, index, array) {
         return {
           name: category,
           color: (function () {
-            return '#' + Math.random().toString(16).substr(-6)
+            // This function is to get random color
+            return hsl2hex(index * (360 / array.length) % 360, 55, 70)
           })()
         }
       }),
@@ -179,14 +256,14 @@ export default {
     initialize (vm, res) {
       vm.seatsDocument = Object.assign({}, vm.seatsDocument, {
         name: res.data.name,
-        comment: res.data.comment
+        comment: res.data.comment,
+        shape: res.data.shape || 'rect'           // rect is default shape
       })
 
       vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
       vm.stages = res.data.objects.filter(obj => obj.type === 'stage')
       vm.facilities = res.data.objects.filter(obj => obj.type === 'facilities')
       vm.disabilities = res.data.objects.filter(obj => obj.type === 'disabilities')
-
       // set svg width, height in vm
       vm.svg.width = res.data.svg.width
       vm.svg.height = res.data.svg.height
@@ -237,7 +314,7 @@ export default {
           'Authorization': `Bearer ${localStorage.getItem('_x_t')}`
         }
       })
-      .then( res => {
+      .then(res => {
         vm.initialize(vm, res)
 
         vm.seatsDocument.name = null
@@ -246,12 +323,10 @@ export default {
         vm.loading = false
         vm.mode = 'pan-zoom'
       })
-    },
-    getToken () {
-      return this.$parent.getToken.call(this)
-    },
-    setToken () {
-      return this.$parent.setToken.call(this)
+      .catch( error => {
+        vm.ajaxFailed = 'API request failed, Try to reload please.'
+        console.log('error')
+      })
     },
     updateCategoryColor(category){
       let categoryIndex = this.categoryItems.findIndex( (item) => {
@@ -416,17 +491,20 @@ export default {
     save () {
       this.mode = 'save'
       this.loading = true
-
+      
       let vm = this
 
-      vm.$http.put(`/seats/${vm.seatsDocument._id}`, {
-          objects: vm.seats,
-          name: vm.seatsDocument.name,
-          comment: vm.seatsDocument.comment
+      vm.$http.post(`/seats/${vm.seatsDocument._id}`, {
+          objects: vm.seats.concat(vm.stages, vm.facilities, vm.disabilities),
+          name: vm.seatsDocument.name || null,
+          shape: vm.seatsDocument.shape,
+          comment: vm.seatsDocument.comment || null,
+          svg: vm.svg
       }, {headers: {
           'Authorization': `Bearer ${localStorage.getItem('_x_t')}`,
+          'Content-Type': 'application/json'
         }})
-      .then(response => {
+      .then(res => {
         vm.loading = false
         vm.diff = false
         /**
@@ -435,6 +513,7 @@ export default {
         vm.mode = 'pan-zoom'
       })
       .catch(error => {
+        vm.ajaxFailed = 'Saving failed. Try to save again later.'
         console.log('error', error)
       })
     }
@@ -498,8 +577,7 @@ export default {
   },
   created () {
     let vm = this
-    //TODO: POST `/seats/${vm.seatsKey}`/get_or_create
-    vm.$http.get(`/seats/${vm.seatsKey}`, {
+    vm.$http.post(`/seats/${vm.seatsKey}/get_or_create`, null,{
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('_x_t')}`
       }
@@ -595,7 +673,7 @@ export default {
           id: 'svg-canvas',
           viewBox: vm.viewboxString,
         },
-        style: vm.styles.edge,
+        style: [vm.styles.edge, {cursor: (vm.mode === 'pan-zoom') ? '-webkit-grab' : 'default'}],
         directives: directives
       }, [
         vm.stages.map(function (stage) {
@@ -620,15 +698,8 @@ export default {
           })
         }),
         createElement('g', null, vm.seats.map(function (seat) {
-          return createElement('rect', {
-            attrs: {
-              x: seat.x,
-              y: seat.y,
-              width: seat.width,
-              height: seat.height,
-              fill: seat.picked ? darken(seat.fill, -0.2) : seat.fill,
-              class: 'seat'
-            },
+          return createElement(vm.seatsDocument.shape, {
+            attrs: SEATS_SHAPE[vm.seatsDocument.shape].htmlAttr.call(seat),
             on: {
               click: function (e) {
                 e.preventDefault()
@@ -869,7 +940,7 @@ export default {
           directives: [
             {
               name: 'show',
-              value: this.seats.some(function (seat) {
+              value: vm.seats.some(function (seat) {
                 return seat.picked
               })
             }
@@ -991,6 +1062,21 @@ export default {
                 class: 'save'
               }
             }, [
+                createElement('select', {
+                  on:{
+                    change: function (e) {
+                      vm.seatsDocument.shape = e.target.value
+                      vm.$emit('change', e.target.value)
+                    }
+                  }
+                }, Object.keys(SEATS_SHAPE).map(function(shape){
+                  return createElement('option', {
+                    domProps: {
+                      value: shape,
+                      selected: shape === vm.seatsDocument.shape
+                    }
+                  }, SEATS_SHAPE[shape].content)
+                })),
                 createElement('input', {
                   attrs: {
                     type: 'text',
@@ -1186,7 +1272,7 @@ export default {
     padding: 5px;
     
     .save {
-      input {
+      input, select, option {
         border: 1px solid #CCC;
         background-color: white;
         border-radius: 3px;
@@ -1202,11 +1288,10 @@ export default {
         display: block;
         box-sizing: border-box;
         width: 100%;
+        height: 36px;
       }
-
+      
       input[type='text'] {
-        
-
         &::placeholder {
           color: #BBB;
         }

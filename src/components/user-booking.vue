@@ -32,8 +32,10 @@
     :style="styles.edge"
     v-pan-zoom.vframe="viewBox"
     >
+
       <g>
         <rect
+        v-if="shape === 'rect'"
         v-for="(seat, index) in seats"
         :x="seat.x"
         :y="seat.y"
@@ -41,8 +43,23 @@
         :height="seat.height"
         :fill="seat.fill"
         stroke="#444"
-        stroke-width="2"
-        class="seat"
+        :stroke-width="(seat.status === 0 || seat.status === 3) ? '0' : '2'"
+        :class="['seat', {'unavailable': (seat.status === 0 || seat.status === 3) ? true : false }]"
+        @click.prevent.stop="book(seat, index)"
+        @mousedown.prevent.stop="() => {tooltip.active = false}"
+        @mouseover.prevent.stop="showTooltip(seat)"
+        @mouseout.prevent="() => {tooltip.active = false}"
+        />
+        <circle
+        v-if="shape === 'circle'"
+        v-for="(seat, index) in seats"
+        :cx="seat.x + seat.width / 2"
+        :cy="seat.y + seat.height / 2"
+        :r="Math.min(seat.width / 2, seat.height / 2)"
+        :fill="seat.fill"
+        stroke="#444"
+        :stroke-width="(seat.status === 0 || seat.status === 3) ? '0' : '2'"
+        :class="['seat', {'unavailable': (seat.status === 0 || seat.status === 3) ? true : false }]"
         @click.prevent.stop="book(seat, index)"
         @mousedown.prevent.stop="() => {tooltip.active = false}"
         @mouseover.prevent.stop="showTooltip(seat)"
@@ -106,19 +123,28 @@ export default {
       required: true
     },
     seatsKey: {
-      type: String
+      type: String,
+      required: true
+    },
+    accessKey: {
+      type: String,
+      required: true
     },
     zoomMax: {
-      type: Number
+      type: Number,
+      default: 2
     },
     zoomMin: {
-      type: Number
+      type: Number,
+      default: 0.5
     },
     amountMax: {
-      type: Number
+      type: Number,
+      required: true
     },
     amountMin: {
-      type: Number
+      type: Number,
+      required: true
     },
     /**
      * For generate form fields out of iframe
@@ -166,6 +192,10 @@ export default {
       stages: [],
       facilities: [],
       disabilities: [],
+      /**
+       * shape for display seats
+       */
+      shape: '',
       /**
        * Booking amount for limitation
        */
@@ -231,9 +261,10 @@ export default {
   },
   created () {
     let vm = this
+
     vm.$http.get(`/seats/${vm.seatsKey}`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('_x_t')}`
+        'Access-Key': vm.accessKey
       }
     })
     .then(res => {
@@ -241,6 +272,8 @@ export default {
       vm.stages = res.data.objects.filter(obj => obj.type === 'stage')
       vm.facilities = res.data.objects.filter(obj => obj.type === 'facilities')
       vm.disabilities = res.data.objects.filter(obj => obj.type === 'disabilities')
+
+      vm.shape = res.data.shape
 
       vm.svg.width = res.data.svg.width
       vm.svg.height = res.data.svg.height
@@ -271,6 +304,8 @@ export default {
       vm.viewBox.scaleRange.minScale = (1 / vm.viewBox.zoomMax) * vm.viewBox.initialScale
 
       vm.seats = vm.seats.map(function (seat) {
+
+        // SEAT_STATUS: [unavailable, available, reserved, other]
         let colors = ['#d3d3d3', seat.fill, vm.darken(seat.fill, -0.4), '#d3d3d3']
         /**
          * If color show black means something wrong
@@ -281,25 +316,6 @@ export default {
         })
       })
 
-      // vm.seats.forEach(seat => {
-      //   console.log('seat.fill', seat.fill)
-      //   seat.fill = (seat.status === 1 ) ? seat.fill : this.darken(colors.seat, +0.8)
-      //   seat.picked = false
-      // })
-
-      /*
-      vm.seats = vm.seats.map( seat => {
-        return Object.assign({}, seat, {
-          // x: seat.x * ratio,
-          // y: seat.y * ratio,
-          // width: seat.width * ratio,
-          // height: seat.height * ratio,
-          fill: colors.seat,    // TODO: 這裡要代入 API 的資料
-          reserved: false,      // TODO: 這裡要根據 API 代入資料
-        })
-      })
-      */
-
       vm.loading = false
     })
     .catch( error => {
@@ -308,12 +324,6 @@ export default {
     })
   },
   methods: {
-    getToken () {
-      return this.$parent.getToken.call(this)
-    },
-    setToken () {
-      return this.$parent.setToken.call(this)
-    },
     darken (color, percent) {
       let f = parseInt(color.slice(1),16),
       t = (percent < 0) ? 0:255,
@@ -441,6 +451,10 @@ export default {
 
   .seat {
     cursor: pointer;
+
+    &.unavailable {
+      cursor: default;
+    }
   }
 
   .manipulate {
