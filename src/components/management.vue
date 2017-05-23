@@ -87,7 +87,7 @@ const SEATS_SHAPE = {
         width: this.width,
         height: this.height,
         fill: this.picked ? darken(this.fill, -0.2) : this.fill,
-        'class': 'seat'
+        class: 'seat'
       }
     } 
   },
@@ -296,6 +296,10 @@ export default {
 
       vm.seats = vm.seats.map(function(seat) {
         return Object.assign({}, seat, {
+          comment: seat.comment || null,
+          category: seat.category || null,
+          info: seat.info || null,
+          sn: seat.sn || null,
           fill: seat.fill || DEFAULT_COLORS.seatFillColor,
           status: seat.status || SEAT_STATUS.unavailable,
           /* For picking to set seat */
@@ -622,7 +626,7 @@ export default {
         name: vm.mode, 
         expression: expressions[vm.mode],
         modifiers: {
-          vframe: false
+          vframe: true
         }
       }
 
