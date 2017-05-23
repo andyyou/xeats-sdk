@@ -234,7 +234,7 @@ export default {
         if (typeof category === 'string') {
           categoryItem.name = category
         } else {
-          categoryItem = Object.assign({}, category)
+          categoryItem = Object.assign({comment: null, info: null, name: null, sn: null}, category)
         }
         categoryItem.color = hsl2hex(index * (360 / array.length) % 360, 55, 70)
         return categoryItem
