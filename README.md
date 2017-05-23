@@ -83,6 +83,137 @@ const Xeat = require('xeats-sdk')
 new Xeats.ManagerMap({...})
 new Xeats.UserMap({...})
 ```
+# API
+
+### ManagerMap
+
+##### el
+Type: `String`
+Description: The Dom element ID for xeats to mount.
+Usage:
+```js
+el: '#seat-map',
+```
+
+##### accessKey
+Type: `String`
+Description: After registering on [xeats.io](http://xeats.io/), you can use xeats.io API to get the `accessKey`.
+
+##### secrete
+Type: `String`
+Description: After registering on [xeats.io](http://xeats.io/), you can use xeats.io API to get the `secrete`.
+
+##### seatsKey
+Type: `String`
+Description:  The unique key for create a seats map. You can name it as hash or event name. This decides which seats you use. Each time you make a new name will create a new seats.
+Usage:
+```js
+seatsKey: 'sandbox',
+```
+
+##### categories
+Type: `Array`
+Description: Set seat related information, such as ticket type, ticketId, or ticket pirce.
+Usage: 
+Simply put an array of string to create different categories of seats:
+```js
+categories: ['Normal', 'Early Bird', 'Special', 'Free']
+```
+For setting detail of seats, put an array of object. Notice that the `commnet` and `sn` property can only accept `String`. If you want to put more seat related information, you can put in `info` property, which accept an `Object`. 
+```js
+categories: [
+    {
+        name: 'Free',
+        info: {
+            ticketId: 'free',
+            price: 0
+        },
+        comment:"This is for student",
+        sn:""
+    },
+    {
+        name: 'Early-Bird',
+        info: {
+            ticketId: 'earlyBird',
+            price: 200
+        },
+        comment:"This is for student",
+        sn:""
+    }
+]
+```
+##### zoomMax
+Type: `Number`
+Description: The maximum scale level to zoom in for the seats map. Larger value can scale in a lagrer level. Defaut is `2`.
+
+##### zoomMin
+Type: `Number`
+Description: The minium scale level to zoom out for the seats map. Smaller value can scale in a smaller level. Defaut is `0.5`.
+
+##### width
+Type: `Number` | `String`
+Description: Set the width of the seats map to show. For responsive, set value to `auto`.
+Usage: 
+```js
+width: 'auto',
+// width: 720
+```
+
+##### height
+Type: `Number`
+Description: Set the height of the seats map to show. This value **can not** set to `auto`
+
+
+### UserMap
+
+##### el
+Type: `String`
+Description: The Dom element ID for xeats to mount.
+Usage:
+```js
+el: '#seat-map',
+```
+
+##### accessKey
+Type: `String`
+Description: After registering on [xeats.io](http://xeats.io/), you can use xeats.io API to get the `accessKey`.
+
+##### seatsKey
+Type: `String`
+Description:  The unique key to get the seats map.
+Usage:
+```js
+seatsKey: 'sandbox',
+```
+
+##### zoomMax
+Type: `Number`
+Description: The maximum scale level to zoom in for the seats map. Larger value can scale in a lagrer level. Defaut is `2`.
+
+##### zoomMin
+Type: `Number`
+Description: The minium scale level to zoom out for the seats map. Smaller value can scale in a smaller level. Defaut is `0.5`.
+
+##### width
+Type: `Number` | `String`
+Description: Set the width of the seats map to show. For responsive, set value to `auto`.
+Usage: 
+```js
+width: 'auto',
+// width: 720
+```
+
+##### height
+Type: `Number`
+Description: Set the height of the seats map to show. This value **can not** set to `auto`
+
+##### amountMax
+Type: `Number`
+Description: Maximum quantity of seats to book.
+##### amountMin
+Type: `Number`
+Description: Minimum quantity of seats to book.
+
 
 # Development
 
@@ -98,6 +229,7 @@ There are currently four VUE components in the package.
 
 # Changelog
 
+* `2017-05-23` Accept array of objects for category property in ManagerMap. Display the legend in UserMap
 * `2017-05-19` Accomplish changing seats shape
 * `2017-05-03` Accomplish APIs with a document of API.(Alpha/Draft)
 * `2017-03-24` Accomplish v-pan-zoom.
