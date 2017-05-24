@@ -41,6 +41,11 @@ class ManagerMap {
         methods: {
           generateFormFields (data) {
             this.fields = data
+          },
+          onAfterSave (data) {
+            if (options.onAfterSave instanceof Function) {
+              options.onAfterSave(data)
+            }
           }
         },
 
@@ -95,7 +100,8 @@ class ManagerMap {
                    * Please make sure your component need to place data
                    * outside of iframe for form-post.
                    */
-                  generateFormFields: this.generateFormFields
+                  generateFormFields: this.generateFormFields,
+                  onAfterSave: this.onAfterSave
                 }
               })
             ])

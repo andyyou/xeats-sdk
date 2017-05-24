@@ -137,6 +137,9 @@ export default {
      */
     generateFormFields: {
       type: Function
+    },
+    onAfterSave : {
+      type: Function
     }
   },
   data () {
@@ -523,6 +526,10 @@ export default {
          * After save back to pan-zoom mode
          */
         vm.mode = 'pan-zoom'
+        /**
+         * onAfterSave: This is for sending seatsId
+         */
+        vm.$nextTick(vm.onAfterSave(vm.seatsDocument._id))
       })
       .catch(error => {
         vm.ajaxFailed = 'Saving failed. Try to save again later.'
