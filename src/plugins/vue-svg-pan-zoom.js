@@ -29,7 +29,6 @@ export default {
 
         onPanStart = function () {
           panning = true
-          console.log('onPanStart')
           startViewBox = svgElement.getAttribute('viewBox').split(' ').map(n => parseFloat(n))
         }
 
@@ -61,7 +60,6 @@ export default {
         }
 
         onPanEnd = function () {
-          console.log('panend')
           panning = false
         }
 
@@ -79,7 +77,7 @@ export default {
             startPoint.x = e.center.x
             startPoint.y = e.center.y
           } else {
-            console.warn('event not support')
+            console.warn('Event not support')
           }
           let svgStartPoint = startPoint.matrixTransform(ctm.inverse())
 
@@ -109,7 +107,7 @@ export default {
               currentScale = scaleRange.maxSize
             }
           } else {
-            console.warn('not handle event')
+            console.warn('Not handle event')
           }
 
           svgElement.setAttribute('viewBox', `${startViewBox[0]} ${startViewBox[1]} ${viewport.width * currentScale} ${viewport.height * currentScale}`)
@@ -135,10 +133,9 @@ export default {
           vnode.context[binding.expression].scale = currentScale
           mc.off('pan')
           setTimeout(mc.on('pan'), 500)
-          console.log('pinchend')
         }
 
-        mc.on('pinchstart', () => { console.log('pinchstart', el) })
+        mc.on('pinchstart', () => {})
         mc.on('pinchmove', onZoom)
         mc.on('pinchend', onPinchEnd)
         mc.on('panstart', onPanStart)
@@ -147,7 +144,7 @@ export default {
         el.addEventListener('wheel', onZoom, false)
       },
       unbind (el, binding, vnode, oldVnode) {
-        mc.off('pinchstart', () => { console.log('pinchstart', el) })
+        mc.off('pinchstart', () => {})
         mc.off('pinchmove', onZoom)
         mc.off('pinchend', onPinchEnd)
         mc.off('panstart', onPanStart)
