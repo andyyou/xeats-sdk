@@ -1,129 +1,3 @@
-<template>
-  <div class="container"
-  :style="styles.edge"
-  >
-    
-    <input type="hidden" 
-      v-for="seat in booked" 
-      :value="seat.node_id"
-      :id="seat._id"
-      name="xeats[]"
-      :data-type="seat.type"
-      :data-row="seat.row"
-      :data-column="seat.column"
-      :data-label="seat.label"
-      >
-   
-    <div class="loader"
-    v-if="loading"
-    >
-      <div class="loader-figure"
-      :style="{display: failed ? 'none' : 'block'}"
-      >
-      </div>
-      <p :class="{
-        'loader-label': true,
-        'animate': !failed,
-        'error': failed
-      }"> {{ failed || 'LOADING' }}</p>
-    </div>
-    <svg id="svg-canvas"
-    :viewBox="viewboxString"
-    :style="styles.edge"
-    v-pan-zoom.vframe="viewBox"
-    >
-
-      <g v-if="shape === 'rect'">
-        <rect
-        v-for="(seat, index) in seats"
-        :x="seat.x"
-        :y="seat.y"
-        :width="seat.width"
-        :height="seat.height"
-        :fill="seat.fill"
-        stroke="#444"
-        :stroke-width="(seat.status === 0 || seat.status === 3) ? '0' : '2'"
-        :class="['seat', {'hover-category': seat.category === hoverCategory}, {'unavailable': (seat.status === 0 || seat.status === 3) ? true : false }]"
-        @click.prevent.stop="book(seat, index)"
-        @mousedown.prevent.stop="() => {tooltip.active = false}"
-        @mouseover.prevent.stop="showTooltip(seat)"
-        @mouseout.prevent="() => {tooltip.active = false}"
-        />
-      </g>
-      <g v-if="shape === 'circle'">
-        <circle
-        v-for="(seat, index) in seats"
-        :cx="seat.x + seat.width / 2"
-        :cy="seat.y + seat.height / 2"
-        :r="Math.min(seat.width / 2, seat.height / 2)"
-        :fill="seat.fill"
-        stroke="#444"
-        :stroke-width="(seat.status === 0 || seat.status === 3) ? '0' : '2'"
-        :class="['seat', {'hover-category': seat.category === hoverCategory}, {'unavailable': (seat.status === 0 || seat.status === 3) ? true : false }]"
-        @click.prevent.stop="book(seat, index)"
-        @mousedown.prevent.stop="() => {tooltip.active = false}"
-        @mouseover.prevent.stop="showTooltip(seat)"
-        @mouseout.prevent="() => {tooltip.active = false}"
-        />
-      </g>
-      <g
-      v-for="stage in stages"
-      v-html="stage.html"
-      ></g>
-      <g
-      v-for="facility in facilities"
-      v-html="facility.html"
-      ></g>
-      <g
-      v-for="disability in disabilities"
-      v-html="disability.html"
-      ></g>
-    </svg>
-    <span
-    :style="styles.tooltip"
-    class="tooltip"
-    v-show="tooltip.active"
-    v-html="tooltip.content"
-    >
-    <!--{{ tooltip.content }}-->
-    </span>
-    <div class="manipulate">
-      <button 
-      class="btn"
-      @click.prevent.stop="reset"
-      >
-        <i class="icon-refresh"></i>
-      </button>
-      <button
-      class="btn"
-      @click.prevent.stop="zoom('in')"
-      >
-        <i class="icon-plus"></i>
-      </button>
-      <button
-      class="btn"
-      @click.prevent.stop="zoom('out')"
-      >
-        <i class="icon-minus"></i>
-      </button>
-    </div>
-    <div class="legend-list-panel" v-show="legend.length > 0">
-      <ul class='legend-list'>
-        <li v-for="item in legend" 
-        :key="item.color"
-        @mouseover.stop.prevent="showHoverCategory(item.name)"
-        @mouseleave.stop.prevent="showHoverCategory(undefined)"
-        >
-          <div class="block" 
-          :style="{backgroundColor: item.color}">
-          </div>
-          {{ item.name }}
-        </li>
-      </ul>
-    </div>
-  </div>
-</template>
-
 <script>
 import _ from 'lodash'
 
@@ -144,6 +18,10 @@ export default {
     accessKey: {
       type: String,
       required: true
+    },
+    disableZoom: {
+      type: Boolean,
+      default: false
     },
     zoomMax: {
       type: Number,
@@ -470,8 +348,318 @@ export default {
       vm.$nextTick(function () {
         vm.generateFormFields(this.booked)
       })
-      
     }
+  },
+  render (createElement) {
+    let vm = this
+
+    return createElement('div', {
+      attrs: {
+        class: 'container'
+      },
+      style: vm.styles.edge
+    }, [
+      vm.booked.map(function (seat) {
+        return createElement('input', {
+          id: seat._id,
+          // TODO: add data-* attributes
+          attrs: {
+            name: 'xeats[]',
+            type: 'hidden'
+          },
+          domProps: {
+            value: seat.node_id
+          }
+        })
+      }),
+      /* loader */
+      vm.loading ? createElement('div', {
+        attrs: {
+          class: 'loader'
+        }
+      }, [
+        createElement('div', {
+          attrs: {
+            class: 'loader-figure'
+          },
+          style: {
+            display: vm.failed ? 'none' : 'block'
+          }
+        }),
+        createElement('p', {
+          class: {
+            'loader-label': true,
+            animate: !vm.failed,
+            error: vm.failed
+          }
+        })
+      ]) : null,
+      /* /loader */
+      
+      /* svg */
+      createElement('svg', {
+        attrs: {
+          id: 'svg-canvas',
+          viewBox: vm.viewboxString,
+        },
+        style: vm.styles.edge,
+        directives: [
+          {
+            name: 'pan-zoom',
+            expression: 'viewBox',
+            modifiers: {
+              vframe: true,
+              zoom: !vm.disableZoom
+            }
+          }
+        ]
+      }, [
+
+        /* seats */
+        createElement('g', null, [
+          vm.seats.map(function (seat, index) {
+            if (vm.shape === 'rect') {
+              return createElement(vm.shape, {
+                attrs: {
+                  stroke: '#444',
+                  x: seat.x,
+                  y: seat.y,
+                  width: seat.width,
+                  height: seat.height,
+                  fill: seat.fill,
+                  'stroke-width': seat.status === 0 || seat.status === 3 ? '0' : '2'
+                },
+                class: [
+                  'seat',
+                  {
+                    'hover-category': seat.category === vm.hoverCategory
+                  },
+                  {
+                    unavailable: seat.status === 0 || seat.status === 3 ? true : false
+                  }
+                ],
+                on: {
+                  click: function (e) {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    vm.book(seat, index)
+                  },
+                  mousedown: function (e) {
+                    vm.tooltip.active = false
+                  },
+                  mouseover: function (e) {
+                    console.log(seat, index)
+                    vm.showTooltip(seat)
+                  },
+                  mouseout: function (e) {
+                    vm.tooltip.active = false
+                  }
+                }
+              })
+            }
+
+            if (vm.shape === 'circle') {
+              return createElement(vm.shape, {
+                attrs: {
+                  stroke: '#444',
+                  cx: seat.x + seat.width / 2,
+                  cy: seat.y + seat.height / 2,
+                  r: Math.min(seat.width / 2, seat.height / 2),
+                  fill: seat.fill,
+                  'stroke-width': seat.status === 0 || seat.status === 3 ? '0' : '2'
+                },
+                class: [
+                  'seat',
+                  {
+                    'hover-category': seat.category === vm.hoverCategory
+                  },
+                  {
+                    unavailable: seat.status === 0 || seat.status === 3 ? true : false
+                  }
+                ],
+                on: {
+                  click: function (e) {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    vm.book(seat, index)
+                  },
+                  mousedown: function (e) {
+                    vm.tooltip.active = false
+                  },
+                  mouseover: function (e) {
+                    vm.showTooltip(seat)
+                  },
+                  mouseout: function (e) {
+                    vm.tooltip.active = false
+                  }
+                }
+              })
+            }
+          })
+        ]),
+        /* /seats */
+
+        /* stages */
+        vm.stages.map(function (stage) {
+          return createElement('g', {
+            domProps: {
+              innerHTML: stage.html
+            }
+          })
+        }),
+        /* /stages */
+
+        /* facilities */
+        vm.facilities.map(function (facility) {
+          return createElement('g', {
+            domProps: {
+              innerHTML: facility.html
+            }
+          })
+        }),
+        /* /facilities */
+
+        /* disabilities */
+        vm.disabilities.map(function (disability) {
+          return createElement('g', {
+            domProps: {
+              innerHTML: disability.html
+            }
+          })
+        }),
+        /* /disabilities */
+      ]),
+      /* /svg */
+
+      /* tooltip */
+      createElement('span', {
+        style: vm.styles.tooltip,
+        attrs: {
+          class: 'tooltip'
+        },
+        domProps: {
+          innerHTML: vm.tooltip.content
+        },
+        directives: [
+          {
+            name: 'show',
+            value: vm.tooltip.active
+          }
+        ]
+      }),
+      /* /tooltip */
+
+      /* manipulate block */
+      createElement('div', {
+        attrs: {
+          class: 'manipulate'
+        }
+      }, [
+        createElement('button', {
+          attrs: {
+            class: 'btn'
+          },
+          on: {
+            click: function (e) {
+              e.preventDefault()
+              e.stopPropagation()
+              vm.reset()
+            }
+          }
+        }, [
+          createElement('i', {
+            attrs: {
+              class: 'icon-refresh'
+            }
+          })
+        ]),
+        createElement('button', {
+          attrs: {
+            class: 'btn'
+          },
+          on: {
+            click: function (e) {
+              e.preventDefault()
+              e.stopPropagation()
+              vm.zoom('in')
+            }
+          }
+        }, [
+          createElement('i', {
+            attrs: {
+              class: 'icon-plus'
+            }
+          })
+        ]),
+        createElement('button', {
+          attrs: {
+            class: 'btn'
+          },
+          on: {
+            click: function (e) {
+              e.preventDefault()
+              e.stopPropagation()
+              vm.zoom('out')
+            }
+          }
+        }, [
+          createElement('i', {
+            attrs: {
+              class: 'icon-minus'
+            }
+          })
+        ])
+      ]),
+      /* /manipulate block */
+
+      /* legend panel */
+      createElement('div', {
+        attrs: {
+          class: 'legend-list-panel'
+        },
+        directives: [
+          {
+            name: 'show',
+            value: vm.legend.length > 0
+          }
+        ]
+      }, [
+        createElement('ul', {
+          attrs: {
+            class: 'legend-list'
+          }
+        }, [
+          vm.legend.map(function (item) {
+            return createElement('li', {
+              key: item.color,
+              on: {
+                mouseover: function (e) {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  vm.showHoverCategory(item.name)
+                },
+                mouseleave: function (e) {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  vm.showHoverCategory(undefined)
+                }
+              }
+            }, [
+              createElement('div', {
+                attrs: {
+                  class: 'block'
+                },
+                style: {
+                  'background-color': item.color
+                }
+              }),
+              item.name
+            ])
+          })
+        ])
+      ])
+      /* /legend panel */
+    ])
   }
 }
 
@@ -509,12 +697,12 @@ export default {
     }
 
     &.hover-category {
-      animation: hover-category-animation 1s infinite;
+      animation: hover-category-animation .8s infinite;
     }
 
     @keyframes hover-category-animation {
-      0%   { opacity: 0.3; stroke: #FFF; stroke-width: 8;}
-      100% { opacity: 1; stroke: #444; stroke-width: 2}
+      0%   { opacity: 0.3; stroke: #FFF; stroke-width: 8; }
+      100% { opacity: 1; stroke: #444; stroke-width: 2; }
     }
   }
 
@@ -596,6 +784,7 @@ export default {
       font-size: 12px;
       transition: .3s ease;
       display: flex;
+      align-items: center;
       cursor: pointer;
       user-select: none;
 
