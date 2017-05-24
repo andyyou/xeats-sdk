@@ -409,7 +409,7 @@ export default {
             expression: 'viewBox',
             modifiers: {
               vframe: true,
-              zoom: !vm.disableZoom
+              'disable-zoom': vm.disableZoom
             }
           }
         ]
