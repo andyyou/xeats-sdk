@@ -359,10 +359,15 @@ export default {
       })
       this.applyToSeatColor = this.categoryItems[categoryIndex].color
     },
-    buttonTooltip () {
-
+    buttonTooltip (buttonEventTarget) {
+      // 如果自己（<i>）的 dataset 找不到 content，則找父層的（<button>）
+      let content = buttonEventTarget.target.dataset.content || buttonEventTarget.target.parentElement.dataset.content
+      this.tooltip.active = true
+      this.tooltip.content = content
+      this.tooltip.left = buttonEventTarget.target.offsetLeft + 25
+      this.tooltip.top = 75
     },
-    showTooltip (seat){
+    seatTooltip (seat){
       this.tooltip.active = true
       this.tooltip.content = seat.label
 
@@ -789,7 +794,7 @@ export default {
                 e.preventDefault()
                 e.stopPropagation()
                 vm.tooltip.timer = setTimeout(function () {
-                  return vm.showTooltip(seat)
+                  return vm.seatTooltip(seat)
                 }, 300)
               },
               mouseout: function (e) {
@@ -840,6 +845,9 @@ export default {
       }, [
         // reset button
         createElement('button', {
+          attrs: {
+            'data-content': 'Reset seats from spots'
+          },
           class: {
             active: vm.mode === 'reset',
             btn: true
@@ -849,17 +857,32 @@ export default {
               e.preventDefault()
               e.stopPropagation()
               vm.mode = 'reset'
+            },
+            mouseover: function (e) {
+              e.preventDefault()
+              e.stopPropagation()
+              vm.tooltip.timer = setTimeout(function () {
+                return vm.buttonTooltip(e)
+              }, 300)
+            },
+            mouseout: function (e) {
+              e.preventDefault()
+              clearTimeout(vm.tooltip.timer)
+              vm.tooltip.active = false
             }
           }
         }, [
           createElement('i', {
             attrs: {
               class: 'icon-th',
-            }
+            },
           })
         ]),
         // pan-zoom button
         createElement('button', {
+          attrs: {
+            'data-content': 'Pan-Zoom Seats'
+          },
           class: {
             active: vm.mode === 'pan-zoom',
             btn: true
@@ -869,6 +892,18 @@ export default {
               e.preventDefault()
               e.stopPropagation()
               vm.mode = 'pan-zoom'
+            },
+            mouseover: function (e) {
+              e.preventDefault()
+              e.stopPropagation()
+              vm.tooltip.timer = setTimeout(function () {
+                return vm.buttonTooltip(e)
+              }, 300)
+            },
+            mouseout: function (e) {
+              e.preventDefault()
+              clearTimeout(vm.tooltip.timer)
+              vm.tooltip.active = false
             }
           }
         }, [
@@ -880,6 +915,9 @@ export default {
         ]),
         // picking button
         createElement('button', {
+          attrs: {
+            'data-content': 'Categorize Seats'
+          },
           class: {
             active: vm.mode === 'picking',
             btn: true
@@ -889,6 +927,18 @@ export default {
               e.preventDefault()
               e.stopPropagation()
               vm.mode = 'picking'
+            },
+            mouseover: function (e) {
+              e.preventDefault()
+              e.stopPropagation()
+              vm.tooltip.timer = setTimeout(function () {
+                return vm.buttonTooltip(e)
+              }, 300)
+            },
+            mouseout: function (e) {
+              e.preventDefault()
+              clearTimeout(vm.tooltip.timer)
+              vm.tooltip.active = false
             }
           }
         }, [
@@ -900,6 +950,9 @@ export default {
         ]),
         // save button
         createElement('button', {
+          attrs: {
+            'data-content': 'Save Seats'
+          },
           class: {
             active: vm.mode === 'save',
             btn: true,
@@ -910,6 +963,18 @@ export default {
               e.preventDefault()
               e.stopPropagation()
               vm.mode = 'save'
+            },
+            mouseover: function (e) {
+              e.preventDefault()
+              e.stopPropagation()
+              vm.tooltip.timer = setTimeout(function () {
+                return vm.buttonTooltip(e)
+              }, 300)
+            },
+            mouseout: function (e) {
+              e.preventDefault()
+              clearTimeout(vm.tooltip.timer)
+              vm.tooltip.active = false
             }
           }
         }, [
@@ -1583,7 +1648,7 @@ export default {
     position: absolute;
     left: 0;
     top: 0;
-    z-index: 10;
+    z-index: 30;
     white-space: nowrap;
   }
 
