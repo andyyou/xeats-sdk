@@ -128,6 +128,7 @@ class ManagerMap {
           //     categories: options.categories
           //   }
           // })
+          /* /render */
         },
         components: {
           app,

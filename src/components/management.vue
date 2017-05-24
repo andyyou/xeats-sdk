@@ -87,7 +87,6 @@ const SEATS_SHAPE = {
         width: this.width,
         height: this.height,
         fill: this.picked ? darken(this.fill, -0.2) : this.fill,
-        class: 'seat'
       }
     } 
   },
@@ -99,7 +98,6 @@ const SEATS_SHAPE = {
         cy: this.y + this.height / 2,
         r: Math.min(this.width / 2, this.height / 2),
         fill: this.picked ? darken(this.fill, -0.2) : this.fill,
-        class: 'seat'
       }
     }
   }
@@ -246,6 +244,12 @@ export default {
         categoryItem.color = hsl2hex(index * (360 / array.length) % 360, 55, 70)
         return categoryItem
       }),
+
+      /**
+       * hoverCategory is for category which been hovered on legend
+       */
+      hoverCategory: '',
+
       /**
        * Status for loader
        */
@@ -339,6 +343,12 @@ export default {
         vm.ajaxFailed = 'API request failed, Try to reload please.'
         console.log('error')
       })
+    },
+    /**
+     * Show Selected Category which is hover on Legend
+     */
+    showHoverCategory (category) {
+      this.hoverCategory = category
     },
     updateCategoryColor(category){
       let categoryIndex = this.categoryItems.findIndex(item => {
@@ -542,6 +552,35 @@ export default {
     }
   },
   computed: {
+    legend () {
+      let vm = this
+      let legend = []
+      const UNAVAILABLE_COLOR = '#d3d3d3'
+      this.seats.forEach( seat => {
+
+        // This is to map Legend
+        let legendIndex = legend.findIndex(item => {
+          return item.color.toLowerCase() === seat.fill.toLowerCase()
+        })
+
+        // if not find the color in Legend and not unavailable color then push in legend
+        if (legendIndex === -1 && seat.fill !== UNAVAILABLE_COLOR) {
+          legend.push({
+            name: seat.category,
+            color: seat.fill,
+          })
+        }
+
+        // sort for clarity of legend
+        legend.sort((a, b) => {
+          if (a.name < b.name) return -1
+          if (a.name > b.name) return 1
+          return 0
+        })
+
+      })
+      return legend
+    },
     viewboxString () {
       const minX = this.viewBox.x || 0 - this.viewBox.x
       const minY = this.viewBox.y || 0 - this.viewBox.y
@@ -724,6 +763,12 @@ export default {
         createElement('g', null, vm.seats.map(function (seat) {
           return createElement(vm.seatsDocument.shape, {
             attrs: SEATS_SHAPE[vm.seatsDocument.shape].htmlAttr.call(seat),
+            class: [
+                  'seat',
+                  {
+                    'hover-category': seat.category === vm.hoverCategory
+                  }
+                ],
             on: {
               click: function (e) {
                 e.preventDefault()
@@ -754,6 +799,7 @@ export default {
           })
         }))
       ]),
+      /* tooltip */
       createElement('span', {
         style: vm.styles.tooltip,
         attrs: {
@@ -766,7 +812,11 @@ export default {
             value: vm.tooltip.active
           }
         ]
-      }, vm.tooltip.content),
+      }, vm.tooltip.content), 
+      
+      /* /tooltip */
+
+      /* manipulate*/
       createElement('div', {
         attrs: {
           class: 'manipulate'
@@ -868,7 +918,7 @@ export default {
           })
         ])
       ]),
-      // zoom button
+      // pan zoom manipulate
       createElement('transition', {
         props: {
           name: 'fade'
@@ -885,6 +935,7 @@ export default {
             }
           ]
         }, [
+          // zoom in button
           createElement('button', {
             attrs: {
               class: 'btn'
@@ -921,6 +972,7 @@ export default {
               }
             })
           ]),
+          // zoom out button
           createElement('button', {
             attrs: {
               class: 'btn'
@@ -1171,7 +1223,55 @@ export default {
             }
           ]
         })
+      ]),
+
+      /* legend panel */
+      createElement('div', {
+        attrs: {
+          class: 'legend-list-panel'
+        },
+        directives: [
+          {
+            name: 'show',
+            value: vm.legend.length > 0
+          }
+        ]
+      }, [
+        createElement('ul', {
+          attrs: {
+            class: 'legend-list'
+          }
+        }, [
+          vm.legend.map(function (item) {
+            return createElement('li', {
+              key: item.color,
+              on: {
+                mouseover: function (e) {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  vm.showHoverCategory(item.name)
+                },
+                mouseleave: function (e) {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  vm.showHoverCategory(undefined)
+                }
+              }
+            }, [
+              createElement('div', {
+                attrs: {
+                  class: 'block'
+                },
+                style: {
+                  'background-color': item.color
+                }
+              }),
+              item.name
+            ])
+          })
+        ])
       ])
+      /* /legend panel */
     ])
   }
 }
@@ -1200,6 +1300,16 @@ export default {
 
   .seat {
     cursor: pointer;
+
+    &.hover-category {
+      animation: hover-category-animation .8s infinite;
+    }
+
+    @keyframes hover-category-animation {
+      0%   { opacity: 0.3; stroke: #FFF; stroke-width: 8; }
+      100% { opacity: 1; stroke: #444; stroke-width: 2; }
+    }
+  
   }
 
   .manipulate {
@@ -1405,6 +1515,57 @@ export default {
           color: white;
         }
       }
+    }
+  }
+
+  .legend-list-panel {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    z-index: 12;
+    top: 35px;
+    right: 30px;
+    border: 1px solid #CCC;
+    border-radius: 3px;
+    background-color: white;
+    box-shadow: 0 1px 2px #DDD;
+    padding: 5px;
+  }
+
+  .legend-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    // width: 320px;
+    max-height: 480px;
+    overflow: auto;
+
+    .block {
+      width: 20px;
+      height: 20px;
+      margin-right: 10px;
+    }
+
+    li {
+      padding: 8px 10px;
+      color: rgba(0, 0, 0, 0.65);
+      font-weight: 500;
+      font-size: 12px;
+      transition: .3s ease;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+
+      &:hover {
+        color: #108ee9;
+      }
+
+      &+li {
+        border-top: 1px solid #ccc;
+      }
+
     }
   }
 
