@@ -131,6 +131,10 @@ export default {
       type: Array,
       required: true
     },
+    disableZoom: {
+      type: Boolean,
+      default: false
+    },
     /**
      * For generate form fields out of iframe
      * Administrator panel no need to use form-post (optional)
@@ -633,7 +637,8 @@ export default {
         name: vm.mode, 
         expression: expressions[vm.mode],
         modifiers: {
-          vframe: true
+          vframe: true,
+          'disable-zoom': vm.disableZoom
         }
       }
 

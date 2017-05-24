@@ -95,6 +95,7 @@ class ManagerMap {
                   amountMax: options.amountMax,
                   amountMin: options.amountMin,
                   categories: options.categories,
+                  disableZoom: options.disableZoom,
                   /**
                    * When use vframe
                    * Please make sure your component need to place data
@@ -123,6 +124,7 @@ class ManagerMap {
           //     zoomMin: options.zoomMin,
           //     amountMax: options.amountMax,
           //     amountMin: options.amountMin,
+          //     disableZoom: options.disableZoom,
           //     categories: options.categories
           //   }
           // })
@@ -230,6 +232,7 @@ class UserMap {
         //     zoomMin: options.zoomMin,
         //     amountMax: options.amountMax,
         //     amountMin: options.amountMin
+        //     disableZoom: options.disableZoom,
         //   }
         // })
       },
