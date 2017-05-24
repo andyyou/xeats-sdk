@@ -197,6 +197,7 @@ class UserMap {
                 height: options.height,
                 seatsKey: options.seatsKey,
                 accessKey: options.accessKey,
+                disableZoom: options.disableZoom,
                 zoomMax: options.zoomMax,
                 zoomMin: options.zoomMin,
                 amountMax: options.amountMax,

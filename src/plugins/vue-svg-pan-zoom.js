@@ -19,7 +19,6 @@ export default {
         } else {
           mc = new Hammer.Manager(svgElement)
         }
-
         // Create Recognizer
         const pinch = new Hammer.Pinch({domEvents: true})
         const pan = new Hammer.Pan({domEvents: true})
@@ -136,23 +135,32 @@ export default {
         }
 
         mc.on('pinchstart', () => {})
-        mc.on('pinchmove', onZoom)
+        if (binding.modifiers.zoom) {
+          mc.on('pinchmove', onZoom)
+        }
         mc.on('pinchend', onPinchEnd)
         mc.on('panstart', onPanStart)
         mc.on('panmove', onPanMove)
         mc.on('panend', onPanEnd)
-        el.addEventListener('wheel', onZoom, false)
+        if (binding.modifiers.zoom) {
+          el.addEventListener('wheel', onZoom, false)
+        }
       },
       unbind (el, binding, vnode, oldVnode) {
         mc.off('pinchstart', () => {})
-        mc.off('pinchmove', onZoom)
+        
+        if (binding.modifiers.zoom) {
+          mc.off('pinchmove', onZoom)
+        }
         mc.off('pinchend', onPinchEnd)
         mc.off('panstart', onPanStart)
         mc.off('panmove', onPanMove)
         mc.off('panend', onPanEnd)
         mc.off('pan')
         mc.off('pinch')
-        el.removeEventListener('wheel', onZoom)
+        if (binding.modifiers.zoom) {
+          el.removeEventListener('wheel', onZoom)
+        }
       }
     })
   }
