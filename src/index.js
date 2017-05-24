@@ -43,7 +43,7 @@ class ManagerMap {
             this.fields = data
           }
         },
-        
+
         render (createElement) {
           // NOTICE: This is for production
           return createElement('div', {

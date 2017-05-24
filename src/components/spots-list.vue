@@ -90,7 +90,7 @@ export default {
       cursor: pointer;
       
       &:hover {
-            color: #108ee9;
+        color: #108ee9;
       }
 
       &+li {

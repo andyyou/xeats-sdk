@@ -33,9 +33,8 @@
     v-pan-zoom.vframe="viewBox"
     >
 
-      <g>
+      <g v-if="shape === 'rect'">
         <rect
-        v-if="shape === 'rect'"
         v-for="(seat, index) in seats"
         :x="seat.x"
         :y="seat.y"
@@ -44,14 +43,15 @@
         :fill="seat.fill"
         stroke="#444"
         :stroke-width="(seat.status === 0 || seat.status === 3) ? '0' : '2'"
-        :class="['seat', {'unavailable': (seat.status === 0 || seat.status === 3) ? true : false }]"
+        :class="['seat', {'hover-category': seat.category === hoverCategory}, {'unavailable': (seat.status === 0 || seat.status === 3) ? true : false }]"
         @click.prevent.stop="book(seat, index)"
         @mousedown.prevent.stop="() => {tooltip.active = false}"
         @mouseover.prevent.stop="showTooltip(seat)"
         @mouseout.prevent="() => {tooltip.active = false}"
         />
+      </g>
+      <g v-if="shape === 'circle'">
         <circle
-        v-if="shape === 'circle'"
         v-for="(seat, index) in seats"
         :cx="seat.x + seat.width / 2"
         :cy="seat.y + seat.height / 2"
@@ -59,7 +59,7 @@
         :fill="seat.fill"
         stroke="#444"
         :stroke-width="(seat.status === 0 || seat.status === 3) ? '0' : '2'"
-        :class="['seat', {'unavailable': (seat.status === 0 || seat.status === 3) ? true : false }]"
+        :class="['seat', {'hover-category': seat.category === hoverCategory}, {'unavailable': (seat.status === 0 || seat.status === 3) ? true : false }]"
         @click.prevent.stop="book(seat, index)"
         @mousedown.prevent.stop="() => {tooltip.active = false}"
         @mouseover.prevent.stop="showTooltip(seat)"
@@ -83,8 +83,9 @@
     :style="styles.tooltip"
     class="tooltip"
     v-show="tooltip.active"
+    v-html="tooltip.content"
     >
-    {{ tooltip.content }}
+    <!--{{ tooltip.content }}-->
     </span>
     <div class="manipulate">
       <button 
@@ -105,6 +106,20 @@
       >
         <i class="icon-minus"></i>
       </button>
+    </div>
+    <div class="legend-list-panel" v-show="legend.length > 0">
+      <ul class='legend-list'>
+        <li v-for="item in legend" 
+        :key="item.color"
+        @mouseover.stop.prevent="showHoverCategory(item.name)"
+        @mouseleave.stop.prevent="showHoverCategory(undefined)"
+        >
+          <div class="block" 
+          :style="{backgroundColor: item.color}">
+          </div>
+          {{ item.name }}
+        </li>
+      </ul>
     </div>
   </div>
 </template>
@@ -208,6 +223,11 @@ export default {
         timer: null
       },
       /**
+       * Legend for showing color-ticket pair
+       */
+      legend: [],
+      hoverCategory: '',
+      /**
        * Status for loader
        */
       loading: true,
@@ -270,6 +290,9 @@ export default {
       }
     })
     .then(res => {
+
+      const UNAVAILABLE_COLOR = '#d3d3d3'
+
       vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
       vm.stages = res.data.objects.filter(obj => obj.type === 'stage')
       vm.facilities = res.data.objects.filter(obj => obj.type === 'facilities')
@@ -307,8 +330,29 @@ export default {
 
       vm.seats = vm.seats.map(function (seat) {
 
+        // This is to map Legend
+        let legendIndex = vm.legend.findIndex(item => {
+          return item.color === seat.fill
+        })
+
+        // if not find the color in Legend and not unavailable color then push in legend
+        if (legendIndex === -1 && seat.fill !== UNAVAILABLE_COLOR) {
+          vm.legend.push({
+            name: seat.category,
+            color: seat.fill,
+          })
+        }
+
+        // sort for clarity of legend
+        vm.legend.sort((a, b) => {
+          if (a.name < b.name) return -1
+          if (a.name > b.name) return 1
+          return 0
+        })
+
+
         // SEAT_STATUS: [unavailable, available, reserved, other]
-        let colors = ['#d3d3d3', seat.fill, vm.darken(seat.fill, -0.4), '#d3d3d3']
+        let colors = [UNAVAILABLE_COLOR, seat.fill, vm.darken(seat.fill, -0.4), UNAVAILABLE_COLOR]
         /**
          * If color show black means something wrong
          */
@@ -326,6 +370,9 @@ export default {
     })
   },
   methods: {
+    showHoverCategory (category) {
+      this.hoverCategory = category
+    },
     darken (color, percent) {
       let f = parseInt(color.slice(1),16),
       t = (percent < 0) ? 0:255,
@@ -337,7 +384,7 @@ export default {
     },
     showTooltip (seat) {
       this.tooltip.active = true
-      this.tooltip.content = seat.label
+      this.tooltip.content = seat.label + '<br>' + (seat.category || '無法購買')
       
       let svgCanvas = this.$el.querySelector('#svg-canvas')
       let point = svgCanvas.createSVGPoint()
@@ -438,6 +485,8 @@ export default {
     user-select: none;
     -moz-user-select: none;
     -webkit-user-select: none;
+    cursor: grab;
+    cursor: -webkit-grab;
     transition: all .3s ease;
     background-color: transparent;
     position: relative;
@@ -453,9 +502,19 @@ export default {
 
   .seat {
     cursor: pointer;
+    transition: 0.5s;
 
     &.unavailable {
-      cursor: default;
+      cursor: not-allowed;
+    }
+
+    &.hover-category {
+      animation: hover-category-animation 1s infinite;
+    }
+
+    @keyframes hover-category-animation {
+      0%   { opacity: 0.3; stroke: #FFF; stroke-width: 8;}
+      100% { opacity: 1; stroke: #444; stroke-width: 2}
     }
   }
 
@@ -501,6 +560,56 @@ export default {
     }
   }
 
+  .legend-list-panel {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    z-index: 12;
+    top: 35px;
+    right: 30px;
+    border: 1px solid #CCC;
+    border-radius: 3px;
+    background-color: white;
+    box-shadow: 0 1px 2px #DDD;
+    padding: 5px;
+  }
+
+  .legend-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    // width: 320px;
+    max-height: 480px;
+    overflow: auto;
+
+    .block {
+      width: 20px;
+      height: 20px;
+      margin-right: 10px;
+    }
+
+    li {
+      padding: 8px 10px;
+      color: rgba(0, 0, 0, 0.65);
+      font-weight: 500;
+      font-size: 12px;
+      transition: .3s ease;
+      display: flex;
+      cursor: pointer;
+      user-select: none;
+
+      &:hover {
+        color: #108ee9;
+      }
+
+      &+li {
+        border-top: 1px solid #ccc;
+      }
+
+    }
+  }
+
   .tooltip {
     user-select: none;
     -moz-user-select: none;
@@ -515,6 +624,7 @@ export default {
     top: 0;
     z-index: 2;
     white-space: nowrap;
+    text-align: center;
   }
 
   .loader, .loader-figure {
