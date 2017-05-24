@@ -210,7 +210,7 @@ export default {
 
         // This is to map Legend
         let legendIndex = vm.legend.findIndex(item => {
-          return item.color === seat.fill
+          return item.color.toLowerCase() === seat.fill.toLowerCase()
         })
 
         // if not find the color in Legend and not unavailable color then push in legend
@@ -293,12 +293,12 @@ export default {
       let scale = this.viewBox.scale
 
       if (effect === 'out') {
-        scale += 0.1
+        scale += 0.3
         if (scale >= this.viewBox.scaleRange.maxScale) {
           scale = this.viewBox.scaleRange.maxScale
         }
       } else if(effect === 'in') {
-        scale -= 0.1
+        scale -= 0.3
         if (scale <= this.viewBox.scaleRange.minScale) {
           scale = this.viewBox.scaleRange.minScale
         }
@@ -690,7 +690,6 @@ export default {
 
   .seat {
     cursor: pointer;
-    transition: 0.5s;
 
     &.unavailable {
       cursor: not-allowed;

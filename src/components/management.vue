@@ -337,7 +337,7 @@ export default {
       })
     },
     updateCategoryColor(category){
-      let categoryIndex = this.categoryItems.findIndex( (item) => {
+      let categoryIndex = this.categoryItems.findIndex(item => {
         return item.name === category
       })
       this.applyToSeatColor = this.categoryItems[categoryIndex].color
@@ -374,12 +374,12 @@ export default {
       // Setup ratio & never grater than zoomMax nor smaller than zoomMin.
       let scale = this.viewBox.scale
       if (effect === 'out') {
-        scale += 0.1
+        scale += 0.3
         if (scale >= this.viewBox.scaleRange.maxScale ) {
           scale = this.viewBox.scaleRange.maxScale
         }
       } else if(effect === 'in') {
-        scale -= 0.1
+        scale -= 0.3
         if (scale <= this.viewBox.scaleRange.minScale) {
           scale = this.viewBox.scaleRange.minScale
         }
@@ -533,7 +533,7 @@ export default {
       })
       .catch(error => {
         vm.ajaxFailed = 'Saving failed. Try to save again later.'
-        console.log('error', error)
+        console.error('error', error)
       })
     }
   },

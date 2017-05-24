@@ -43,57 +43,57 @@
   <script>
     
     // NOTICE: For User to create Manager
-    (function () {
-      var xeat = new Xeats.ManagerMap({
-        el: '#seat-map',
-        accessKey: '70abb94c-0a4e-4b60-b228-d3e17f2eb4ad',
-        secret: '2a669a9ec56ae69bd0be2de0c3c81b79',
-        /**
-         * The unique key for create a seats.
-         * You can name it as hash or event name.
-         * NOTE: it decide which seats you use.
-         *  Each time you make a new name will create another seats.
-         */
-        seatsKey: 'sandbox',
-        // categories: ['A', 'B', 'C', 'D'],
+    // (function () {
+    //   var xeat = new Xeats.ManagerMap({
+    //     el: '#seat-map',
+    //     accessKey: '70abb94c-0a4e-4b60-b228-d3e17f2eb4ad',
+    //     secret: '2a669a9ec56ae69bd0be2de0c3c81b79',
+    //     /**
+    //      * The unique key for create a seats.
+    //      * You can name it as hash or event name.
+    //      * NOTE: it decide which seats you use.
+    //      *  Each time you make a new name will create another seats.
+    //      */
+    //     seatsKey: 'sandbox',
+    //     // categories: ['A', 'B', 'C', 'D'],
         
         
-        categories: [{
-          name: '免費票',
-          info: {
-            ticketId: 'free',
-            price: '0'
-          },
-          comment:"這是免費票",
-          // sn:""
-        },
-        {
-          name: '貴賓票',
-          info: {
-            ticketId: 'special',
-            price: '545'
-          },
-          comment:"這是貴賓票",
-          // sn:""
-        },
-        {
-          name: '一般票',
-          info: {
-            ticketId: 'normal',
-            price: '390'
-          },
-          comment:"這是一般票",
-          // sn:""
-        }],
+    //     categories: [{
+    //       name: '免費票',
+    //       info: {
+    //         ticketId: 'free',
+    //         price: '0'
+    //       },
+    //       comment:"這是免費票",
+    //       // sn:""
+    //     },
+    //     {
+    //       name: '貴賓票',
+    //       info: {
+    //         ticketId: 'special',
+    //         price: '545'
+    //       },
+    //       comment:"這是貴賓票",
+    //       // sn:""
+    //     },
+    //     {
+    //       name: '一般票',
+    //       info: {
+    //         ticketId: 'normal',
+    //         price: '390'
+    //       },
+    //       comment:"這是一般票",
+    //       // sn:""
+    //     }],
         
         
-        // zoomMax: 4,    // default is 2
-        // zoomMin: 0.5,  // default is 0.5
-        width: 'auto',    // For responsive set value to `auto`
-        height: 800,      // Height can not set to auto
-        onAfterSave: function (data) {console.log('data', data)}
-      })
-    })()
+    //     // zoomMax: 4,    // default is 2
+    //     // zoomMin: 0.5,  // default is 0.5
+    //     width: 'auto',    // For responsive set value to `auto`
+    //     height: 800,      // Height can not set to auto
+    //     onAfterSave: function (data) {console.log('data', data)}
+    //   })
+    // })()
 
     // NOTICE:For user to book SeatsMap
     (function () {
