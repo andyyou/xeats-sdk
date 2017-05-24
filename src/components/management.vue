@@ -65,11 +65,12 @@ function hsl2hex (h, s, l) {
     return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 }
 
-const DEFAULT_COLORS = {
-  seatFillColor: '#d3d3d3',
-  applyToSeatColor: '#d3d3d3'
+const DEFAULT = {
+  SEAT: {
+    unavailableColor: '#d3d3d3',    // This color means the seat is unavailable
+    shape: 'circle'
+  }
 }
-
 const SEAT_STATUS = {
   unavailable: 0,
   available: 1,
@@ -232,7 +233,7 @@ export default {
        * select a color for apply to seats object's fill
        * show in setup-panel-category e.g. current color & category
        */
-      applyToSeatColor: DEFAULT_COLORS.applyToSeatColor,
+      applyToSeatColor: DEFAULT.SEAT.unavailableColor,
       category: (typeof this.categories[0] === 'string') ? this.categories[0] : this.categories[0].name,
       categoryItems: this.categories.map((category, index, array) => {
         let categoryItem = {}
@@ -269,7 +270,7 @@ export default {
       vm.seatsDocument = Object.assign({}, vm.seatsDocument, {
         name: res.data.name,
         comment: res.data.comment,
-        shape: res.data.shape || 'rect'           // rect is default shape
+        shape: res.data.shape || DEFAULT.SEAT.shape           // circle is default shape
       })
 
       vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
@@ -311,7 +312,7 @@ export default {
           category: seat.category || null,
           info: seat.info || null,
           sn: seat.sn || null,
-          fill: seat.fill || DEFAULT_COLORS.seatFillColor,
+          fill: seat.fill || DEFAULT.SEAT.unavailableColor,
           status: seat.status || SEAT_STATUS.unavailable,
           /* For picking to set seat */
           picked: false
@@ -331,11 +332,13 @@ export default {
         }
       })
       .then(res => {
+        // Replace seats with new spots
         vm.initialize(vm, res)
 
         vm.seatsDocument.name = null
         vm.seatsDocument.comment = null
 
+        this.reset()
         vm.loading = false
         vm.mode = 'pan-zoom'
       })
@@ -355,6 +358,9 @@ export default {
         return item.name === category
       })
       this.applyToSeatColor = this.categoryItems[categoryIndex].color
+    },
+    buttonTooltip () {
+
     },
     showTooltip (seat){
       this.tooltip.active = true
@@ -493,7 +499,7 @@ export default {
         options['clean'] = false
       }
 
-      let changedColor = options.clean ? DEFAULT_COLORS.seatFillColor : vm.applyToSeatColor
+      let changedColor = options.clean ? DEFAULT.SEAT.unavailableColor : vm.applyToSeatColor
       let changeCategory = options.clean ? null : vm.category
       let changeStatus = options.clean ? SEAT_STATUS.unavailable : SEAT_STATUS.available
 
@@ -554,30 +560,26 @@ export default {
   computed: {
     legend () {
       let vm = this
-      let legend = []
-      const UNAVAILABLE_COLOR = '#d3d3d3'
-      this.seats.forEach( seat => {
-
-        // This is to map Legend
-        let legendIndex = legend.findIndex(item => {
-          return item.color.toLowerCase() === seat.fill.toLowerCase()
-        })
-
-        // if not find the color in Legend and not unavailable color then push in legend
-        if (legendIndex === -1 && seat.fill !== UNAVAILABLE_COLOR) {
-          legend.push({
+      let temp = {}   // This is an empty object for reduce
+      let legend = this.seats.reduce( (acc, seat) => {
+        
+        let key = seat.category + '|' + seat.fill
+        if (!temp[key] && seat.fill !== DEFAULT.SEAT.unavailableColor) {
+          temp[key] = true;
+          return acc.concat({
             name: seat.category,
             color: seat.fill,
           })
+        } else {
+          return acc
         }
+      }, [])
 
-        // sort for clarity of legend
-        legend.sort((a, b) => {
-          if (a.name < b.name) return -1
-          if (a.name > b.name) return 1
-          return 0
-        })
-
+      // sort for clarity of legend
+      legend.sort((a, b) => {
+        if (a.name < b.name) return -1
+        if (a.name > b.name) return 1
+        return 0
       })
       return legend
     },
@@ -676,7 +678,7 @@ export default {
         name: vm.mode, 
         expression: expressions[vm.mode],
         modifiers: {
-          vframe: true,
+          vframe: false,
           'disable-zoom': vm.disableZoom
         }
       }
@@ -852,7 +854,7 @@ export default {
         }, [
           createElement('i', {
             attrs: {
-              class: 'icon-th'
+              class: 'icon-th',
             }
           })
         ]),
