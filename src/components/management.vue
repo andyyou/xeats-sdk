@@ -68,7 +68,8 @@ function hsl2hex (h, s, l) {
 const DEFAULT = {
   SEAT: {
     unavailableColor: '#d3d3d3',    // This color means the seat is unavailable
-    shape: 'circle'
+    shape: 'circle',
+    tooltipContent: '無法購買'
   }
 }
 const SEAT_STATUS = {
@@ -369,7 +370,7 @@ export default {
     },
     seatTooltip (seat){
       this.tooltip.active = true
-      this.tooltip.content = seat.label
+      this.tooltip.content = seat.label + '<br>' + (seat.category || DEFAULT.SEAT.tooltipContent)     // tooltipContent: 無法購買
 
       let svgCanvas = this.$el.querySelector('#svg-canvas')
       let point = svgCanvas.createSVGPoint()
@@ -809,6 +810,9 @@ export default {
       /* tooltip */
       createElement('span', {
         style: vm.styles.tooltip,
+        domProps: {
+          innerHTML: vm.tooltip.content
+        },
         attrs: {
           class: 'tooltip'
         },
@@ -819,7 +823,7 @@ export default {
             value: vm.tooltip.active
           }
         ]
-      }, vm.tooltip.content), 
+      }),
       
       /* /tooltip */
 
@@ -1650,6 +1654,7 @@ export default {
     top: 0;
     z-index: 30;
     white-space: nowrap;
+    text-align: center;
   }
 
   .dotted-around {

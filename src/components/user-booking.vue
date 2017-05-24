@@ -1,6 +1,13 @@
 <script>
 import _ from 'lodash'
 
+const DEFAULT = {
+  SEAT: {
+    unavailableColor: '#d3d3d3',    // This color means the seat is unavailable
+    tooltipContent: '無法購買'
+  }
+}
+
 export default {
   props: {
     width: {
@@ -169,8 +176,6 @@ export default {
     })
     .then(res => {
 
-      const UNAVAILABLE_COLOR = '#d3d3d3'
-
       vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
       vm.stages = res.data.objects.filter(obj => obj.type === 'stage')
       vm.facilities = res.data.objects.filter(obj => obj.type === 'facilities')
@@ -206,15 +211,12 @@ export default {
       vm.viewBox.scaleRange.maxScale = (1 / vm.viewBox.zoomMin) * vm.viewBox.initialScale
       vm.viewBox.scaleRange.minScale = (1 / vm.viewBox.zoomMax) * vm.viewBox.initialScale
 
+      let temp = {}   // This is an empty object for filter legend
       vm.seats = vm.seats.map(function (seat) {
 
-        // This is to map Legend
-        let legendIndex = vm.legend.findIndex(item => {
-          return item.color.toLowerCase() === seat.fill.toLowerCase()
-        })
-
-        // if not find the color in Legend and not unavailable color then push in legend
-        if (legendIndex === -1 && seat.fill !== UNAVAILABLE_COLOR) {
+        let key = seat.category + '|' + seat.fill
+        if (!temp[key] && seat.fill !== DEFAULT.SEAT.unavailableColor) {
+          temp[key] = true
           vm.legend.push({
             name: seat.category,
             color: seat.fill,
@@ -230,7 +232,7 @@ export default {
 
 
         // SEAT_STATUS: [unavailable, available, reserved, other]
-        let colors = [UNAVAILABLE_COLOR, seat.fill, vm.darken(seat.fill, -0.4), UNAVAILABLE_COLOR]
+        let colors = [DEFAULT.SEAT.unavailableColor, seat.fill, vm.darken(seat.fill, -0.4), DEFAULT.SEAT.unavailableColor]
         /**
          * If color show black means something wrong
          */
@@ -260,9 +262,9 @@ export default {
       B = f & 0x0000FF
       return "#"+(0x1000000+(Math.round((t-R)*p)+R)*0x10000+(Math.round((t-G)*p)+G)*0x100+(Math.round((t-B)*p)+B)).toString(16).slice(1);
     },
-    showTooltip (seat) {
+    seatTooltip (seat) {
       this.tooltip.active = true
-      this.tooltip.content = seat.label + '<br>' + (seat.category || '無法購買')
+      this.tooltip.content = seat.label + '<br>' + (seat.category || DEFAULT.SEAT.tooltipContent)     // tooltipContent: 無法購買
       
       let svgCanvas = this.$el.querySelector('#svg-canvas')
       let point = svgCanvas.createSVGPoint()
@@ -448,8 +450,7 @@ export default {
                     vm.tooltip.active = false
                   },
                   mouseover: function (e) {
-                    console.log(seat, index)
-                    vm.showTooltip(seat)
+                    vm.seatTooltip(seat)
                   },
                   mouseout: function (e) {
                     vm.tooltip.active = false
@@ -487,7 +488,7 @@ export default {
                     vm.tooltip.active = false
                   },
                   mouseover: function (e) {
-                    vm.showTooltip(seat)
+                    vm.seatTooltip(seat)
                   },
                   mouseout: function (e) {
                     vm.tooltip.active = false
