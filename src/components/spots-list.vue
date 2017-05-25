@@ -1,22 +1,3 @@
-<template>
-  <div class='spots-list-panel'>
-    <div class='loading' v-if="spotsList.length === 0">
-      <div class='line'></div>
-      <div class='line'></div>
-      <div class='line'></div>
-    </div>
-    <ul class='spots-list' v-else>
-      <li v-for="(spot, index) in spotsList" 
-      :key="spot._id"
-      :data-spot-id="spot._id"
-      @click.prevent.stop="confirmReset($event)"
-      >
-        {{ spot.name }}
-      </li>
-    </ul>
-  </div>
-</template>
-
 <script>
 export default {
   data () {
@@ -30,7 +11,7 @@ export default {
             
       if (reset) {
         this.$emit('reset-spot-id', e.target.dataset.spotId)
-        console.log('reset-spot-id')    
+        // console.log('reset-spot-id')
       } else {
         return
       }
@@ -43,12 +24,73 @@ export default {
       }
     })
     .then(res => {
-      console.log('get spots list', res.data)
       this.spotsList = res.data
     })
     .catch( error => {
-      console.log('request error', error)
+      console.error('request error', error)
     })
+  },
+  render (h) {
+    let vm = this
+    /* .spots-list-panel */
+    return h('div', {
+      attrs: {
+        class: 'spots-list-panel'
+      }
+    },[
+      /* .spots-list-panel>.loading */
+      h('div', {
+        attrs: {
+          class: 'loading'
+        },
+        directives: [
+          {
+            name: 'show',
+            value: vm.spotsList.length === 0
+          }
+        ]
+      },[
+        /* .spots-list-panel>.loading>.line*3 */
+        h('div'), {
+          attrs: {
+            class: 'line'
+          }
+        },
+        h('div'), {
+          attrs: {
+            class: 'line'
+          }
+        },
+        h('div'), {
+          attrs: {
+            class: 'line'
+          }
+        }/* /.spots-list-panel>.loading>.line*3 */
+      ]),/* /.spots-list-panel>.loading */
+      /* .spots-list-panel>ul.spots-list */
+      h('ul', {
+        attrs: {
+          class: 'spots-list'
+        }
+      }, 
+      /* .spots-list-panel>ul.spots-list>li*n */
+      vm.spotsList.map((spot) => {
+        return h('li', {
+          attrs: {
+            'data-spot-id': spot._id
+          },
+          on: {
+            click: function (e) {
+              e.preventDefault()
+              e.stopPropagation()
+              vm.confirmReset(e)
+            }
+          },
+          key: spot._id
+        }, spot.name)
+      }/* /.spots-list-panel>ul.spots-list>li*n */
+      ))/* /.spots-list-panel>ul.spots-list */
+    ])/* /.spots-list-panel */
   }
 }
 </script>
