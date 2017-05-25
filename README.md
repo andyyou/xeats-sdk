@@ -143,11 +143,11 @@ categories: [
 ```
 ##### zoomMax
 - Type: `Number`
-- Description: The maximum scale level to zoom in for the seats map. Larger value can scale in a lagrer level. Defaut is `2`.
+- Description: The maximum scale level to zoom in for the seats map. Larger value can scale in a lagrer level. Default is `2`.
 
 ##### zoomMin
 - Type: `Number`
-- Description: The minium scale level to zoom out for the seats map. Smaller value can scale in a smaller level. Defaut is `0.5`.
+- Description: The minimum scale level to zoom out for the seats map. Smaller value can scale in a smaller level. Default is `0.5`.
 
 ##### width
 - Type: `Number` | `String`
@@ -187,11 +187,11 @@ seatsKey: 'sandbox',
 
 ##### zoomMax
 - Type: `Number`
-- Description: The maximum scale level to zoom in for the seats map. Larger value can scale in a lagrer level. Defaut is `2`.
+- Description: The maximum scale level to zoom in for the seats map. Larger value can scale in a lagrer level. Default is `2`.
 
 ##### zoomMin
 - Type: `Number`
-- Description: The minium scale level to zoom out for the seats map. Smaller value can scale in a smaller level. Defaut is `0.5`.
+- Description: The minimum scale level to zoom out for the seats map. Smaller value can scale in a smaller level. Default is `0.5`.
 
 ##### width
 - Type: `Number` | `String`
@@ -222,11 +222,11 @@ Run `npm run build` to bundle a xeats-sdk.js for production.
 There are currently four VUE components in the package.
 - `user-booking`: This component will show the seats map and seats information for user to book the seat.
 - `management`: This component is for managers to choose spots, create seats, change seats status, change seats shape, also to categorize seats.
-- `spots-list`: This component is embeded in `management` component, which will get the list of authorized spots for user to change current spots.
-- `v-frame`: This component is for embeding other components in an iframe.
+- `spots-list`: This component is embedded in `management` component, which will get the list of authorized spots for user to change current spots.
+- `v-frame`: This component is for embedding other components in an iframe.
 
 
-# Changelog
+# Change log
 
 * `2017-05-23` Accept array of objects for category property in ManagerMap. Display the legend in UserMap
 * `2017-05-19` Accomplish changing seats shape
@@ -240,4 +240,4 @@ There are currently four VUE components in the package.
 
 # Issues
 
-# Roadmap
+# Road map

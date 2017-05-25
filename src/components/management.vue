@@ -131,7 +131,7 @@ export default {
       type: Array,
       required: true
     },
-    disableZoom: {
+    disableWheel: {
       type: Boolean,
       default: false
     },
@@ -685,7 +685,7 @@ export default {
         expression: expressions[vm.mode],
         modifiers: {
           vframe: true,
-          'disable-zoom': vm.disableZoom
+          'disable-zoom': vm.disableWheel
         }
       }
 

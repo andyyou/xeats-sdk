@@ -59,37 +59,35 @@
         
         
         categories: [{
-          name: '免費票',
+          name: 'Free',	
           info: {
             ticketId: 'free',
             price: '0'
           },
-          comment:"這是免費票",
-          // sn:""
-        },
-        {
-          name: '貴賓票',
+          comment: "This is for students",
+          sn:"0"
+        }, {
+          name: 'Early Bird',
           info: {
-            ticketId: 'special',
+            ticketId: 'earlyBird',
             price: '545'
           },
-          comment:"這是貴賓票",
-          // sn:""
-        },
-        {
-          name: '一般票',
+          comment: 'This is for early birds',
+          sn:"1"
+        }, {
+          name: 'Normal',
           info: {
             ticketId: 'normal',
             price: '390'
           },
-          comment:"這是一般票",
-          // sn:""
+          comment: "This is normal price ticket",
+          sn:"2"
         }],
         
         
         // zoomMax: 4,    // default is 2
         // zoomMin: 0.5,  // default is 0.5
-        disableZoom: true,
+        disableWheel: true,
         width: 'auto',    // For responsive set value to `auto`
         height: 800,      // Height can not set to auto
         onAfterSave: function (data) {console.log('data', data)}
@@ -102,7 +100,7 @@
     //     el: '#seat-map',
     //     accessKey: '70abb94c-0a4e-4b60-b228-d3e17f2eb4ad',
     //     seatsKey: 'sandbox',
-    //     disableZoom: true,
+    //     disableWheel: true,
     //     // zoomMax: 4,
     //     // zoomMin: 0.5,
     //     width: 'auto',    // For responsive set value to `auto`

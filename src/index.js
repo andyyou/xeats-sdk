@@ -95,7 +95,7 @@ class ManagerMap {
                   amountMax: options.amountMax,
                   amountMin: options.amountMin,
                   categories: options.categories,
-                  disableZoom: options.disableZoom,
+                  disableWheel: options.disableWheel,
                   /**
                    * When use vframe
                    * Please make sure your component need to place data
@@ -124,7 +124,7 @@ class ManagerMap {
           //     zoomMin: options.zoomMin,
           //     amountMax: options.amountMax,
           //     amountMin: options.amountMin,
-          //     disableZoom: options.disableZoom,
+          //     disableWheel: options.disableWheel,
           //     categories: options.categories
           //   }
           // })
@@ -206,7 +206,7 @@ class UserMap {
                 height: options.height,
                 seatsKey: options.seatsKey,
                 accessKey: options.accessKey,
-                disableZoom: options.disableZoom,
+                disableWheel: options.disableWheel,
                 zoomMax: options.zoomMax,
                 zoomMin: options.zoomMin,
                 amountMax: options.amountMax,
@@ -233,7 +233,7 @@ class UserMap {
         //     zoomMin: options.zoomMin,
         //     amountMax: options.amountMax,
         //     amountMin: options.amountMin,
-        //     disableZoom: options.disableZoom
+        //     disableWheel: options.disableWheel
         //   }
         // })
         /* /develope */

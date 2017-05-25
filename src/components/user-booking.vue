@@ -26,7 +26,7 @@ export default {
       type: String,
       required: true
     },
-    disableZoom: {
+    disableWheel: {
       type: Boolean,
       default: false
     },
@@ -411,7 +411,7 @@ export default {
             expression: 'viewBox',
             modifiers: {
               vframe: true,
-              'disable-zoom': vm.disableZoom
+              'disable-zoom': vm.disableWheel
             }
           }
         ]
