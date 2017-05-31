@@ -1216,6 +1216,11 @@ export default {
                 class: 'save'
               }
             }, [
+              createElement('div', {
+                attrs: {
+                  class: 'select-container'
+                }
+              }, [
                 createElement('select', {
                   on:{
                     change: function (e) {
@@ -1230,7 +1235,8 @@ export default {
                       selected: shape === vm.seatsDocument.shape
                     }
                   }, SEATS_SHAPE[shape].content)
-                })),
+                }))
+              ]),
                 createElement('input', {
                   attrs: {
                     type: 'text',
@@ -1484,6 +1490,7 @@ export default {
     padding: 5px;
     
     .save {
+
       input, select, option {
         border: 1px solid #CCC;
         background-color: white;
@@ -1502,10 +1509,41 @@ export default {
         width: 100%;
         height: 36px;
       }
+      select {
+        overflow: hidden;
+        position: relative;
+        margin-left: 0px;
+        min-width: 120px;
+        border: 1px solid #CCC;
+        box-shadow: none;
+        background: transparent;
+        background-image: none;
+        outline: 0;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        
+        &:-moz-focusring {
+          color: transparent;
+          text-shadow: 0 0 0 #000;
+        }
+        &:focus {
+          outline: none;
+        }
+      }
       
       input[type='text'] {
         &::placeholder {
           color: #BBB;
+        }
+      }
+      .select-container{
+        position: relative;
+        &:before{
+          content: "\e00a";
+          font-family: "xeats-fonts" !important;
+          position: absolute;
+          right: 3px;
+          top: 10px;
         }
       }
     }
