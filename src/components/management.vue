@@ -70,6 +70,11 @@ const DEFAULT = {
     unavailableColor: '#d3d3d3',    // This color means the seat is unavailable
     shape: 'circle',
     tooltipContent: '無法購買'
+  },
+  ZOOM: {
+    scale: 0.5,
+    max: 2,
+    min: 0.5
   }
 }
 const SEAT_STATUS = {
@@ -121,11 +126,11 @@ export default {
     },
     zoomMax: {
       type: Number,
-      default: 2
+      default: DEFAULT.ZOOM.max
     },
     zoomMin: {
       type: Number,
-      default: 0.5
+      default: DEFAULT.ZOOM.min
     },
     categories: {
       type: Array,
@@ -345,7 +350,7 @@ export default {
       })
       .catch( error => {
         vm.ajaxFailed = 'API request failed, Try to reload please.'
-        console.log('error')
+        console.error('error')
       })
     },
     /**
@@ -400,12 +405,12 @@ export default {
       // Setup ratio & never grater than zoomMax nor smaller than zoomMin.
       let scale = this.viewBox.scale
       if (effect === 'out') {
-        scale += 0.3
+        scale += DEFAULT.ZOOM.scale
         if (scale >= this.viewBox.scaleRange.maxScale ) {
           scale = this.viewBox.scaleRange.maxScale
         }
       } else if(effect === 'in') {
-        scale -= 0.3
+        scale -= DEFAULT.ZOOM.scale
         if (scale <= this.viewBox.scaleRange.minScale) {
           scale = this.viewBox.scaleRange.minScale
         }
@@ -663,7 +668,7 @@ export default {
     })
     .catch( error => {
       vm.ajaxFailed = 'API request failed, Try to reload please.'
-      console.log('error', error)
+      console.error('error', error)
     })
   },
   render (createElement) {
@@ -684,7 +689,7 @@ export default {
         name: vm.mode, 
         expression: expressions[vm.mode],
         modifiers: {
-          vframe: false,
+          vframe: true,
           'disable-wheel': vm.disableWheel
         }
       }
