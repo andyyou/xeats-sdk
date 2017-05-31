@@ -30,7 +30,7 @@ export default {
             
       if (reset) {
         this.$emit('reset-spot-id', e.target.dataset.spotId)
-        console.log('reset-spot-id')    
+        // console.log('reset-spot-id')
       } else {
         return
       }
@@ -43,13 +43,75 @@ export default {
       }
     })
     .then(res => {
-      console.log('get spots list', res.data)
       this.spotsList = res.data
     })
     .catch( error => {
-      console.log('request error', error)
+      console.error('request error', error)
     })
-  }
+  },
+  // NOTICE: Render function start
+  // render (createElement) {
+  //   let vm = this
+  //   /* .spots-list-panel */
+  //   return createElement('div', {
+  //     attrs: {
+  //       class: 'spots-list-panel'
+  //     }
+  //   },[
+  //     /* .spots-list-panel>.loading */
+  //     createElement('div', {
+  //       attrs: {
+  //         class: 'loading'
+  //       },
+  //       directives: [
+  //         {
+  //           name: 'show',
+  //           value: vm.spotsList.length === 0
+  //         }
+  //       ]
+  //     },[
+  //       /* .spots-list-panel>.loading>.line*3 */
+  //       createElement('div'), {
+  //         attrs: {
+  //           class: 'line'
+  //         }
+  //       },
+  //       createElement('div'), {
+  //         attrs: {
+  //           class: 'line'
+  //         }
+  //       },
+  //       createElement('div'), {
+  //         attrs: {
+  //           class: 'line'
+  //         }
+  //       }/* /.spots-list-panel>.loading>.line*3 */
+  //     ]),/* /.spots-list-panel>.loading */
+  //     /* .spots-list-panel>ul.spots-list */
+  //     createElement('ul', {
+  //       attrs: {
+  //         class: 'spots-list'
+  //       }
+  //     }, 
+  //     /* .spots-list-panel>ul.spots-list>li*n */
+  //     vm.spotsList.map((spot) => {
+  //       return createElement('li', {
+  //         attrs: {
+  //           'data-spot-id': spot._id
+  //         },
+  //         on: {
+  //           click: function (e) {
+  //             e.preventDefault()
+  //             e.stopPropagation()
+  //             vm.confirmReset(e)
+  //           }
+  //         },
+  //         key: spot._id
+  //       }, spot.name)
+  //     }/* /.spots-list-panel>ul.spots-list>li*n */
+  //     ))/* /.spots-list-panel>ul.spots-list */
+  //   ])/* /.spots-list-panel */
+  // }
 }
 </script>
 

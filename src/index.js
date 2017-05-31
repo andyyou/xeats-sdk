@@ -41,6 +41,11 @@ class ManagerMap {
         methods: {
           generateFormFields (data) {
             this.fields = data
+          },
+          onAfterSave (data) {
+            if (options.onAfterSave instanceof Function) {
+              options.onAfterSave(data)
+            }
           }
         },
 
@@ -90,12 +95,14 @@ class ManagerMap {
                   amountMax: options.amountMax,
                   amountMin: options.amountMin,
                   categories: options.categories,
+                  disableWheel: options.disableWheel,
                   /**
                    * When use vframe
                    * Please make sure your component need to place data
                    * outside of iframe for form-post.
                    */
-                  generateFormFields: this.generateFormFields
+                  generateFormFields: this.generateFormFields,
+                  onAfterSave: this.onAfterSave
                 }
               })
             ])
@@ -117,9 +124,11 @@ class ManagerMap {
           //     zoomMin: options.zoomMin,
           //     amountMax: options.amountMax,
           //     amountMin: options.amountMin,
+          //     disableWheel: options.disableWheel,
           //     categories: options.categories
           //   }
           // })
+          /* /render */
         },
         components: {
           app,
@@ -128,7 +137,7 @@ class ManagerMap {
       })
     })
     .catch(err => {
-      console.log(err)
+      console.error(err)
     })
   }
 }
@@ -197,7 +206,7 @@ class UserMap {
                 height: options.height,
                 seatsKey: options.seatsKey,
                 accessKey: options.accessKey,
-                disableZoom: options.disableZoom,
+                disableWheel: options.disableWheel,
                 zoomMax: options.zoomMax,
                 zoomMin: options.zoomMin,
                 amountMax: options.amountMax,
@@ -211,7 +220,7 @@ class UserMap {
               }
             })
           ])
-        ])
+        ]) /* /production */
 
         // NOTICE: This is for develope
         // return createElement('app', {
@@ -223,9 +232,11 @@ class UserMap {
         //     zoomMax: options.zoomMax,
         //     zoomMin: options.zoomMin,
         //     amountMax: options.amountMax,
-        //     amountMin: options.amountMin
+        //     amountMin: options.amountMin,
+        //     disableWheel: options.disableWheel
         //   }
         // })
+        /* /develope */
       },
       components: {
         app,

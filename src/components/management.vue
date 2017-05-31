@@ -65,11 +65,13 @@ function hsl2hex (h, s, l) {
     return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 }
 
-const DEFAULT_COLORS = {
-  seatFillColor: '#d3d3d3',
-  applyToSeatColor: '#d3d3d3'
+const DEFAULT = {
+  SEAT: {
+    unavailableColor: '#d3d3d3',    // This color means the seat is unavailable
+    shape: 'circle',
+    tooltipContent: '無法購買'
+  }
 }
-
 const SEAT_STATUS = {
   unavailable: 0,
   available: 1,
@@ -87,7 +89,6 @@ const SEATS_SHAPE = {
         width: this.width,
         height: this.height,
         fill: this.picked ? darken(this.fill, -0.2) : this.fill,
-        class: 'seat'
       }
     } 
   },
@@ -99,7 +100,6 @@ const SEATS_SHAPE = {
         cy: this.y + this.height / 2,
         r: Math.min(this.width / 2, this.height / 2),
         fill: this.picked ? darken(this.fill, -0.2) : this.fill,
-        class: 'seat'
       }
     }
   }
@@ -131,11 +131,18 @@ export default {
       type: Array,
       required: true
     },
+    disableWheel: {
+      type: Boolean,
+      default: false
+    },
     /**
      * For generate form fields out of iframe
      * Administrator panel no need to use form-post (optional)
      */
     generateFormFields: {
+      type: Function
+    },
+    onAfterSave : {
       type: Function
     }
   },
@@ -227,7 +234,7 @@ export default {
        * select a color for apply to seats object's fill
        * show in setup-panel-category e.g. current color & category
        */
-      applyToSeatColor: DEFAULT_COLORS.applyToSeatColor,
+      applyToSeatColor: DEFAULT.SEAT.unavailableColor,
       category: (typeof this.categories[0] === 'string') ? this.categories[0] : this.categories[0].name,
       categoryItems: this.categories.map((category, index, array) => {
         let categoryItem = {}
@@ -239,6 +246,12 @@ export default {
         categoryItem.color = hsl2hex(index * (360 / array.length) % 360, 55, 70)
         return categoryItem
       }),
+
+      /**
+       * hoverCategory is for category which been hovered on legend
+       */
+      hoverCategory: '',
+
       /**
        * Status for loader
        */
@@ -258,7 +271,7 @@ export default {
       vm.seatsDocument = Object.assign({}, vm.seatsDocument, {
         name: res.data.name,
         comment: res.data.comment,
-        shape: res.data.shape || 'rect'           // rect is default shape
+        shape: res.data.shape || DEFAULT.SEAT.shape           // circle is default shape
       })
 
       vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
@@ -300,7 +313,7 @@ export default {
           category: seat.category || null,
           info: seat.info || null,
           sn: seat.sn || null,
-          fill: seat.fill || DEFAULT_COLORS.seatFillColor,
+          fill: seat.fill || DEFAULT.SEAT.unavailableColor,
           status: seat.status || SEAT_STATUS.unavailable,
           /* For picking to set seat */
           picked: false
@@ -320,11 +333,13 @@ export default {
         }
       })
       .then(res => {
+        // Replace seats with new spots
         vm.initialize(vm, res)
 
         vm.seatsDocument.name = null
         vm.seatsDocument.comment = null
 
+        this.reset()
         vm.loading = false
         vm.mode = 'pan-zoom'
       })
@@ -333,15 +348,29 @@ export default {
         console.log('error')
       })
     },
+    /**
+     * Show Selected Category which is hover on Legend
+     */
+    showHoverCategory (category) {
+      this.hoverCategory = category
+    },
     updateCategoryColor(category){
-      let categoryIndex = this.categoryItems.findIndex( (item) => {
+      let categoryIndex = this.categoryItems.findIndex(item => {
         return item.name === category
       })
       this.applyToSeatColor = this.categoryItems[categoryIndex].color
     },
-    showTooltip (seat){
+    buttonTooltip (buttonEventTarget) {
+      // 如果自己（<i>）的 dataset 找不到 content，則找父層的（<button>）
+      let content = buttonEventTarget.target.dataset.content || buttonEventTarget.target.parentElement.dataset.content
       this.tooltip.active = true
-      this.tooltip.content = seat.label
+      this.tooltip.content = content
+      this.tooltip.left = buttonEventTarget.target.offsetLeft + 25
+      this.tooltip.top = 75
+    },
+    seatTooltip (seat){
+      this.tooltip.active = true
+      this.tooltip.content = seat.label + '<br>' + (seat.category || DEFAULT.SEAT.tooltipContent)     // tooltipContent: 無法購買
 
       let svgCanvas = this.$el.querySelector('#svg-canvas')
       let point = svgCanvas.createSVGPoint()
@@ -371,12 +400,12 @@ export default {
       // Setup ratio & never grater than zoomMax nor smaller than zoomMin.
       let scale = this.viewBox.scale
       if (effect === 'out') {
-        scale += 0.1
+        scale += 0.3
         if (scale >= this.viewBox.scaleRange.maxScale ) {
           scale = this.viewBox.scaleRange.maxScale
         }
       } else if(effect === 'in') {
-        scale -= 0.1
+        scale -= 0.3
         if (scale <= this.viewBox.scaleRange.minScale) {
           scale = this.viewBox.scaleRange.minScale
         }
@@ -476,7 +505,7 @@ export default {
         options['clean'] = false
       }
 
-      let changedColor = options.clean ? DEFAULT_COLORS.seatFillColor : vm.applyToSeatColor
+      let changedColor = options.clean ? DEFAULT.SEAT.unavailableColor : vm.applyToSeatColor
       let changeCategory = options.clean ? null : vm.category
       let changeStatus = options.clean ? SEAT_STATUS.unavailable : SEAT_STATUS.available
 
@@ -523,14 +552,43 @@ export default {
          * After save back to pan-zoom mode
          */
         vm.mode = 'pan-zoom'
+        /**
+         * onAfterSave: This is for sending seatsId
+         */
+        vm.$nextTick(vm.onAfterSave(vm.seatsDocument._id))
       })
       .catch(error => {
         vm.ajaxFailed = 'Saving failed. Try to save again later.'
-        console.log('error', error)
+        console.error('error', error)
       })
     }
   },
   computed: {
+    legend () {
+      let vm = this
+      let temp = {}   // This is an empty object for reduce
+      let legend = this.seats.reduce( (acc, seat) => {
+        
+        let key = seat.category + '|' + seat.fill
+        if (!temp[key] && seat.fill !== DEFAULT.SEAT.unavailableColor) {
+          temp[key] = true;
+          return acc.concat({
+            name: seat.category,
+            color: seat.fill,
+          })
+        } else {
+          return acc
+        }
+      }, [])
+
+      // sort for clarity of legend
+      legend.sort((a, b) => {
+        if (a.name < b.name) return -1
+        if (a.name > b.name) return 1
+        return 0
+      })
+      return legend
+    },
     viewboxString () {
       const minX = this.viewBox.x || 0 - this.viewBox.x
       const minY = this.viewBox.y || 0 - this.viewBox.y
@@ -626,7 +684,8 @@ export default {
         name: vm.mode, 
         expression: expressions[vm.mode],
         modifiers: {
-          vframe: true
+          vframe: false,
+          'disable-wheel': vm.disableWheel
         }
       }
 
@@ -712,6 +771,12 @@ export default {
         createElement('g', null, vm.seats.map(function (seat) {
           return createElement(vm.seatsDocument.shape, {
             attrs: SEATS_SHAPE[vm.seatsDocument.shape].htmlAttr.call(seat),
+            class: [
+                  'seat',
+                  {
+                    'hover-category': seat.category === vm.hoverCategory
+                  }
+                ],
             on: {
               click: function (e) {
                 e.preventDefault()
@@ -730,7 +795,7 @@ export default {
                 e.preventDefault()
                 e.stopPropagation()
                 vm.tooltip.timer = setTimeout(function () {
-                  return vm.showTooltip(seat)
+                  return vm.seatTooltip(seat)
                 }, 300)
               },
               mouseout: function (e) {
@@ -742,8 +807,12 @@ export default {
           })
         }))
       ]),
+      /* tooltip */
       createElement('span', {
         style: vm.styles.tooltip,
+        domProps: {
+          innerHTML: vm.tooltip.content
+        },
         attrs: {
           class: 'tooltip'
         },
@@ -754,7 +823,11 @@ export default {
             value: vm.tooltip.active
           }
         ]
-      }, vm.tooltip.content),
+      }),
+      
+      /* /tooltip */
+
+      /* manipulate*/
       createElement('div', {
         attrs: {
           class: 'manipulate'
@@ -776,6 +849,9 @@ export default {
       }, [
         // reset button
         createElement('button', {
+          attrs: {
+            'data-content': 'Reset seats from spots'
+          },
           class: {
             active: vm.mode === 'reset',
             btn: true
@@ -785,17 +861,32 @@ export default {
               e.preventDefault()
               e.stopPropagation()
               vm.mode = 'reset'
+            },
+            mouseover: function (e) {
+              e.preventDefault()
+              e.stopPropagation()
+              vm.tooltip.timer = setTimeout(function () {
+                return vm.buttonTooltip(e)
+              }, 300)
+            },
+            mouseout: function (e) {
+              e.preventDefault()
+              clearTimeout(vm.tooltip.timer)
+              vm.tooltip.active = false
             }
           }
         }, [
           createElement('i', {
             attrs: {
-              class: 'icon-th'
-            }
+              class: 'icon-th',
+            },
           })
         ]),
         // pan-zoom button
         createElement('button', {
+          attrs: {
+            'data-content': 'Pan-Zoom Seats'
+          },
           class: {
             active: vm.mode === 'pan-zoom',
             btn: true
@@ -805,6 +896,18 @@ export default {
               e.preventDefault()
               e.stopPropagation()
               vm.mode = 'pan-zoom'
+            },
+            mouseover: function (e) {
+              e.preventDefault()
+              e.stopPropagation()
+              vm.tooltip.timer = setTimeout(function () {
+                return vm.buttonTooltip(e)
+              }, 300)
+            },
+            mouseout: function (e) {
+              e.preventDefault()
+              clearTimeout(vm.tooltip.timer)
+              vm.tooltip.active = false
             }
           }
         }, [
@@ -816,6 +919,9 @@ export default {
         ]),
         // picking button
         createElement('button', {
+          attrs: {
+            'data-content': 'Categorize Seats'
+          },
           class: {
             active: vm.mode === 'picking',
             btn: true
@@ -825,6 +931,18 @@ export default {
               e.preventDefault()
               e.stopPropagation()
               vm.mode = 'picking'
+            },
+            mouseover: function (e) {
+              e.preventDefault()
+              e.stopPropagation()
+              vm.tooltip.timer = setTimeout(function () {
+                return vm.buttonTooltip(e)
+              }, 300)
+            },
+            mouseout: function (e) {
+              e.preventDefault()
+              clearTimeout(vm.tooltip.timer)
+              vm.tooltip.active = false
             }
           }
         }, [
@@ -836,6 +954,9 @@ export default {
         ]),
         // save button
         createElement('button', {
+          attrs: {
+            'data-content': 'Save Seats'
+          },
           class: {
             active: vm.mode === 'save',
             btn: true,
@@ -846,6 +967,18 @@ export default {
               e.preventDefault()
               e.stopPropagation()
               vm.mode = 'save'
+            },
+            mouseover: function (e) {
+              e.preventDefault()
+              e.stopPropagation()
+              vm.tooltip.timer = setTimeout(function () {
+                return vm.buttonTooltip(e)
+              }, 300)
+            },
+            mouseout: function (e) {
+              e.preventDefault()
+              clearTimeout(vm.tooltip.timer)
+              vm.tooltip.active = false
             }
           }
         }, [
@@ -856,7 +989,7 @@ export default {
           })
         ])
       ]),
-      // zoom button
+      // pan zoom manipulate
       createElement('transition', {
         props: {
           name: 'fade'
@@ -873,6 +1006,7 @@ export default {
             }
           ]
         }, [
+          // zoom in button
           createElement('button', {
             attrs: {
               class: 'btn'
@@ -909,6 +1043,7 @@ export default {
               }
             })
           ]),
+          // zoom out button
           createElement('button', {
             attrs: {
               class: 'btn'
@@ -1159,7 +1294,55 @@ export default {
             }
           ]
         })
+      ]),
+
+      /* legend panel */
+      createElement('div', {
+        attrs: {
+          class: 'legend-list-panel'
+        },
+        directives: [
+          {
+            name: 'show',
+            value: vm.legend.length > 0
+          }
+        ]
+      }, [
+        createElement('ul', {
+          attrs: {
+            class: 'legend-list'
+          }
+        }, [
+          vm.legend.map(function (item) {
+            return createElement('li', {
+              key: item.color,
+              on: {
+                mouseover: function (e) {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  vm.showHoverCategory(item.name)
+                },
+                mouseleave: function (e) {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  vm.showHoverCategory(undefined)
+                }
+              }
+            }, [
+              createElement('div', {
+                attrs: {
+                  class: 'block'
+                },
+                style: {
+                  'background-color': item.color
+                }
+              }),
+              item.name
+            ])
+          })
+        ])
       ])
+      /* /legend panel */
     ])
   }
 }
@@ -1188,6 +1371,16 @@ export default {
 
   .seat {
     cursor: pointer;
+
+    &.hover-category {
+      animation: hover-category-animation .8s infinite;
+    }
+
+    @keyframes hover-category-animation {
+      0%   { opacity: 0.3; stroke: #FFF; stroke-width: 8; }
+      100% { opacity: 1; stroke: #444; stroke-width: 2; }
+    }
+  
   }
 
   .manipulate {
@@ -1396,6 +1589,57 @@ export default {
     }
   }
 
+  .legend-list-panel {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    z-index: 12;
+    top: 35px;
+    right: 30px;
+    border: 1px solid #CCC;
+    border-radius: 3px;
+    background-color: white;
+    box-shadow: 0 1px 2px #DDD;
+    padding: 5px;
+  }
+
+  .legend-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    // width: 320px;
+    max-height: 480px;
+    overflow: auto;
+
+    .block {
+      width: 20px;
+      height: 20px;
+      margin-right: 10px;
+    }
+
+    li {
+      padding: 8px 10px;
+      color: rgba(0, 0, 0, 0.65);
+      font-weight: 500;
+      font-size: 12px;
+      transition: .3s ease;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+
+      &:hover {
+        color: #108ee9;
+      }
+
+      &+li {
+        border-top: 1px solid #ccc;
+      }
+
+    }
+  }
+
   .tooltip {
     user-select: none;
     -moz-user-select: none;
@@ -1408,8 +1652,9 @@ export default {
     position: absolute;
     left: 0;
     top: 0;
-    z-index: 10;
+    z-index: 30;
     white-space: nowrap;
+    text-align: center;
   }
 
   .dotted-around {

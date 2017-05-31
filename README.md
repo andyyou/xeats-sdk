@@ -1,7 +1,13 @@
 xeats.io sdk
 ===
 
-# Getting started
+## What is xeats-sdk
+
+`xeats-sdk` is the sdk provided by [xeats.io](http://xeats.io/). 
+- For seats managers, this is for managing the seats map, setting tickets and categorizing seats for an activity. 
+- For seats users, this is for participants who want to enroll an activity to book their seats.
+
+## Getting started
 
 1. Sign up in `https://xeats.io`.
 2. Use `email` and `password` to get `access_key` and `secret`. Visit [documents](https://xeats.io/documents/api) for more. NOTE: use this SDK require `access_key` and `secret`. 
@@ -38,6 +44,7 @@ For User to Create Manager:
     categories: ['A', 'B', 'C', 'D'],
     zoomMax: 4,         // default is 2
     zoomMin: 0.5,       // default is 0.5
+    disableWheel: true,  // default is false
     width: 'auto',      // For responsive set value to `auto`
     height: 800         // Height can not set to auto
   })
@@ -60,7 +67,8 @@ For User to Book Seats:
     width: 'auto',    // For responsive set value to `auto`
     height: 800,      // Height can not set to auto
     amountMax: 4,     // Limit selection amount
-    amountMin: 1
+    amountMin: 1,
+    disableWheel: true,  // default is false
   })
 })()
 </script>
@@ -83,9 +91,10 @@ const Xeat = require('xeats-sdk')
 new Xeats.ManagerMap({...})
 new Xeats.UserMap({...})
 ```
-# API
 
-## ManagerMap
+## API Documentation
+
+### ManagerMap
 
 ##### el
 - Type: `String`
@@ -143,11 +152,11 @@ categories: [
 ```
 ##### zoomMax
 - Type: `Number`
-- Description: The maximum scale level to zoom in for the seats map. Larger value can scale in a lagrer level. Defaut is `2`.
+- Description: The maximum scale level to zoom in for the seats map. Larger value can scale in a lagrer level. Default is `2`.
 
 ##### zoomMin
 - Type: `Number`
-- Description: The minium scale level to zoom out for the seats map. Smaller value can scale in a smaller level. Defaut is `0.5`.
+- Description: The minimum scale level to zoom out for the seats map. Smaller value can scale in a smaller level. Default is `0.5`.
 
 ##### width
 - Type: `Number` | `String`
@@ -162,6 +171,9 @@ width: 'auto',
 - Type: `Number`
 - Description: Set the height of the seats map to show. This value **can not** set to `auto`
 
+##### disableWheel
+- Type: `Boolean`
+- Description: Disable the function of zooming on mouse wheel in seats map. Default is `false`.
 
 ## UserMap
 
@@ -187,11 +199,11 @@ seatsKey: 'sandbox',
 
 ##### zoomMax
 - Type: `Number`
-- Description: The maximum scale level to zoom in for the seats map. Larger value can scale in a lagrer level. Defaut is `2`.
+- Description: The maximum scale level to zoom in for the seats map. Larger value can scale in a lagrer level. Default is `2`.
 
 ##### zoomMin
 - Type: `Number`
-- Description: The minium scale level to zoom out for the seats map. Smaller value can scale in a smaller level. Defaut is `0.5`.
+- Description: The minimum scale level to zoom out for the seats map. Smaller value can scale in a smaller level. Default is `0.5`.
 
 ##### width
 - Type: `Number` | `String`
@@ -214,7 +226,11 @@ width: 'auto',
 - Type: `Number`
 - Description: Minimum quantity of seats to book.
 
-# Development
+##### disableWheel
+- Type: `Boolean`
+- Description: Disable the function of zooming on mouse wheel in seats map. Default is `false`.
+
+## Development
 
 Run `npm run dev` to start the webpack-dev-server on your local device.
 Run `npm run build` to bundle a xeats-sdk.js for production.
@@ -222,22 +238,23 @@ Run `npm run build` to bundle a xeats-sdk.js for production.
 There are currently four VUE components in the package.
 - `user-booking`: This component will show the seats map and seats information for user to book the seat.
 - `management`: This component is for managers to choose spots, create seats, change seats status, change seats shape, also to categorize seats.
-- `spots-list`: This component is embeded in `management` component, which will get the list of authorized spots for user to change current spots.
-- `v-frame`: This component is for embeding other components in an iframe.
+- `spots-list`: This component is embedded in `management` component, which will get the list of authorized spots for user to change current spots.
+- `v-frame`: This component is for embedding other components in an iframe.
 
 
-# Changelog
+## Change log
 
-* `2017-05-23` Accept array of objects for category property in ManagerMap. Display the legend in UserMap
-* `2017-05-19` Accomplish changing seats shape
+* `2017-05-25` Add new argument 'disableWheel' for user to disable zooming on wheel.
+* `2017-05-23` Accept array of objects for category property in ManagerMap. Display the legend in UserMap.
+* `2017-05-19` Accomplish changing seats shape.
 * `2017-05-03` Accomplish APIs with a document of API.(Alpha/Draft)
 * `2017-03-24` Accomplish v-pan-zoom.
 * `2017-03-21` Finish zoom in out and pick plugins.
 
-# Contributors
+## Contributors
 
 [![](https://avatars3.githubusercontent.com/u/665690?v=3&s=60)](https://github.com/andyyou) [![](https://avatars1.githubusercontent.com/u/13399740?v=3&s=60)](https://github.com/PJCHENder)
 
-# Issues
+## Issues
 
-# Roadmap
+## Road map
