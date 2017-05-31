@@ -411,7 +411,7 @@ export default {
             expression: 'viewBox',
             modifiers: {
               vframe: true,
-              'disable-zoom': vm.disableWheel
+              'disable-wheel': vm.disableWheel
             }
           }
         ]

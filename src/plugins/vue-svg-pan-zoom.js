@@ -135,21 +135,21 @@ export default {
         }
 
         mc.on('pinchstart', () => {})
-        if (!binding.modifiers['disable-zoom']) {
+        if (!binding.modifiers['disable-wheel']) {
           mc.on('pinchmove', onZoom)
+          mc.on('pinchend', onPinchEnd)
         }
-        mc.on('pinchend', onPinchEnd)
         mc.on('panstart', onPanStart)
         mc.on('panmove', onPanMove)
         mc.on('panend', onPanEnd)
-        if (!binding.modifiers['disable-zoom']) {
+        if (!binding.modifiers['disable-wheel']) {
           el.addEventListener('wheel', onZoom, false)
         }
       },
       unbind (el, binding, vnode, oldVnode) {
         mc.off('pinchstart', () => {})
         
-        if (!binding.modifiers['disable-zoom']) {
+        if (!binding.modifiers['disable-wheel']) {
           mc.off('pinchmove', onZoom)
         }
         mc.off('pinchend', onPinchEnd)
@@ -158,7 +158,7 @@ export default {
         mc.off('panend', onPanEnd)
         mc.off('pan')
         mc.off('pinch')
-        if (!binding.modifiers['disable-zoom']) {
+        if (!binding.modifiers['disable-wheel']) {
           el.removeEventListener('wheel', onZoom)
         }
       }

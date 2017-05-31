@@ -684,8 +684,8 @@ export default {
         name: vm.mode, 
         expression: expressions[vm.mode],
         modifiers: {
-          vframe: true,
-          'disable-zoom': vm.disableWheel
+          vframe: false,
+          'disable-wheel': vm.disableWheel
         }
       }
 
