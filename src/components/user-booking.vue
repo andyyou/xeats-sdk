@@ -5,6 +5,11 @@ const DEFAULT = {
   SEAT: {
     unavailableColor: '#d3d3d3',    // This color means the seat is unavailable
     tooltipContent: '無法購買'
+  },
+  ZOOM: {
+    scale: 0.5,
+    max: 2,
+    min: 0.5
   }
 }
 
@@ -32,11 +37,11 @@ export default {
     },
     zoomMax: {
       type: Number,
-      default: 2
+      default: DEFAULT.ZOOM.max
     },
     zoomMin: {
       type: Number,
-      default: 0.5
+      default: DEFAULT.ZOOM.min
     },
     amountMax: {
       type: Number,
@@ -246,7 +251,7 @@ export default {
     })
     .catch( error => {
       vm.failed = 'API request failed, Try to reload please.'
-      console.log('error', error)
+      console.error('error', error)
     })
   },
   methods: {
@@ -295,12 +300,12 @@ export default {
       let scale = this.viewBox.scale
 
       if (effect === 'out') {
-        scale += 0.3
+        scale += DEFAULT.ZOOM.scale
         if (scale >= this.viewBox.scaleRange.maxScale) {
           scale = this.viewBox.scaleRange.maxScale
         }
       } else if(effect === 'in') {
-        scale -= 0.3
+        scale -= DEFAULT.ZOOM.scale
         if (scale <= this.viewBox.scaleRange.minScale) {
           scale = this.viewBox.scaleRange.minScale
         }

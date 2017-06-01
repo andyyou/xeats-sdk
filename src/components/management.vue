@@ -70,6 +70,11 @@ const DEFAULT = {
     unavailableColor: '#d3d3d3',    // This color means the seat is unavailable
     shape: 'circle',
     tooltipContent: '無法購買'
+  },
+  ZOOM: {
+    scale: 0.5,
+    max: 2,
+    min: 0.5
   }
 }
 const SEAT_STATUS = {
@@ -121,11 +126,11 @@ export default {
     },
     zoomMax: {
       type: Number,
-      default: 2
+      default: DEFAULT.ZOOM.max
     },
     zoomMin: {
       type: Number,
-      default: 0.5
+      default: DEFAULT.ZOOM.min
     },
     categories: {
       type: Array,
@@ -345,7 +350,7 @@ export default {
       })
       .catch( error => {
         vm.ajaxFailed = 'API request failed, Try to reload please.'
-        console.log('error')
+        console.error('error')
       })
     },
     /**
@@ -400,12 +405,12 @@ export default {
       // Setup ratio & never grater than zoomMax nor smaller than zoomMin.
       let scale = this.viewBox.scale
       if (effect === 'out') {
-        scale += 0.3
+        scale += DEFAULT.ZOOM.scale
         if (scale >= this.viewBox.scaleRange.maxScale ) {
           scale = this.viewBox.scaleRange.maxScale
         }
       } else if(effect === 'in') {
-        scale -= 0.3
+        scale -= DEFAULT.ZOOM.scale
         if (scale <= this.viewBox.scaleRange.minScale) {
           scale = this.viewBox.scaleRange.minScale
         }
@@ -663,7 +668,7 @@ export default {
     })
     .catch( error => {
       vm.ajaxFailed = 'API request failed, Try to reload please.'
-      console.log('error', error)
+      console.error('error', error)
     })
   },
   render (createElement) {
@@ -684,7 +689,7 @@ export default {
         name: vm.mode, 
         expression: expressions[vm.mode],
         modifiers: {
-          vframe: false,
+          vframe: true,
           'disable-wheel': vm.disableWheel
         }
       }
@@ -1211,6 +1216,11 @@ export default {
                 class: 'save'
               }
             }, [
+              createElement('div', {
+                attrs: {
+                  class: 'select-container'
+                }
+              }, [
                 createElement('select', {
                   on:{
                     change: function (e) {
@@ -1225,7 +1235,8 @@ export default {
                       selected: shape === vm.seatsDocument.shape
                     }
                   }, SEATS_SHAPE[shape].content)
-                })),
+                }))
+              ]),
                 createElement('input', {
                   attrs: {
                     type: 'text',
@@ -1479,6 +1490,7 @@ export default {
     padding: 5px;
     
     .save {
+
       input, select, option {
         border: 1px solid #CCC;
         background-color: white;
@@ -1497,10 +1509,41 @@ export default {
         width: 100%;
         height: 36px;
       }
+      select {
+        overflow: hidden;
+        position: relative;
+        margin-left: 0px;
+        min-width: 120px;
+        border: 1px solid #CCC;
+        box-shadow: none;
+        background: transparent;
+        background-image: none;
+        outline: 0;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        
+        &:-moz-focusring {
+          color: transparent;
+          text-shadow: 0 0 0 #000;
+        }
+        &:focus {
+          outline: none;
+        }
+      }
       
       input[type='text'] {
         &::placeholder {
           color: #BBB;
+        }
+      }
+      .select-container{
+        position: relative;
+        &:before{
+          content: "\e00a";
+          font-family: "xeats-fonts" !important;
+          position: absolute;
+          right: 3px;
+          top: 10px;
         }
       }
     }
