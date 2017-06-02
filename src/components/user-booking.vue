@@ -130,7 +130,8 @@ export default {
         timer: null
       },
       alert:{
-        show: false,
+        active: false,
+        title: '',
         content: ''
       },
       /**
@@ -240,25 +241,51 @@ export default {
       let temp = {}   // This is an empty object for filter legend
       vm.seats = vm.seats.map(function (seat) {
 
+        let categoryStatus = null
+        let categoryStartAt = null
+        let categoryEndAt = null
+        if (seat.start_at && seat.end_at) {
+          // 如果該座位有給 start_at 和 end_at，先用此判斷能否購買
+          let currentTimeStamp = Date.now()
+          let startAtTimeStamp = new Date(seat.start_at).getTime()
+          let endAtTimeStamp = new Date(seat.end_at).getTime()
+          categoryStartAt = new Date(seat.start_at).toLocaleString()
+          categoryEndAt = new Date(seat.end_at).toLocaleString()
+
+          if (currentTimeStamp < startAtTimeStamp ) {
+            // 尚未開賣
+            seat.status = SEAT_STATUS.unavailable
+            categoryStatus = '尚未開賣'
+          } else if (currentTimeStamp > endAtTimeStamp){
+            // 超過購買時間
+            seat.status = SEAT_STATUS.unavailable
+            seat.fill = DEFAULT.SEAT.unavailableColor   // 不要出現在 legend 內
+            // categoryStatus = '已售完'
+          } else {
+            // 可以購買
+            // categoryStatus = '熱賣中'
+          }
+        }
+
         let key = seat.category + '|' + seat.fill
         if (!temp[key] && seat.fill !== DEFAULT.SEAT.unavailableColor) {
           temp[key] = true
           vm.legend.push({
             name: seat.category,
             color: seat.fill,
-            // 如果有給 limitCategory 則以 limitCategory 為主，否則以總座位數量限制為主
+            // if limitCategory is set then use amount in limitCategory else use total amountMax
             amount: 0,
-            amountMax: (vm.limitCategory && vm.limitCategory[seat.category].amountMax) || vm.amountMax,
-            amountMin: (vm.limitCategory && vm.limitCategory[seat.category].amountMin) || vm.amountMin
+            amountMax: (vm.limitCategory && vm.limitCategory[seat.category] && vm.limitCategory[seat.category].amountMax) || vm.amountMax,
+            amountMin: (vm.limitCategory && vm.limitCategory[seat.category] && vm.limitCategory[seat.category].amountMin) || vm.amountMin,
+            // Additional information to present
+            categoryStatus,
+            categoryStartAt,
+            categoryEndAt
           })
         }
 
         // sort for clarity of legend
-        vm.legend.sort((a, b) => {
-          if (a.name < b.name) return -1
-          if (a.name > b.name) return 1
-          return 0
-        })
+        vm.legend.sort((a, b) => (a.name <= b.name) ? -1 : 1)
 
 
         // SEAT_STATUS: [unavailable, available, reserved, other]
@@ -267,6 +294,7 @@ export default {
          * If color show black (errorColor) means something wrong
          */
         return Object.assign({}, seat, {
+          status: seat.status,
           fill: colors[seat.status] || DEFAULT.SEAT.errorColor,
           picked: false
         })
@@ -376,14 +404,14 @@ export default {
             vm.legend[legendIndex].amount++
             vm.seats.splice(index, 1, seat)
           } else {
-            vm.alert.content = `${vm.legend[legendIndex].name} 座位數量不得大於 ${vm.legend[legendIndex].amountMax}`
-            vm.alert.show = true
+            vm.alert.title = `${vm.legend[legendIndex].name} 座位數量不得大於 ${vm.legend[legendIndex].amountMax}`
+            vm.alert.active = true
             return 
           }
         } else {
           // 購買數量大於 amountMax
-          vm.alert.content = `總座位數不得大於 ${vm.amountMax}`
-          vm.alert.show = true
+          vm.alert.title = `總座位數不得大於 ${vm.amountMax}`
+          vm.alert.active = true
           return
         }
       } else {
@@ -703,6 +731,18 @@ export default {
                   e.preventDefault()
                   e.stopPropagation()
                   vm.showHoverCategory(undefined)
+                },
+                click: function (e) {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  vm.alert.title = item.name
+                  vm.alert.content = ''
+                  if (item.categoryStartAt) {vm.alert.content += `開賣時間：${item.categoryStartAt}<br>`}
+                  if (item.categoryEndAt) {vm.alert.content += `截止時間：${item.categoryEndAt}<br>`}
+                  if (item.amountMax) {vm.alert.content += `購票上限：${item.amountMax}`}
+                  if (vm.alert.content) {
+                    vm.alert.active = true
+                  }
                 }
               }
             }, [
@@ -714,7 +754,18 @@ export default {
                   'background-color': item.color
                 }
               }, (item.amount) ? item.amount : ''),
-              item.name
+              [
+                item.name, 
+                createElement('span', {
+                  attrs: {
+                    class: 'badge-warn'
+                  },
+                  directives: [{
+                    name: 'show',
+                    value: item.categoryStatus
+                  }]
+                }, item.categoryStatus)
+              ]
             ])
           })
         ])
@@ -727,7 +778,7 @@ export default {
         directives: [
           {
             name: 'show',
-            value: vm.alert.show
+            value: vm.alert.active
           }
         ],
         on: {
@@ -737,36 +788,46 @@ export default {
           }
         }
       }, [
-        createElement('div',{
+      createElement('div',{
+        attrs: {
+          class: 'alert-container'
+        }
+      },[
+        createElement('h3', {
           attrs: {
-            class: 'alert-container'
+            class: 'alert-title'
           }
-        },[
-          createElement('h3', {
-            attrs: {
-              class: 'alert-title'
-            }
-          }, vm.alert.content),
-          createElement('div', {
-            attrs: {
-              class: 'button-container'
-            }
-          }, [
-              createElement('button',{
-                attrs: {
-                  class: 'confirm-button'
-                },
-                on: {
-                  click: function (e) {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    vm.alert.show = false
-                  }
+        }, vm.alert.title),
+        createElement('div', {
+          attrs: {
+            class: 'alert-content'
+          },
+          domProps:{
+            innerHTML: vm.alert.content
+          }
+        }),
+        createElement('div', {
+          attrs: {
+            class: 'button-container'
+          }
+        }, [
+            createElement('button',{
+              attrs: {
+                class: 'confirm-button'
+              },
+              on: {
+                click: function (e) {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  vm.alert.active = false
+                  vm.alert.title = null
+                  vm.alert.content = null
                 }
-              }, 'OK')
-            ])
+              }
+            }, 'OK')
           ])
-        ])/* /alert modal */
+        ])
+      ])/* /alert modal */
     ])
   }
 }
@@ -910,6 +971,22 @@ export default {
       }
 
     }
+    .badge-warn {
+      display: inline-block;
+      margin-left: .4em;
+      padding: .25em .4em;
+      font-size: 75%;
+      font-weight: 700;
+      line-height: 1;
+      color: #fff;
+      text-align: center;
+      white-space: nowrap;
+      vertical-align: baseline;
+      background-color: #f0ad4e;
+      padding-right: .6em;
+      padding-left: .6em;
+      border-radius: 10rem;
+    }
   }
 
   /* style of alert-modal is forked from sweetAlert */
@@ -928,8 +1005,6 @@ export default {
     right: 0;
     padding: 10px;
     z-index: 1060;
-
-    
 
     .alert-container{
       border-radius: 5px;
@@ -959,6 +1034,19 @@ export default {
       margin: .4em 0;
       padding: 0;
       display: block;
+      word-wrap: break-word;
+    }
+
+    .alert-content{
+      font-size: 18px;
+      text-align: center;
+      font-weight: 300;
+      position: relative;
+      float: none;
+      margin: 0;
+      padding: 0;
+      line-height: normal;
+      color: #545454;
       word-wrap: break-word;
     }
 

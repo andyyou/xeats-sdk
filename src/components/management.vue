@@ -250,6 +250,9 @@ export default {
           categoryItem.startAt = categoryItem.startAt ? new Date(categoryItem.startAt).toISOString() : null
           categoryItem.endAt = categoryItem.endAt ? new Date(categoryItem.endAt).toISOString() : null
         }
+        if(!categoryItem.name){
+          throw new Error('Error on setting categories in sdk')
+        }
         categoryItem.color = hsl2hex(index * (360 / array.length) % 360, 55, 70)
         return categoryItem
       }),
@@ -354,7 +357,7 @@ export default {
       })
       .catch( error => {
         vm.ajaxFailed = 'API request failed, Try to reload please.'
-        console.error('error')
+        console.error('error', error)
       })
     },
     /**
@@ -695,7 +698,7 @@ export default {
         name: vm.mode, 
         expression: expressions[vm.mode],
         modifiers: {
-          vframe: false,
+          vframe: true,
           'disable-wheel': vm.disableWheel
         }
       }
@@ -1358,8 +1361,7 @@ export default {
             ])
           })
         ])
-      ])
-      /* /legend panel */
+      ]),/* /legend panel */
     ])
   }
 }
