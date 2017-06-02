@@ -912,6 +912,7 @@ export default {
     }
   }
 
+  /* style of alert-modal is forked from sweetAlert */
   .alert-modal{
     font-family: $font;
     overflow-y: auto;

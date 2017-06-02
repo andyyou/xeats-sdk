@@ -246,7 +246,9 @@ export default {
         if (typeof category === 'string') {
           categoryItem.name = category
         } else {
-          categoryItem = Object.assign({comment: null, info: null, name: null, sn: null}, category)
+          categoryItem = Object.assign({comment: null, info: null, name: null, sn: null, startAt: null, endAt: null}, category)
+          categoryItem.startAt = categoryItem.startAt ? new Date(categoryItem.startAt).toISOString() : null
+          categoryItem.endAt = categoryItem.endAt ? new Date(categoryItem.endAt).toISOString() : null
         }
         categoryItem.color = hsl2hex(index * (360 / array.length) % 360, 55, 70)
         return categoryItem
@@ -318,6 +320,8 @@ export default {
           category: seat.category || null,
           info: seat.info || null,
           sn: seat.sn || null,
+          start_at: seat.start_at || null,
+          end_at: seat.end_at || null,
           fill: seat.fill || DEFAULT.SEAT.unavailableColor,
           status: seat.status || SEAT_STATUS.unavailable,
           /* For picking to set seat */
@@ -526,6 +530,8 @@ export default {
             info: (vm.categoryItems[index]) ? vm.categoryItems[index].info : null,
             comment: (vm.categoryItems[index]) ? vm.categoryItems[index].comment : null,
             sn: (vm.categoryItems[index]) ? vm.categoryItems[index].sn : null,
+            start_at: (vm.categoryItems[index]) ? vm.categoryItems[index].startAt : null,
+            end_at: (vm.categoryItems[index]) ? vm.categoryItems[index].endAt : null,
             status: changeStatus,
             picked: false
           })
@@ -689,7 +695,7 @@ export default {
         name: vm.mode, 
         expression: expressions[vm.mode],
         modifiers: {
-          vframe: true,
+          vframe: false,
           'disable-wheel': vm.disableWheel
         }
       }
@@ -1363,6 +1369,8 @@ export default {
   /* _xeats_: Do Not remove this for import in vframe */
   ._xeats_ {position: static;}
 
+  $font: 'Helvetica Neue', Helvetica, Arial, '微軟正黑體', sans-serif;
+
   svg {
     user-select: none;
     -moz-user-select: none;
@@ -1405,6 +1413,7 @@ export default {
     background-color: white;
     box-shadow: 0 1px 2px #DDD;
     padding: 5px 0;
+    font-family: $font;
 
     button {
       float: left;
@@ -1449,6 +1458,7 @@ export default {
     background-color: white;
     box-shadow: 0 1px 2px #DDD;
     padding: 5px;
+    font-family: $font;
 
     button {
       padding: 6px;
@@ -1488,6 +1498,7 @@ export default {
     background-color: white;
     box-shadow: 0 1px 2px #DDD;
     padding: 5px;
+    font-family: $font;
     
     .save {
 
@@ -1613,6 +1624,7 @@ export default {
       line-height: 1.5em;
       width: 100%;
       transition: all .3s ease;
+      font-family: $font;
       
       &.btn-primary:hover {
         border: 1px solid #108ee9;
@@ -1645,6 +1657,7 @@ export default {
     background-color: white;
     box-shadow: 0 1px 2px #DDD;
     padding: 5px;
+    font-family: $font;
   }
 
   .legend-list {
@@ -1698,6 +1711,7 @@ export default {
     z-index: 30;
     white-space: nowrap;
     text-align: center;
+    font-family: $font;
   }
 
   .dotted-around {
@@ -1714,6 +1728,7 @@ export default {
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
+    font-family: $font;
   }
 
   $loader-color: orange;
