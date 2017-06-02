@@ -101,8 +101,8 @@ class ManagerMap {
                    * Please make sure your component need to place data
                    * outside of iframe for form-post.
                    */
-                  generateFormFields: this.generateFormFields,
-                  onAfterSave: this.onAfterSave
+                  generateFormFields: options.generateFormFields,
+                  onAfterSave: options.onAfterSave
                 }
               })
             ])
@@ -211,12 +211,13 @@ class UserMap {
                 zoomMin: options.zoomMin,
                 amountMax: options.amountMax,
                 amountMin: options.amountMin,
+                limitCategory: options.limitCategory,
                 /**
                  * When use vframe
                  * Please make sure your component need to place data
                  * outside of iframe for form-post.
                  */
-                generateFormFields: this.generateFormFields
+                generateFormFields: options.generateFormFields
               }
             })
           ])
@@ -233,7 +234,9 @@ class UserMap {
         //     zoomMin: options.zoomMin,
         //     amountMax: options.amountMax,
         //     amountMin: options.amountMin,
-        //     disableWheel: options.disableWheel
+        //     limitCategory: options.limitCategory,
+        //     disableWheel: options.disableWheel,
+        //     generateFormFields: options.generateFormFields
         //   }
         // })
         /* /develope */

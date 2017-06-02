@@ -4,13 +4,21 @@ import _ from 'lodash'
 const DEFAULT = {
   SEAT: {
     unavailableColor: '#d3d3d3',    // This color means the seat is unavailable
-    tooltipContent: '無法購買'
+    errorColor: 'black',
+    tooltipContent: '無法購買',
+    darken: -0.4
   },
   ZOOM: {
     scale: 0.5,
     max: 2,
     min: 0.5
   }
+}
+const SEAT_STATUS = {
+  unavailable: 0,
+  available: 1,
+  reserved: 2,
+  other: 3
 }
 
 export default {
@@ -43,6 +51,9 @@ export default {
       type: Number,
       default: DEFAULT.ZOOM.min
     },
+    /**
+     * For limit total ticket buying amounts (required) and ticket category buying amounts (options)
+     */
     amountMax: {
       type: Number,
       required: true
@@ -51,13 +62,16 @@ export default {
       type: Number,
       required: true
     },
+    limitCategory: {
+      type: Object
+    },
     /**
      * For generate form fields out of iframe
      * Administrator panel no need to use form-post (optional)
      */
     generateFormFields: {
       type: Function
-    }
+    },
   },
   data () {
     return {
@@ -105,12 +119,19 @@ export default {
        * Booking amount for limitation
        */
       amount: 0,
+      /**
+       * Tooltip and alert are for providing supplementary information
+       */
       tooltip: {
         content: "",
         active: false,
         left: 0,
         top: 0,
         timer: null
+      },
+      alert:{
+        show: false,
+        content: ''
       },
       /**
        * Legend for showing color-ticket pair
@@ -225,6 +246,10 @@ export default {
           vm.legend.push({
             name: seat.category,
             color: seat.fill,
+            // 如果有給 limitCategory 則以 limitCategory 為主，否則以總座位數量限制為主
+            amount: 0,
+            amountMax: (vm.limitCategory && vm.limitCategory[seat.category].amountMax) || vm.amountMax,
+            amountMin: (vm.limitCategory && vm.limitCategory[seat.category].amountMin) || vm.amountMin
           })
         }
 
@@ -237,12 +262,12 @@ export default {
 
 
         // SEAT_STATUS: [unavailable, available, reserved, other]
-        let colors = [DEFAULT.SEAT.unavailableColor, seat.fill, vm.darken(seat.fill, -0.4), DEFAULT.SEAT.unavailableColor]
+        let colors = [DEFAULT.SEAT.unavailableColor, seat.fill, vm.darken(seat.fill, DEFAULT.SEAT.darken), DEFAULT.SEAT.unavailableColor]
         /**
-         * If color show black means something wrong
+         * If color show black (errorColor) means something wrong
          */
         return Object.assign({}, seat, {
-          fill: colors[seat.status] || 'black',
+          fill: colors[seat.status] || DEFAULT.SEAT.errorColor,
           picked: false
         })
       })
@@ -333,23 +358,39 @@ export default {
       svgCanvas.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${viewport.width * scale} ${viewport.height * scale}`)
     },
     book (seat, index) {
-      if (seat.status !== 1) {
+      if (seat.status !== SEAT_STATUS.available) {
         return
       }
+      let legendIndex = this.legend.findIndex((item) => {
+        return item.name === seat.category
+      })
       let vm = this
 
       if (!seat.picked) {
-        if (this.amount + 1 <= this.amountMax) {
-          seat.picked = !seat.picked
-          seat.cache = seat.fill
-          seat.fill = vm.darken(seat.fill, -0.4)
-          vm.amount++
-          vm.seats.splice(index, 1, seat)
+        if (vm.amount + 1 <= vm.amountMax) {
+          if (vm.legend[legendIndex].amount + 1 <= vm.legend[legendIndex].amountMax) {
+            seat.picked = !seat.picked
+            seat.cache = seat.fill
+            seat.fill = vm.darken(seat.fill, DEFAULT.SEAT.darken)
+            vm.amount++
+            vm.legend[legendIndex].amount++
+            vm.seats.splice(index, 1, seat)
+          } else {
+            vm.alert.content = `${vm.legend[legendIndex].name} 座位數量不得大於 ${vm.legend[legendIndex].amountMax}`
+            vm.alert.show = true
+            return 
+          }
+        } else {
+          // 購買數量大於 amountMax
+          vm.alert.content = `總座位數不得大於 ${vm.amountMax}`
+          vm.alert.show = true
+          return
         }
       } else {
         seat.picked = !seat.picked
         seat.fill = seat.cache
         vm.amount--
+        vm.legend[legendIndex].amount--
         vm.seats.splice(index, 1, seat)
       }
       vm.$nextTick(function () {
@@ -451,10 +492,17 @@ export default {
                     e.stopPropagation()
                     vm.book(seat, index)
                   },
+                  touchend: function (e) {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    vm.book(seat, index)
+                  },
                   mousedown: function (e) {
                     vm.tooltip.active = false
                   },
                   mouseover: function (e) {
+                    e.preventDefault()
+                    e.stopPropagation()
                     vm.seatTooltip(seat)
                   },
                   mouseout: function (e) {
@@ -489,10 +537,17 @@ export default {
                     e.stopPropagation()
                     vm.book(seat, index)
                   },
+                  touchend: function (e) {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    vm.book(seat, index)
+                  },
                   mousedown: function (e) {
                     vm.tooltip.active = false
                   },
                   mouseover: function (e) {
+                    e.preventDefault()
+                    e.stopPropagation()
                     vm.seatTooltip(seat)
                   },
                   mouseout: function (e) {
@@ -658,13 +713,60 @@ export default {
                 style: {
                   'background-color': item.color
                 }
-              }),
+              }, (item.amount) ? item.amount : ''),
               item.name
             ])
           })
         ])
-      ])
-      /* /legend panel */
+      ]),/* /legend panel */
+      /* alert modal */
+      createElement('div', {
+        attrs: {
+          class: 'alert-modal'
+        },
+        directives: [
+          {
+            name: 'show',
+            value: vm.alert.show
+          }
+        ],
+        on: {
+          wheel: function (e) {
+            e.preventDefault()
+            e.stopPropagation()
+          }
+        }
+      }, [
+        createElement('div',{
+          attrs: {
+            class: 'alert-container'
+          }
+        },[
+          createElement('h3', {
+            attrs: {
+              class: 'alert-title'
+            }
+          }, vm.alert.content),
+          createElement('div', {
+            attrs: {
+              class: 'button-container'
+            }
+          }, [
+              createElement('button',{
+                attrs: {
+                  class: 'confirm-button'
+                },
+                on: {
+                  click: function (e) {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    vm.alert.show = false
+                  }
+                }
+              }, 'OK')
+            ])
+          ])
+        ])/* /alert modal */
     ])
   }
 }
@@ -674,6 +776,8 @@ export default {
 <style lang="sass" scoped>
   /* _xeats_: Do Not remove this for import in vframe */
   ._xeats_ {position: static;}
+
+  $font: 'Helvetica Neue', Helvetica, Arial, '微軟正黑體', sans-serif;
 
   svg {
     user-select: none;
@@ -754,6 +858,7 @@ export default {
   }
 
   .legend-list-panel {
+    font-family: $font;
     position: absolute;
     display: flex;
     flex-direction: column;
@@ -779,7 +884,10 @@ export default {
     .block {
       width: 20px;
       height: 20px;
+      line-height: 20px;
       margin-right: 10px;
+      text-align: center;
+      color: #FFF;
     }
 
     li {
@@ -804,7 +912,93 @@ export default {
     }
   }
 
+  .alert-modal{
+    font-family: $font;
+    overflow-y: auto;
+    background-color: rgba(0,0,0,.4);
+    transition: background-color .1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    padding: 10px;
+    z-index: 1060;
+
+    
+
+    .alert-container{
+      border-radius: 5px;
+      box-sizing: border-box;
+      text-align: center;
+      margin: auto;
+      overflow-x: hidden;
+      overflow-y: auto;
+      display: none;
+      position: relative;
+      max-width: 100%;
+      width: 500px;
+      padding: 20px;
+      background: rgb(255, 255, 255);
+      display: block;
+      min-height: 148px;
+      animation: showAlert .3s;
+    }
+
+    .alert-title{
+      color: #595959;
+      font-size: 30px;
+      text-align: center;
+      font-weight: 600;
+      text-transform: none;
+      position: relative;
+      margin: .4em 0;
+      padding: 0;
+      display: block;
+      word-wrap: break-word;
+    }
+
+    .confirm-button{
+      background-color: #3085d6;
+      color: #fff;
+      border: 0;
+      -webkit-box-shadow: none;
+      box-shadow: none;
+      font-size: 17px;
+      font-weight: 500;
+      border-radius: 3px;
+      padding: 15px 35px;
+      margin: 20px 5px 0;
+      cursor: pointer;
+      white-space: nowrap;
+
+      &:hover{
+        background-color: #297dce;
+      }
+    }
+
+    @keyframes showAlert {
+      0% {
+        transform: scale(.7);
+      }
+      45% {
+        transform: scale(1.05);
+      }
+      80% {
+        transform: scale(.95);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+  }
+
+
   .tooltip {
+    font-family: $font;
     user-select: none;
     -moz-user-select: none;
     -webkit-user-select: none;
@@ -832,6 +1026,7 @@ export default {
   $loader-color: orange;
 
   .loader {
+    font-family: $font;
     overflow: visible;
     padding-top: 50px;
     width: 50px;
