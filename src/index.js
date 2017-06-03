@@ -166,79 +166,87 @@ class UserMap {
       },
       render (createElement) {
         // NOTICE: render element in iframe
-        return createElement('div', {
-          style: {
-            height: '100%'
-          }
-        }, [
-          this.fields.map(function (field) {
-            /**
-             * field should has properties:
-             * * type
-             * * row
-             * * column
-             * * _id
-             * * node_id
-             * * label
-             */
-            return createElement('input', {
-              attrs: {
-                value: field.node_id,
-                id: field._id,
-                type: 'hidden',
-                name: 'xeats[]',
-                'data-type': field.type,
-                'data-row': field.row,
-                'data-column': field.column,
-                'data-label': field.label
-              }
-            })
-          }),
-          createElement('vframe', {
-            props: {
-              width: options.width,
-              height: options.height
-            }
-          }, [
-            createElement('app', {
-              props: {
-                width: options.width,
-                height: options.height,
-                seatsKey: options.seatsKey,
-                accessKey: options.accessKey,
-                disableWheel: options.disableWheel,
-                zoomMax: options.zoomMax,
-                zoomMin: options.zoomMin,
-                amountMax: options.amountMax,
-                amountMin: options.amountMin,
-                limitCategory: options.limitCategory,
-                /**
-                 * When use vframe
-                 * Please make sure your component need to place data
-                 * outside of iframe for form-post.
-                 */
-                generateFormFields: options.generateFormFields
-              }
-            })
-          ])
-        ]) /* /production */
+        // return createElement('div', {
+        //   style: {
+        //     height: '100%'
+        //   }
+        // }, [
+        //   this.fields.map(function (field) {
+        //     /**
+        //      * field should has properties:
+        //      * * type
+        //      * * row
+        //      * * column
+        //      * * _id
+        //      * * node_id
+        //      * * label
+        //      */
+        //     return createElement('input', {
+        //       attrs: {
+        //         value: field.node_id,
+        //         id: field._id,
+        //         type: 'hidden',
+        //         name: 'xeats[]',
+        //         'data-type': field.type,
+        //         'data-row': field.row,
+        //         'data-column': field.column,
+        //         'data-label': field.label
+        //       }
+        //     })
+        //   }),
+        //   createElement('vframe', {
+        //     props: {
+        //       width: options.width,
+        //       height: options.height
+        //     }
+        //   }, [
+        //     createElement('app', {
+        //       props: {
+        //         width: options.width,
+        //         height: options.height,
+        //         seatsKey: options.seatsKey,
+        //         accessKey: options.accessKey,
+        //         disableWheel: options.disableWheel,
+        //         zoomMax: options.zoomMax,
+        //         zoomMin: options.zoomMin,
+        //         amountMax: options.amountMax,
+        //         amountMin: options.amountMin,
+        //         /**
+        //          * When use vframe
+        //          * Please make sure your component need to place data
+        //          * outside of iframe for form-post.
+        //          */
+        //         generateFormFields: options.generateFormFields,
+        //         /**
+        //          * For limiting the booking time for each seat category
+        //          */
+        //         limitCategory: options.limitCategory,
+        //         /**
+        //          * disable the time limit of limitCategory (this is for preoccupying seats)
+        //          */
+        //         disableDatetimeLimit: options.disableDatetimeLimit
+        //       }
+        //     })
+        //   ])
+        // ]) /* /production */
 
         // NOTICE: This is for develope
-        // return createElement('app', {
-        //   props: {
-        //     width: options.width,
-        //     height: options.height,
-        //     seatsKey: options.seatsKey,
-        //     accessKey: options.accessKey,
-        //     zoomMax: options.zoomMax,
-        //     zoomMin: options.zoomMin,
-        //     amountMax: options.amountMax,
-        //     amountMin: options.amountMin,
-        //     limitCategory: options.limitCategory,
-        //     disableWheel: options.disableWheel,
-        //     generateFormFields: options.generateFormFields
-        //   }
-        // })
+        return createElement('app', {
+          props: {
+            width: options.width,
+            height: options.height,
+            seatsKey: options.seatsKey,
+            accessKey: options.accessKey,
+            zoomMax: options.zoomMax,
+            zoomMin: options.zoomMin,
+            amountMax: options.amountMax,
+            amountMin: options.amountMin,
+            limitCategory: options.limitCategory,
+            disableDatetimeLimit: options.disableDatetimeLimit,
+            disableWheel: options.disableWheel,
+            generateFormFields: options.generateFormFields
+          }
+        })
         /* /develope */
       },
       components: {

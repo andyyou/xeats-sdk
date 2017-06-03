@@ -65,6 +65,9 @@ export default {
     limitCategory: {
       type: Object
     },
+    disableDatetimeLimit: {
+      type: Boolean
+    },
     /**
      * For generate form fields out of iframe
      * Administrator panel no need to use form-post (optional)
@@ -244,8 +247,10 @@ export default {
         let categoryStatus = null
         let categoryStartAt = null
         let categoryEndAt = null
-        if (seat.start_at && seat.end_at) {
-          // 如果該座位有給 start_at 和 end_at，先用此判斷能否購買
+
+        if (seat.start_at && seat.end_at && !vm.disableDatetimeLimit) {
+          // 如果該 category 有給 start_at 和 end_at，而且 disableDatetimeLimit 不為 true ，
+          // 則用時間判斷能否購買
           let currentTimeStamp = Date.now()
           let startAtTimeStamp = new Date(seat.start_at).getTime()
           let endAtTimeStamp = new Date(seat.end_at).getTime()
@@ -299,7 +304,6 @@ export default {
           picked: false
         })
       })
-
       vm.loading = false
     })
     .catch( error => {
@@ -484,7 +488,7 @@ export default {
             name: 'pan-zoom',
             expression: 'viewBox',
             modifiers: {
-              vframe: true,
+              vframe: false,
               'disable-wheel': vm.disableWheel
             }
           }
