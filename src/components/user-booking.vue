@@ -4,7 +4,7 @@ import _ from 'lodash'
 const DEFAULT = {
   SEAT: {
     unavailableColor: '#d3d3d3',    // This color means the seat is unavailable
-    errorColor: 'black',
+    errorColor: '#000000',
     tooltipContent: '無法購買',
     darken: -0.4
   },

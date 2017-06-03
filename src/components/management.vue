@@ -67,7 +67,9 @@ function hsl2hex (h, s, l) {
 
 const DEFAULT = {
   SEAT: {
-    unavailableColor: '#d3d3d3',    // This color means the seat is unavailable
+    unavailableColor: '#d3d3d3',      // This color means the seat is unavailable
+    errorColor: '#000000',            // This color means something go wrong
+    preventDefaultColor: '#DD9D62',   // If manager choose color in DEFAULT, then change to this color.
     shape: 'circle',
     tooltipContent: '無法購買'
   },
@@ -698,7 +700,7 @@ export default {
         name: vm.mode, 
         expression: expressions[vm.mode],
         modifiers: {
-          vframe: true,
+          vframe: false,
           'disable-wheel': vm.disableWheel
         }
       }
@@ -1122,12 +1124,15 @@ export default {
               },
               on: {
                 change: function (e) {
-                  vm.applyToSeatColor = e.target.value
-                  vm.categoryItems.find( category => {
-                    return category.name === vm.category
-                  }).color = e.target.value
-
-                  vm.$emit('change', e.target.value)
+                  let pickedColor = e.target.value.toLowerCase()
+                  if (pickedColor === DEFAULT.SEAT.unavailableColor || pickedColor === DEFAULT.SEAT.errorColor) {
+                    // Avoid manager pick an unavailableColor
+                    pickedColor = DEFAULT.SEAT.preventDefaultColor
+                    console.warn('This color is disallowed.')
+                  }
+                  vm.applyToSeatColor = pickedColor
+                  vm.categoryItems.find(category => category.name === vm.category).color = pickedColor
+                  vm.$emit('change', pickedColor)
                 }
               }
             }),
