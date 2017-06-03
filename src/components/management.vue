@@ -600,6 +600,27 @@ export default {
           let categoryStartAt = (vm.categoryItems[categoryItemsIndex].start_at) ? new Date(vm.categoryItems[categoryItemsIndex].start_at).toLocaleString() : null
           let categoryEndAt = (vm.categoryItems[categoryItemsIndex].end_at) ? new Date(vm.categoryItems[categoryItemsIndex].end_at).toLocaleString() : null
           let categoryInfo = (vm.categoryItems[categoryItemsIndex].info) ? JSON.stringify(vm.categoryItems[categoryItemsIndex].info, null, 2) : null
+          let categoryStatus = null
+
+          if (seat.start_at && seat.end_at) {
+            // 如果該 category 有給 start_at 和 end_at 則判斷該票卷狀態
+            let currentTimeStamp = Date.now()
+            let startAtTimeStamp = new Date(seat.start_at).getTime()
+            let endAtTimeStamp = new Date(seat.end_at).getTime()
+            categoryStartAt = new Date(seat.start_at).toLocaleString()
+            categoryEndAt = new Date(seat.end_at).toLocaleString()
+
+            if (currentTimeStamp < startAtTimeStamp ) {
+              // 尚未開賣
+              categoryStatus = '尚未開賣'
+            } else if (currentTimeStamp > endAtTimeStamp){
+              // 超過購買時間
+              categoryStatus = '已逾售票日期'
+            } else {
+              // 可以購買
+              categoryStatus = '販賣中'
+            }
+          }
 
           return acc.concat({
             name: vm.categoryItems[categoryItemsIndex].name,
@@ -608,7 +629,8 @@ export default {
             categoryEndAt,
             categorySn: vm.categoryItems[categoryItemsIndex].sn || null,
             categoryComment: vm.categoryItems[categoryItemsIndex].comment || null,
-            categoryInfo
+            categoryInfo,
+            categoryStatus
           })
         } else {
           return acc
@@ -718,7 +740,7 @@ export default {
         name: vm.mode, 
         expression: expressions[vm.mode],
         modifiers: {
-          vframe: false,
+          vframe: true,
           'disable-wheel': vm.disableWheel
         }
       }
@@ -1394,8 +1416,17 @@ export default {
                 style: {
                   'background-color': item.color
                 }
-              }),
-              item.name
+              }), 
+              item.name, 
+              createElement('span', {
+                attrs: {
+                  class: 'badge-warn'
+                },
+                directives: [{
+                  name: 'show',
+                  value: item.categoryStatus
+                }]
+              }, item.categoryStatus)
             ])
           })
         ])
@@ -1791,6 +1822,22 @@ export default {
         border-top: 1px solid #ccc;
       }
 
+      .badge-warn {
+        display: inline-block;
+        margin-left: .4em;
+        padding: .25em .4em;
+        font-size: 75%;
+        font-weight: 700;
+        line-height: 1;
+        color: #fff;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: baseline;
+        background-color: #f0ad4e;
+        padding-right: .6em;
+        padding-left: .6em;
+        border-radius: 10rem;
+      }
     }
   }
 

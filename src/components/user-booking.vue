@@ -488,7 +488,7 @@ export default {
             name: 'pan-zoom',
             expression: 'viewBox',
             modifiers: {
-              vframe: false,
+              vframe: true,
               'disable-wheel': vm.disableWheel
             }
           }
@@ -758,18 +758,16 @@ export default {
                   'background-color': item.color
                 }
               }, (item.amount) ? item.amount : ''),
-              [
-                item.name, 
-                createElement('span', {
-                  attrs: {
-                    class: 'badge-warn'
-                  },
-                  directives: [{
-                    name: 'show',
-                    value: item.categoryStatus
-                  }]
-                }, item.categoryStatus)
-              ]
+              item.name, 
+              createElement('span', {
+                attrs: {
+                  class: 'badge-warn'
+                },
+                directives: [{
+                  name: 'show',
+                  value: item.categoryStatus
+                }]
+              }, item.categoryStatus)
             ])
           })
         ])
