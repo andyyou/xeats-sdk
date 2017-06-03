@@ -197,6 +197,7 @@ export default {
     }
   },
   created () {
+
     let vm = this
 
     vm.$http.get(`/seats/${vm.seatsKey}`, {

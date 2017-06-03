@@ -101,8 +101,8 @@ class ManagerMap {
                    * Please make sure your component need to place data
                    * outside of iframe for form-post.
                    */
-                  generateFormFields: options.generateFormFields,
-                  onAfterSave: options.onAfterSave
+                  generateFormFields: this.generateFormFields,
+                  onAfterSave: this.onAfterSave
                 }
               })
             ])
@@ -212,19 +212,19 @@ class UserMap {
                 amountMax: options.amountMax,
                 amountMin: options.amountMin,
                 /**
-                 * When use vframe
-                 * Please make sure your component need to place data
-                 * outside of iframe for form-post.
-                 */
-                generateFormFields: options.generateFormFields,
-                /**
                  * For limiting the booking time for each seat category
                  */
                 limitCategory: options.limitCategory,
                 /**
                  * disable the time limit of limitCategory (this is for preoccupying seats)
                  */
-                disableDatetimeLimit: options.disableDatetimeLimit
+                disableDatetimeLimit: options.disableDatetimeLimit,
+                /**
+                 * When use vframe
+                 * Please make sure your component need to place data
+                 * outside of iframe for form-post.
+                 */
+                generateFormFields: this.generateFormFields
               }
             })
           ])
@@ -244,7 +244,7 @@ class UserMap {
         //     limitCategory: options.limitCategory,
         //     disableDatetimeLimit: options.disableDatetimeLimit,
         //     disableWheel: options.disableWheel,
-        //     generateFormFields: options.generateFormFields
+        //     generateFormFields: this.generateFormFields
         //   }
         // })
         /* /develope */

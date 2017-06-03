@@ -149,7 +149,7 @@ export default {
     generateFormFields: {
       type: Function
     },
-    onAfterSave : {
+    onAfterSave: {
       type: Function
     }
   },
