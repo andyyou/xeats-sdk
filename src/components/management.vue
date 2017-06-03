@@ -207,12 +207,20 @@ export default {
        * Booking amount for limitation
        */
       amount: 0,
+      /**
+       * Tooltip and alert are for providing supplementary information
+       */
       tooltip: {
         content: "",
         active: false,
         left: 0,
         top: 0,
         timer: null
+      },
+      alert:{
+        active: false,
+        title: '',
+        content: ''
       },
       /**
        * mode will mount directive to svg
@@ -248,9 +256,9 @@ export default {
         if (typeof category === 'string') {
           categoryItem.name = category
         } else {
-          categoryItem = Object.assign({comment: null, info: null, name: null, sn: null, startAt: null, endAt: null}, category)
-          categoryItem.startAt = categoryItem.startAt ? new Date(categoryItem.startAt).toISOString() : null
-          categoryItem.endAt = categoryItem.endAt ? new Date(categoryItem.endAt).toISOString() : null
+          categoryItem = Object.assign({comment: null, info: null, name: null, sn: null, start_at: null, end_at: null}, category)
+          categoryItem.start_at = categoryItem.start_at ? new Date(categoryItem.start_at).toISOString() : null
+          categoryItem.end_at = categoryItem.end_at ? new Date(categoryItem.end_at).toISOString() : null
         }
         if(!categoryItem.name){
           throw new Error('Error on setting categories in sdk')
@@ -525,9 +533,7 @@ export default {
 
       vm.seats = vm.seats.map(seat => {
         if (seat.picked) {
-          let index = vm.categoryItems.findIndex(item => {
-            return item.name === changeCategory
-          })
+          let index = vm.categoryItems.findIndex(item => item.name === changeCategory)
           return Object.assign({}, seat, {
             // 如果 vm.categoryItems[index] 不存在，表示使用者選擇 clean
             fill: changedColor,
@@ -535,8 +541,8 @@ export default {
             info: (vm.categoryItems[index]) ? vm.categoryItems[index].info : null,
             comment: (vm.categoryItems[index]) ? vm.categoryItems[index].comment : null,
             sn: (vm.categoryItems[index]) ? vm.categoryItems[index].sn : null,
-            start_at: (vm.categoryItems[index]) ? vm.categoryItems[index].startAt : null,
-            end_at: (vm.categoryItems[index]) ? vm.categoryItems[index].endAt : null,
+            start_at: (vm.categoryItems[index]) ? vm.categoryItems[index].start_at : null,
+            end_at: (vm.categoryItems[index]) ? vm.categoryItems[index].end_at : null,
             status: changeStatus,
             picked: false
           })
@@ -584,13 +590,25 @@ export default {
       let vm = this
       let temp = {}   // This is an empty object for reduce
       let legend = this.seats.reduce( (acc, seat) => {
-        
+      
         let key = seat.category + '|' + seat.fill
         if (!temp[key] && seat.fill !== DEFAULT.SEAT.unavailableColor) {
           temp[key] = true;
+
+          let categoryItemsIndex = vm.categoryItems.findIndex(categoryItem => categoryItem.name === seat.category)
+          
+          let categoryStartAt = (vm.categoryItems[categoryItemsIndex].start_at) ? new Date(vm.categoryItems[categoryItemsIndex].start_at).toLocaleString() : null
+          let categoryEndAt = (vm.categoryItems[categoryItemsIndex].end_at) ? new Date(vm.categoryItems[categoryItemsIndex].end_at).toLocaleString() : null
+          let categoryInfo = (vm.categoryItems[categoryItemsIndex].info) ? JSON.stringify(vm.categoryItems[categoryItemsIndex].info, null, 2) : null
+
           return acc.concat({
-            name: seat.category,
+            name: vm.categoryItems[categoryItemsIndex].name,
             color: seat.fill,
+            categoryStartAt,
+            categoryEndAt,
+            categorySn: vm.categoryItems[categoryItemsIndex].sn || null,
+            categoryComment: vm.categoryItems[categoryItemsIndex].comment || null,
+            categoryInfo
           })
         } else {
           return acc
@@ -1128,7 +1146,8 @@ export default {
                   if (pickedColor === DEFAULT.SEAT.unavailableColor || pickedColor === DEFAULT.SEAT.errorColor) {
                     // Avoid manager pick an unavailableColor
                     pickedColor = DEFAULT.SEAT.preventDefaultColor
-                    console.warn('This color is disallowed.')
+                    vm.alert.title = 'This color is disallowed.'
+                    vm.alert.active = true
                   }
                   vm.applyToSeatColor = pickedColor
                   vm.categoryItems.find(category => category.name === vm.category).color = pickedColor
@@ -1351,6 +1370,20 @@ export default {
                   e.preventDefault()
                   e.stopPropagation()
                   vm.showHoverCategory(undefined)
+                },
+                click: function (e) {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  vm.alert.title = item.name
+                  vm.alert.content = ''
+                  if (item.categoryStartAt) {vm.alert.content += `開賣時間：${item.categoryStartAt}<br>`}
+                  if (item.categoryEndAt) {vm.alert.content += `截止時間：${item.categoryEndAt}<br>`}
+                  if (item.categorySn) {vm.alert.content += `SN: ${item.categorySn}<br>`}
+                  if (item.categoryInfo) {vm.alert.content += `Info: ${item.categoryInfo}<br>`}
+                  if (item.categoryComment) {vm.alert.content += `Comment: ${item.categoryComment}<br>`}
+                  if (vm.alert.content) {
+                    vm.alert.active = true
+                  }
                 }
               }
             }, [
@@ -1367,6 +1400,64 @@ export default {
           })
         ])
       ]),/* /legend panel */
+      /* alert modal */
+      createElement('div', {
+        attrs: {
+          class: 'alert-modal'
+        },
+        directives: [
+          {
+            name: 'show',
+            value: vm.alert.active
+          }
+        ],
+        on: {
+          wheel: function (e) {
+            e.preventDefault()
+            e.stopPropagation()
+          }
+        }
+      }, [
+      createElement('div',{
+        attrs: {
+          class: 'alert-container'
+        }
+      },[
+        createElement('h3', {
+          attrs: {
+            class: 'alert-title'
+          }
+        }, vm.alert.title),
+        createElement('div', {
+          attrs: {
+            class: 'alert-content'
+          },
+          domProps:{
+            innerHTML: vm.alert.content
+          }
+        }),
+        createElement('div', {
+          attrs: {
+            class: 'button-container'
+          }
+        }, [
+            createElement('button',{
+              attrs: {
+                class: 'confirm-button'
+              },
+              on: {
+                click: function (e) {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  vm.alert.active = false
+                  vm.alert.title = null
+                  vm.alert.content = null
+                }
+              }
+            }, 'OK')
+          ])
+        ])
+      ])/* /alert modal */
     ])
   }
 }
@@ -1719,6 +1810,101 @@ export default {
     white-space: nowrap;
     text-align: center;
     font-family: $font;
+  }
+    /* style of alert-modal is forked from sweetAlert */
+  .alert-modal{
+    font-family: $font;
+    overflow-y: auto;
+    background-color: rgba(0,0,0,.4);
+    transition: background-color .1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    padding: 10px;
+    z-index: 1060;
+
+    .alert-container{
+      border-radius: 5px;
+      box-sizing: border-box;
+      text-align: center;
+      margin: auto;
+      overflow-x: hidden;
+      overflow-y: auto;
+      display: none;
+      position: relative;
+      max-width: 100%;
+      width: 500px;
+      padding: 20px;
+      background: rgb(255, 255, 255);
+      display: block;
+      min-height: 148px;
+      animation: showAlert .3s;
+    }
+
+    .alert-title{
+      color: #595959;
+      font-size: 30px;
+      text-align: center;
+      font-weight: 600;
+      text-transform: none;
+      position: relative;
+      margin: .4em 0;
+      padding: 0;
+      display: block;
+      word-wrap: break-word;
+    }
+
+    .alert-content{
+      font-size: 18px;
+      text-align: left;
+      font-weight: 300;
+      position: relative;
+      float: none;
+      margin: 0;
+      padding: 0;
+      line-height: normal;
+      color: #545454;
+      word-wrap: break-word;
+    }
+
+    .confirm-button{
+      background-color: #3085d6;
+      color: #fff;
+      border: 0;
+      -webkit-box-shadow: none;
+      box-shadow: none;
+      font-size: 17px;
+      font-weight: 500;
+      border-radius: 3px;
+      padding: 15px 35px;
+      margin: 20px 5px 0;
+      cursor: pointer;
+      white-space: nowrap;
+
+      &:hover{
+        background-color: #297dce;
+      }
+    }
+
+    @keyframes showAlert {
+      0% {
+        transform: scale(.7);
+      }
+      45% {
+        transform: scale(1.05);
+      }
+      80% {
+        transform: scale(.95);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
   }
 
   .dotted-around {
