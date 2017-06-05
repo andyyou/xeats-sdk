@@ -288,6 +288,7 @@ export default {
   },
   methods: {
     initialize (vm, res) {
+
       vm.seatsDocument = Object.assign({}, vm.seatsDocument, {
         name: res.data.name,
         comment: res.data.comment,
@@ -357,7 +358,7 @@ export default {
       .then(res => {
         // Replace seats with new spots
         vm.initialize(vm, res)
-
+        vm.seatsDocument.spotId = spotId
         vm.seatsDocument.name = null
         vm.seatsDocument.comment = null
 
@@ -367,6 +368,8 @@ export default {
       })
       .catch( error => {
         vm.ajaxFailed = 'API request failed, Try to reload please.'
+        vm.alert.title = '無法取得座位表，請稍後重試'
+        vm.alert.active = true
         console.error('error', error)
       })
     },
@@ -561,6 +564,7 @@ export default {
           objects: vm.seats.concat(vm.stages, vm.facilities, vm.disabilities),
           name: vm.seatsDocument.name || null,
           shape: vm.seatsDocument.shape,
+          spot_id: vm.seatsDocument.spotId,
           comment: vm.seatsDocument.comment || null,
           svg: vm.svg
       }, {headers: {
@@ -581,6 +585,8 @@ export default {
       })
       .catch(error => {
         vm.ajaxFailed = 'Saving failed. Try to save again later.'
+        vm.alert.title = '存檔失敗，請重試'
+        vm.alert.active = true
         console.error('error', error)
       })
     }
@@ -590,17 +596,20 @@ export default {
       let vm = this
       let temp = {}   // This is an empty object for reduce
       let legend = this.seats.reduce( (acc, seat) => {
+
+        if (seat.lock === true) {
+          // 如果有任何座位是 lock 狀態
+          vm.alert.title = "此座位表目前為 Lock 狀態，無法編輯，如需變更請聯絡管理者"
+          vm.alert.active = true
+        }
       
         let key = seat.category + '|' + seat.fill
         if (!temp[key] && seat.fill !== DEFAULT.SEAT.unavailableColor) {
           temp[key] = true;
 
-          let categoryItemsIndex = vm.categoryItems.findIndex(categoryItem => categoryItem.name === seat.category)
-          
-          let categoryStartAt = (vm.categoryItems[categoryItemsIndex].start_at) ? new Date(vm.categoryItems[categoryItemsIndex].start_at).toLocaleString() : null
-          let categoryEndAt = (vm.categoryItems[categoryItemsIndex].end_at) ? new Date(vm.categoryItems[categoryItemsIndex].end_at).toLocaleString() : null
-          let categoryInfo = (vm.categoryItems[categoryItemsIndex].info) ? JSON.stringify(vm.categoryItems[categoryItemsIndex].info, null, 2) : null
           let categoryStatus = null
+          let categoryStartAt = null
+          let categoryEndAt = null
 
           if (seat.start_at && seat.end_at) {
             // 如果該 category 有給 start_at 和 end_at 則判斷該票卷狀態
@@ -623,13 +632,13 @@ export default {
           }
 
           return acc.concat({
-            name: vm.categoryItems[categoryItemsIndex].name,
+            name: seat.category,
             color: seat.fill,
             categoryStartAt,
             categoryEndAt,
-            categorySn: vm.categoryItems[categoryItemsIndex].sn || null,
-            categoryComment: vm.categoryItems[categoryItemsIndex].comment || null,
-            categoryInfo,
+            categorySn: seat.sn || null,
+            categoryComment: seat.comment || null,
+            categoryInfo: seat.info || null,
             categoryStatus
           })
         } else {
@@ -710,7 +719,8 @@ export default {
     })
     .then(res => {
       vm.seatsDocument = Object.assign({}, vm.seatsDocument, {
-        _id: res.data._id
+        _id: res.data._id,
+        spotId: res.data.spot
       })
       vm.initialize(vm, res)
 
@@ -719,6 +729,8 @@ export default {
     })
     .catch( error => {
       vm.ajaxFailed = 'API request failed, Try to reload please.'
+      vm.alert.title = '無法建立座位表，請稍後重試'
+      vm.alert.active = true
       console.error('error', error)
     })
   },
@@ -740,7 +752,7 @@ export default {
         name: vm.mode, 
         expression: expressions[vm.mode],
         modifiers: {
-          vframe: true,
+          vframe: false,
           'disable-wheel': vm.disableWheel
         }
       }
@@ -1325,6 +1337,7 @@ export default {
                 click: function (e) {
                   e.preventDefault()
                   e.stopPropagation()
+                  vm.ajaxFailed = null
                   vm.save()
                 }
               }
