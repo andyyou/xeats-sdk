@@ -342,6 +342,7 @@ export default {
           picked: false
         })
       })
+      this.reset()
     },
     /**
      * For change/reset spot
@@ -361,8 +362,6 @@ export default {
         vm.seatsDocument.spotId = spotId
         vm.seatsDocument.name = null
         vm.seatsDocument.comment = null
-
-        this.reset()
         vm.loading = false
         vm.mode = 'pan-zoom'
       })
@@ -723,9 +722,7 @@ export default {
         spotId: res.data.spot
       })
       vm.initialize(vm, res)
-
       vm.loading = false
-
     })
     .catch( error => {
       vm.ajaxFailed = 'API request failed, Try to reload please.'
@@ -752,7 +749,7 @@ export default {
         name: vm.mode, 
         expression: expressions[vm.mode],
         modifiers: {
-          vframe: false,
+          vframe: true,
           'disable-wheel': vm.disableWheel
         }
       }
