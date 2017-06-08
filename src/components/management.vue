@@ -112,6 +112,12 @@ const SEATS_SHAPE = {
   }
 }
 
+const ERROR_MESSAGE = {
+  getSeatsFailed: '無法取得座位表，請稍後重試',
+  saveFailed: '存檔失敗',
+  seatsLocked: '此座位表目前為 Lock 狀態，無法編輯，如需變更請聯絡管理者'
+}
+
 export default {
   props: {
     width: {
@@ -357,6 +363,15 @@ export default {
         }
       })
       .then(res => {
+
+        // Catch request error
+        if (res.data && res.data.error) {
+          vm.ajaxFailed = 'Saving failed. Try to save again later.'
+          vm.alert.title = `${ERROR_MESSAGE.getSeatsFailed}（${res.data.error}）`
+          vm.alert.active = true
+          return
+        }
+
         // Replace seats with new spots
         vm.initialize(vm, res)
         vm.seatsDocument.spotId = spotId
@@ -367,7 +382,7 @@ export default {
       })
       .catch( error => {
         vm.ajaxFailed = 'API request failed, Try to reload please.'
-        vm.alert.title = '無法取得座位表，請稍後重試'
+        vm.alert.title = ERROR_MESSAGE.getSeatsFailed
         vm.alert.active = true
         console.error('error', error)
       })
@@ -574,6 +589,16 @@ export default {
         vm.loading = false
         vm.diff = false
         /**
+         * Catch request error
+        **/
+        if (res.data && res.data.error) {
+          vm.ajaxFailed = 'Saving failed. Try to save again later.'
+          vm.alert.title = `${ERROR_MESSAGE.saveFailed}（${res.data.error}）`
+          vm.alert.active = true
+          return
+        }
+
+        /**
          * After save back to pan-zoom mode
          */
         vm.mode = 'pan-zoom'
@@ -584,7 +609,7 @@ export default {
       })
       .catch(error => {
         vm.ajaxFailed = 'Saving failed. Try to save again later.'
-        vm.alert.title = '存檔失敗，請重試'
+        vm.alert.title = ERROR_MESSAGE.saveFailed
         vm.alert.active = true
         console.error('error', error)
       })
@@ -598,7 +623,7 @@ export default {
 
         if (seat.lock === true) {
           // 如果有任何座位是 lock 狀態
-          vm.alert.title = "此座位表目前為 Lock 狀態，無法編輯，如需變更請聯絡管理者"
+          vm.alert.title = ERROR_MESSAGE.seatsLocked
           vm.alert.active = true
         }
       
@@ -717,6 +742,15 @@ export default {
       }
     })
     .then(res => {
+
+      // Catch request error
+      if (res.data && res.data.error) {
+        vm.ajaxFailed = 'Saving failed. Try to save again later.'
+        vm.alert.title = `${ERROR_MESSAGE.getSeatsFailed}（${res.data.error}）`
+        vm.alert.active = true
+        return
+      }
+
       vm.seatsDocument = Object.assign({}, vm.seatsDocument, {
         _id: res.data._id,
         spotId: res.data.spot
@@ -726,7 +760,7 @@ export default {
     })
     .catch( error => {
       vm.ajaxFailed = 'API request failed, Try to reload please.'
-      vm.alert.title = '無法建立座位表，請稍後重試'
+      vm.alert.title = ERROR_MESSAGE.getSeatsFailed
       vm.alert.active = true
       console.error('error', error)
     })

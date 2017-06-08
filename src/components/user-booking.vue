@@ -21,6 +21,12 @@ const SEAT_STATUS = {
   other: 3
 }
 
+const ERROR_MESSAGE = {
+  getSeatsFailed: '無法取得座位表，請稍後重試',
+  saveFailed: '存檔失敗',
+  seatsLocked: '此座位表目前為 Lock 狀態，無法編輯，如需變更請聯絡管理者'
+}
+
 export default {
   props: {
     width: {
@@ -146,7 +152,7 @@ export default {
        * Status for loader
        */
       loading: true,
-      failed: null
+      ajaxFailed: null
     }
   },
   computed: {
@@ -206,6 +212,14 @@ export default {
       }
     })
     .then(res => {
+
+      // Catch request error
+      if (res.data && res.data.error) {
+        vm.ajaxFailed = 'Saving failed. Try to save again later.'
+        vm.alert.title = `${ERROR_MESSAGE.getSeatsFailed}（${res.data.error}）`
+        vm.alert.active = true
+        return
+      }
 
       vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
       vm.stages = res.data.objects.filter(obj => obj.type === 'stage')
@@ -308,7 +322,9 @@ export default {
       vm.loading = false
     })
     .catch( error => {
-      vm.failed = 'API request failed, Try to reload please.'
+      vm.ajaxFailed = 'API request failed, Try to reload please.'
+      vm.alert.title = ERROR_MESSAGE.getSeatsFailed
+      vm.alert.active = true
       console.error('error', error)
     })
   },
@@ -464,14 +480,14 @@ export default {
             class: 'loader-figure'
           },
           style: {
-            display: vm.failed ? 'none' : 'block'
+            display: vm.ajaxFailed ? 'none' : 'block'
           }
         }),
         createElement('p', {
           class: {
             'loader-label': true,
-            animate: !vm.failed,
-            error: vm.failed
+            animate: !vm.ajaxFailed,
+            error: vm.ajaxFailed
           }
         })
       ]) : null,
