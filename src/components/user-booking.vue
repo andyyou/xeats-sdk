@@ -4,13 +4,27 @@ import _ from 'lodash'
 const DEFAULT = {
   SEAT: {
     unavailableColor: '#d3d3d3',    // This color means the seat is unavailable
-    tooltipContent: '無法購買'
+    errorColor: '#000000',
+    tooltipContent: '無法購買',
+    darken: -0.4
   },
   ZOOM: {
     scale: 0.5,
     max: 2,
     min: 0.5
   }
+}
+const SEAT_STATUS = {
+  unavailable: 0,
+  available: 1,
+  reserved: 2,
+  other: 3
+}
+
+const ERROR_MESSAGE = {
+  getSeatsFailed: '無法取得座位表，請稍後重試',
+  saveFailed: '存檔失敗',
+  seatsLocked: '此座位表目前為 Lock 狀態，無法編輯，如需變更請聯絡管理者'
 }
 
 export default {
@@ -43,6 +57,9 @@ export default {
       type: Number,
       default: DEFAULT.ZOOM.min
     },
+    /**
+     * For limit total ticket buying amounts (required) and ticket category buying amounts (options)
+     */
     amountMax: {
       type: Number,
       required: true
@@ -51,13 +68,19 @@ export default {
       type: Number,
       required: true
     },
+    limitCategory: {
+      type: Object
+    },
+    disableDatetimeLimit: {
+      type: Boolean
+    },
     /**
      * For generate form fields out of iframe
      * Administrator panel no need to use form-post (optional)
      */
     generateFormFields: {
       type: Function
-    }
+    },
   },
   data () {
     return {
@@ -105,12 +128,20 @@ export default {
        * Booking amount for limitation
        */
       amount: 0,
+      /**
+       * Tooltip and alert are for providing supplementary information
+       */
       tooltip: {
         content: "",
         active: false,
         left: 0,
         top: 0,
         timer: null
+      },
+      alert:{
+        active: false,
+        title: '',
+        content: ''
       },
       /**
        * Legend for showing color-ticket pair
@@ -121,7 +152,7 @@ export default {
        * Status for loader
        */
       loading: true,
-      failed: null
+      ajaxFailed: null
     }
   },
   computed: {
@@ -172,6 +203,7 @@ export default {
     }
   },
   created () {
+
     let vm = this
 
     vm.$http.get(`/seats/${vm.seatsKey}`, {
@@ -180,6 +212,14 @@ export default {
       }
     })
     .then(res => {
+
+      // Catch request error
+      if (res.data && res.data.error) {
+        vm.ajaxFailed = 'Saving failed. Try to save again later.'
+        vm.alert.title = `${ERROR_MESSAGE.getSeatsFailed}（${res.data.error}）`
+        vm.alert.active = true
+        return
+      }
 
       vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
       vm.stages = res.data.objects.filter(obj => obj.type === 'stage')
@@ -219,38 +259,72 @@ export default {
       let temp = {}   // This is an empty object for filter legend
       vm.seats = vm.seats.map(function (seat) {
 
+        let categoryStatus = null
+        let categoryStartAt = null
+        let categoryEndAt = null
+
+        if (seat.start_at && seat.end_at && !vm.disableDatetimeLimit) {
+          // 如果該 category 有給 start_at 和 end_at，而且 disableDatetimeLimit 不為 true ，
+          // 則用時間判斷能否購買
+          let currentTimeStamp = Date.now()
+          let startAtTimeStamp = new Date(seat.start_at).getTime()
+          let endAtTimeStamp = new Date(seat.end_at).getTime()
+          categoryStartAt = new Date(seat.start_at).toLocaleString()
+          categoryEndAt = new Date(seat.end_at).toLocaleString()
+
+          if (currentTimeStamp < startAtTimeStamp ) {
+            // 尚未開賣
+            seat.status = SEAT_STATUS.unavailable
+            categoryStatus = '尚未開賣'
+          } else if (currentTimeStamp > endAtTimeStamp){
+            // 超過購買時間
+            seat.status = SEAT_STATUS.unavailable
+            seat.fill = DEFAULT.SEAT.unavailableColor   // 不要出現在 legend 內
+            // categoryStatus = '已售完'
+          } else {
+            // 可以購買
+            // categoryStatus = '熱賣中'
+          }
+        }
+
         let key = seat.category + '|' + seat.fill
         if (!temp[key] && seat.fill !== DEFAULT.SEAT.unavailableColor) {
           temp[key] = true
           vm.legend.push({
             name: seat.category,
             color: seat.fill,
+            // if limitCategory is set then use amount in limitCategory else use total amountMax
+            amount: 0,
+            amountMax: (vm.limitCategory && vm.limitCategory[seat.category] && vm.limitCategory[seat.category].amountMax) || vm.amountMax,
+            amountMin: (vm.limitCategory && vm.limitCategory[seat.category] && vm.limitCategory[seat.category].amountMin) || vm.amountMin,
+            // Additional information to present
+            categoryStatus,
+            categoryStartAt,
+            categoryEndAt
           })
         }
 
         // sort for clarity of legend
-        vm.legend.sort((a, b) => {
-          if (a.name < b.name) return -1
-          if (a.name > b.name) return 1
-          return 0
-        })
+        vm.legend.sort((a, b) => (a.name <= b.name) ? -1 : 1)
 
 
         // SEAT_STATUS: [unavailable, available, reserved, other]
-        let colors = [DEFAULT.SEAT.unavailableColor, seat.fill, vm.darken(seat.fill, -0.4), DEFAULT.SEAT.unavailableColor]
+        let colors = [DEFAULT.SEAT.unavailableColor, seat.fill, vm.darken(seat.fill, DEFAULT.SEAT.darken), DEFAULT.SEAT.unavailableColor]
         /**
-         * If color show black means something wrong
+         * If color show black (errorColor) means something wrong
          */
         return Object.assign({}, seat, {
-          fill: colors[seat.status] || 'black',
+          status: seat.status,
+          fill: colors[seat.status] || DEFAULT.SEAT.errorColor,
           picked: false
         })
       })
-
       vm.loading = false
     })
     .catch( error => {
-      vm.failed = 'API request failed, Try to reload please.'
+      vm.ajaxFailed = 'API request failed, Try to reload please.'
+      vm.alert.title = ERROR_MESSAGE.getSeatsFailed
+      vm.alert.active = true
       console.error('error', error)
     })
   },
@@ -333,23 +407,39 @@ export default {
       svgCanvas.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${viewport.width * scale} ${viewport.height * scale}`)
     },
     book (seat, index) {
-      if (seat.status !== 1) {
+      if (seat.status !== SEAT_STATUS.available) {
         return
       }
+      let legendIndex = this.legend.findIndex((item) => {
+        return item.name === seat.category
+      })
       let vm = this
 
       if (!seat.picked) {
-        if (this.amount + 1 <= this.amountMax) {
-          seat.picked = !seat.picked
-          seat.cache = seat.fill
-          seat.fill = vm.darken(seat.fill, -0.4)
-          vm.amount++
-          vm.seats.splice(index, 1, seat)
+        if (vm.amount + 1 <= vm.amountMax) {
+          if (vm.legend[legendIndex].amount + 1 <= vm.legend[legendIndex].amountMax) {
+            seat.picked = !seat.picked
+            seat.cache = seat.fill
+            seat.fill = vm.darken(seat.fill, DEFAULT.SEAT.darken)
+            vm.amount++
+            vm.legend[legendIndex].amount++
+            vm.seats.splice(index, 1, seat)
+          } else {
+            vm.alert.title = `${vm.legend[legendIndex].name} 座位數量不得大於 ${vm.legend[legendIndex].amountMax}`
+            vm.alert.active = true
+            return 
+          }
+        } else {
+          // 購買數量大於 amountMax
+          vm.alert.title = `總座位數不得大於 ${vm.amountMax}`
+          vm.alert.active = true
+          return
         }
       } else {
         seat.picked = !seat.picked
         seat.fill = seat.cache
         vm.amount--
+        vm.legend[legendIndex].amount--
         vm.seats.splice(index, 1, seat)
       }
       vm.$nextTick(function () {
@@ -390,14 +480,14 @@ export default {
             class: 'loader-figure'
           },
           style: {
-            display: vm.failed ? 'none' : 'block'
+            display: vm.ajaxFailed ? 'none' : 'block'
           }
         }),
         createElement('p', {
           class: {
             'loader-label': true,
-            animate: !vm.failed,
-            error: vm.failed
+            animate: !vm.ajaxFailed,
+            error: vm.ajaxFailed
           }
         })
       ]) : null,
@@ -451,10 +541,17 @@ export default {
                     e.stopPropagation()
                     vm.book(seat, index)
                   },
+                  touchend: function (e) {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    vm.book(seat, index)
+                  },
                   mousedown: function (e) {
                     vm.tooltip.active = false
                   },
                   mouseover: function (e) {
+                    e.preventDefault()
+                    e.stopPropagation()
                     vm.seatTooltip(seat)
                   },
                   mouseout: function (e) {
@@ -489,10 +586,17 @@ export default {
                     e.stopPropagation()
                     vm.book(seat, index)
                   },
+                  touchend: function (e) {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    vm.book(seat, index)
+                  },
                   mousedown: function (e) {
                     vm.tooltip.active = false
                   },
                   mouseover: function (e) {
+                    e.preventDefault()
+                    e.stopPropagation()
                     vm.seatTooltip(seat)
                   },
                   mouseout: function (e) {
@@ -648,6 +752,18 @@ export default {
                   e.preventDefault()
                   e.stopPropagation()
                   vm.showHoverCategory(undefined)
+                },
+                click: function (e) {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  vm.alert.title = item.name
+                  vm.alert.content = ''
+                  if (item.categoryStartAt) {vm.alert.content += `開賣時間：${item.categoryStartAt}<br>`}
+                  if (item.categoryEndAt) {vm.alert.content += `截止時間：${item.categoryEndAt}<br>`}
+                  if (item.amountMax) {vm.alert.content += `購票上限：${item.amountMax}`}
+                  if (vm.alert.content) {
+                    vm.alert.active = true
+                  }
                 }
               }
             }, [
@@ -658,13 +774,79 @@ export default {
                 style: {
                   'background-color': item.color
                 }
-              }),
-              item.name
+              }, (item.amount) ? item.amount : ''),
+              item.name, 
+              createElement('span', {
+                attrs: {
+                  class: 'badge-warn'
+                },
+                directives: [{
+                  name: 'show',
+                  value: item.categoryStatus
+                }]
+              }, item.categoryStatus)
             ])
           })
         ])
-      ])
-      /* /legend panel */
+      ]),/* /legend panel */
+      /* alert modal */
+      createElement('div', {
+        attrs: {
+          class: 'alert-modal'
+        },
+        directives: [
+          {
+            name: 'show',
+            value: vm.alert.active
+          }
+        ],
+        on: {
+          wheel: function (e) {
+            e.preventDefault()
+            e.stopPropagation()
+          }
+        }
+      }, [
+      createElement('div',{
+        attrs: {
+          class: 'alert-container'
+        }
+      },[
+        createElement('h3', {
+          attrs: {
+            class: 'alert-title'
+          }
+        }, vm.alert.title),
+        createElement('div', {
+          attrs: {
+            class: 'alert-content'
+          },
+          domProps:{
+            innerHTML: vm.alert.content
+          }
+        }),
+        createElement('div', {
+          attrs: {
+            class: 'button-container'
+          }
+        }, [
+            createElement('button',{
+              attrs: {
+                class: 'confirm-button'
+              },
+              on: {
+                click: function (e) {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  vm.alert.active = false
+                  vm.alert.title = null
+                  vm.alert.content = null
+                }
+              }
+            }, 'OK')
+          ])
+        ])
+      ])/* /alert modal */
     ])
   }
 }
@@ -674,6 +856,8 @@ export default {
 <style lang="sass" scoped>
   /* _xeats_: Do Not remove this for import in vframe */
   ._xeats_ {position: static;}
+
+  $font: 'Helvetica Neue', Helvetica, Arial, '微軟正黑體', sans-serif;
 
   svg {
     user-select: none;
@@ -754,6 +938,7 @@ export default {
   }
 
   .legend-list-panel {
+    font-family: $font;
     position: absolute;
     display: flex;
     flex-direction: column;
@@ -779,7 +964,10 @@ export default {
     .block {
       width: 20px;
       height: 20px;
+      line-height: 20px;
       margin-right: 10px;
+      text-align: center;
+      color: #FFF;
     }
 
     li {
@@ -802,9 +990,123 @@ export default {
       }
 
     }
+    .badge-warn {
+      display: inline-block;
+      margin-left: .4em;
+      padding: .25em .4em;
+      font-size: 75%;
+      font-weight: 700;
+      line-height: 1;
+      color: #fff;
+      text-align: center;
+      white-space: nowrap;
+      vertical-align: baseline;
+      background-color: #f0ad4e;
+      padding-right: .6em;
+      padding-left: .6em;
+      border-radius: 10rem;
+    }
   }
 
+  /* style of alert-modal is forked from sweetAlert */
+  .alert-modal{
+    font-family: $font;
+    overflow-y: auto;
+    background-color: rgba(0,0,0,.4);
+    transition: background-color .1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    padding: 10px;
+    z-index: 1060;
+
+    .alert-container{
+      border-radius: 5px;
+      box-sizing: border-box;
+      text-align: center;
+      margin: auto;
+      overflow-x: hidden;
+      overflow-y: auto;
+      display: none;
+      position: relative;
+      max-width: 100%;
+      width: 500px;
+      padding: 20px;
+      background: rgb(255, 255, 255);
+      display: block;
+      min-height: 148px;
+      animation: showAlert .3s;
+    }
+
+    .alert-title{
+      color: #595959;
+      font-size: 30px;
+      text-align: center;
+      font-weight: 600;
+      text-transform: none;
+      position: relative;
+      margin: .4em 0;
+      padding: 0;
+      display: block;
+      word-wrap: break-word;
+    }
+
+    .alert-content{
+      font-size: 18px;
+      text-align: center;
+      font-weight: 300;
+      position: relative;
+      float: none;
+      margin: 0;
+      padding: 0;
+      line-height: normal;
+      color: #545454;
+      word-wrap: break-word;
+    }
+
+    .confirm-button{
+      background-color: #3085d6;
+      color: #fff;
+      border: 0;
+      -webkit-box-shadow: none;
+      box-shadow: none;
+      font-size: 17px;
+      font-weight: 500;
+      border-radius: 3px;
+      padding: 15px 35px;
+      margin: 20px 5px 0;
+      cursor: pointer;
+      white-space: nowrap;
+
+      &:hover{
+        background-color: #297dce;
+      }
+    }
+
+    @keyframes showAlert {
+      0% {
+        transform: scale(.7);
+      }
+      45% {
+        transform: scale(1.05);
+      }
+      80% {
+        transform: scale(.95);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+  }
+
+
   .tooltip {
+    font-family: $font;
     user-select: none;
     -moz-user-select: none;
     -webkit-user-select: none;
@@ -832,6 +1134,7 @@ export default {
   $loader-color: orange;
 
   .loader {
+    font-family: $font;
     overflow: visible;
     padding-top: 50px;
     width: 50px;

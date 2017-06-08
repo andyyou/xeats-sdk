@@ -128,7 +128,7 @@ class ManagerMap {
           //     categories: options.categories
           //   }
           // })
-          /* /render */
+          /* /development */
         },
         components: {
           app,
@@ -212,6 +212,14 @@ class UserMap {
                 amountMax: options.amountMax,
                 amountMin: options.amountMin,
                 /**
+                 * For limiting the booking time for each seat category
+                 */
+                limitCategory: options.limitCategory,
+                /**
+                 * disable the time limit of limitCategory (this is for preoccupying seats)
+                 */
+                disableDatetimeLimit: options.disableDatetimeLimit,
+                /**
                  * When use vframe
                  * Please make sure your component need to place data
                  * outside of iframe for form-post.
@@ -233,7 +241,10 @@ class UserMap {
         //     zoomMin: options.zoomMin,
         //     amountMax: options.amountMax,
         //     amountMin: options.amountMin,
-        //     disableWheel: options.disableWheel
+        //     limitCategory: options.limitCategory,
+        //     disableDatetimeLimit: options.disableDatetimeLimit,
+        //     disableWheel: options.disableWheel,
+        //     generateFormFields: this.generateFormFields
         //   }
         // })
         /* /develope */

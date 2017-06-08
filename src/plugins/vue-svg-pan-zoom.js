@@ -135,10 +135,8 @@ export default {
         }
 
         mc.on('pinchstart', () => {})
-        if (!binding.modifiers['disable-wheel']) {
-          mc.on('pinchmove', onZoom)
-          mc.on('pinchend', onPinchEnd)
-        }
+        mc.on('pinchmove', onZoom)
+        mc.on('pinchend', onPinchEnd)
         mc.on('panstart', onPanStart)
         mc.on('panmove', onPanMove)
         mc.on('panend', onPanEnd)

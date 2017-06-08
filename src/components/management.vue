@@ -67,7 +67,9 @@ function hsl2hex (h, s, l) {
 
 const DEFAULT = {
   SEAT: {
-    unavailableColor: '#d3d3d3',    // This color means the seat is unavailable
+    unavailableColor: '#d3d3d3',      // This color means the seat is unavailable
+    errorColor: '#000000',            // This color means something go wrong
+    preventDefaultColor: '#DD9D62',   // If manager choose color in DEFAULT, then change to this color.
     shape: 'circle',
     tooltipContent: '無法購買'
   },
@@ -110,6 +112,12 @@ const SEATS_SHAPE = {
   }
 }
 
+const ERROR_MESSAGE = {
+  getSeatsFailed: '無法取得座位表，請稍後重試',
+  saveFailed: '存檔失敗',
+  seatsLocked: '此座位表目前為 Lock 狀態，無法編輯，如需變更請聯絡管理者'
+}
+
 export default {
   props: {
     width: {
@@ -147,7 +155,7 @@ export default {
     generateFormFields: {
       type: Function
     },
-    onAfterSave : {
+    onAfterSave: {
       type: Function
     }
   },
@@ -205,12 +213,20 @@ export default {
        * Booking amount for limitation
        */
       amount: 0,
+      /**
+       * Tooltip and alert are for providing supplementary information
+       */
       tooltip: {
         content: "",
         active: false,
         left: 0,
         top: 0,
         timer: null
+      },
+      alert:{
+        active: false,
+        title: '',
+        content: ''
       },
       /**
        * mode will mount directive to svg
@@ -246,7 +262,12 @@ export default {
         if (typeof category === 'string') {
           categoryItem.name = category
         } else {
-          categoryItem = Object.assign({comment: null, info: null, name: null, sn: null}, category)
+          categoryItem = Object.assign({comment: null, info: null, name: null, sn: null, start_at: null, end_at: null}, category)
+          categoryItem.start_at = categoryItem.start_at ? new Date(categoryItem.start_at).toISOString() : null
+          categoryItem.end_at = categoryItem.end_at ? new Date(categoryItem.end_at).toISOString() : null
+        }
+        if(!categoryItem.name){
+          throw new Error('Error on setting categories in sdk')
         }
         categoryItem.color = hsl2hex(index * (360 / array.length) % 360, 55, 70)
         return categoryItem
@@ -273,6 +294,7 @@ export default {
   },
   methods: {
     initialize (vm, res) {
+
       vm.seatsDocument = Object.assign({}, vm.seatsDocument, {
         name: res.data.name,
         comment: res.data.comment,
@@ -318,12 +340,15 @@ export default {
           category: seat.category || null,
           info: seat.info || null,
           sn: seat.sn || null,
+          start_at: seat.start_at || null,
+          end_at: seat.end_at || null,
           fill: seat.fill || DEFAULT.SEAT.unavailableColor,
           status: seat.status || SEAT_STATUS.unavailable,
           /* For picking to set seat */
           picked: false
         })
       })
+      this.reset()
     },
     /**
      * For change/reset spot
@@ -338,19 +363,28 @@ export default {
         }
       })
       .then(res => {
+
+        // Catch request error
+        if (res.data && res.data.error) {
+          vm.ajaxFailed = 'Saving failed. Try to save again later.'
+          vm.alert.title = `${ERROR_MESSAGE.getSeatsFailed}（${res.data.error}）`
+          vm.alert.active = true
+          return
+        }
+
         // Replace seats with new spots
         vm.initialize(vm, res)
-
+        vm.seatsDocument.spotId = spotId
         vm.seatsDocument.name = null
         vm.seatsDocument.comment = null
-
-        this.reset()
         vm.loading = false
         vm.mode = 'pan-zoom'
       })
       .catch( error => {
         vm.ajaxFailed = 'API request failed, Try to reload please.'
-        console.error('error')
+        vm.alert.title = ERROR_MESSAGE.getSeatsFailed
+        vm.alert.active = true
+        console.error('error', error)
       })
     },
     /**
@@ -516,9 +550,7 @@ export default {
 
       vm.seats = vm.seats.map(seat => {
         if (seat.picked) {
-          let index = vm.categoryItems.findIndex(item => {
-            return item.name === changeCategory
-          })
+          let index = vm.categoryItems.findIndex(item => item.name === changeCategory)
           return Object.assign({}, seat, {
             // 如果 vm.categoryItems[index] 不存在，表示使用者選擇 clean
             fill: changedColor,
@@ -526,6 +558,8 @@ export default {
             info: (vm.categoryItems[index]) ? vm.categoryItems[index].info : null,
             comment: (vm.categoryItems[index]) ? vm.categoryItems[index].comment : null,
             sn: (vm.categoryItems[index]) ? vm.categoryItems[index].sn : null,
+            start_at: (vm.categoryItems[index]) ? vm.categoryItems[index].start_at : null,
+            end_at: (vm.categoryItems[index]) ? vm.categoryItems[index].end_at : null,
             status: changeStatus,
             picked: false
           })
@@ -544,6 +578,7 @@ export default {
           objects: vm.seats.concat(vm.stages, vm.facilities, vm.disabilities),
           name: vm.seatsDocument.name || null,
           shape: vm.seatsDocument.shape,
+          spot_id: vm.seatsDocument.spotId,
           comment: vm.seatsDocument.comment || null,
           svg: vm.svg
       }, {headers: {
@@ -553,6 +588,16 @@ export default {
       .then(res => {
         vm.loading = false
         vm.diff = false
+        /**
+         * Catch request error
+        **/
+        if (res.data && res.data.error) {
+          vm.ajaxFailed = 'Saving failed. Try to save again later.'
+          vm.alert.title = `${ERROR_MESSAGE.saveFailed}（${res.data.error}）`
+          vm.alert.active = true
+          return
+        }
+
         /**
          * After save back to pan-zoom mode
          */
@@ -564,6 +609,8 @@ export default {
       })
       .catch(error => {
         vm.ajaxFailed = 'Saving failed. Try to save again later.'
+        vm.alert.title = ERROR_MESSAGE.saveFailed
+        vm.alert.active = true
         console.error('error', error)
       })
     }
@@ -573,13 +620,50 @@ export default {
       let vm = this
       let temp = {}   // This is an empty object for reduce
       let legend = this.seats.reduce( (acc, seat) => {
-        
+
+        if (seat.lock === true) {
+          // 如果有任何座位是 lock 狀態
+          vm.alert.title = ERROR_MESSAGE.seatsLocked
+          vm.alert.active = true
+        }
+      
         let key = seat.category + '|' + seat.fill
         if (!temp[key] && seat.fill !== DEFAULT.SEAT.unavailableColor) {
           temp[key] = true;
+
+          let categoryStatus = null
+          let categoryStartAt = null
+          let categoryEndAt = null
+
+          if (seat.start_at && seat.end_at) {
+            // 如果該 category 有給 start_at 和 end_at 則判斷該票卷狀態
+            let currentTimeStamp = Date.now()
+            let startAtTimeStamp = new Date(seat.start_at).getTime()
+            let endAtTimeStamp = new Date(seat.end_at).getTime()
+            categoryStartAt = new Date(seat.start_at).toLocaleString()
+            categoryEndAt = new Date(seat.end_at).toLocaleString()
+
+            if (currentTimeStamp < startAtTimeStamp ) {
+              // 尚未開賣
+              categoryStatus = '尚未開賣'
+            } else if (currentTimeStamp > endAtTimeStamp){
+              // 超過購買時間
+              categoryStatus = '已逾售票日期'
+            } else {
+              // 可以購買
+              categoryStatus = '販賣中'
+            }
+          }
+
           return acc.concat({
             name: seat.category,
             color: seat.fill,
+            categoryStartAt,
+            categoryEndAt,
+            categorySn: seat.sn || null,
+            categoryComment: seat.comment || null,
+            categoryInfo: seat.info || null,
+            categoryStatus
           })
         } else {
           return acc
@@ -658,16 +742,26 @@ export default {
       }
     })
     .then(res => {
+
+      // Catch request error
+      if (res.data && res.data.error) {
+        vm.ajaxFailed = 'Saving failed. Try to save again later.'
+        vm.alert.title = `${ERROR_MESSAGE.getSeatsFailed}（${res.data.error}）`
+        vm.alert.active = true
+        return
+      }
+
       vm.seatsDocument = Object.assign({}, vm.seatsDocument, {
-        _id: res.data._id
+        _id: res.data._id,
+        spotId: res.data.spot
       })
       vm.initialize(vm, res)
-
       vm.loading = false
-
     })
     .catch( error => {
       vm.ajaxFailed = 'API request failed, Try to reload please.'
+      vm.alert.title = ERROR_MESSAGE.getSeatsFailed
+      vm.alert.active = true
       console.error('error', error)
     })
   },
@@ -1113,12 +1207,16 @@ export default {
               },
               on: {
                 change: function (e) {
-                  vm.applyToSeatColor = e.target.value
-                  vm.categoryItems.find( category => {
-                    return category.name === vm.category
-                  }).color = e.target.value
-
-                  vm.$emit('change', e.target.value)
+                  let pickedColor = e.target.value.toLowerCase()
+                  if (pickedColor === DEFAULT.SEAT.unavailableColor || pickedColor === DEFAULT.SEAT.errorColor) {
+                    // Avoid manager pick an unavailableColor
+                    pickedColor = DEFAULT.SEAT.preventDefaultColor
+                    vm.alert.title = 'This color is disallowed.'
+                    vm.alert.active = true
+                  }
+                  vm.applyToSeatColor = pickedColor
+                  vm.categoryItems.find(category => category.name === vm.category).color = pickedColor
+                  vm.$emit('change', pickedColor)
                 }
               }
             }),
@@ -1270,6 +1368,7 @@ export default {
                 click: function (e) {
                   e.preventDefault()
                   e.stopPropagation()
+                  vm.ajaxFailed = null
                   vm.save()
                 }
               }
@@ -1337,6 +1436,20 @@ export default {
                   e.preventDefault()
                   e.stopPropagation()
                   vm.showHoverCategory(undefined)
+                },
+                click: function (e) {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  vm.alert.title = item.name
+                  vm.alert.content = ''
+                  if (item.categoryStartAt) {vm.alert.content += `開賣時間：${item.categoryStartAt}<br>`}
+                  if (item.categoryEndAt) {vm.alert.content += `截止時間：${item.categoryEndAt}<br>`}
+                  if (item.categorySn) {vm.alert.content += `SN: ${item.categorySn}<br>`}
+                  if (item.categoryInfo) {vm.alert.content += `Info: ${item.categoryInfo}<br>`}
+                  if (item.categoryComment) {vm.alert.content += `Comment: ${item.categoryComment}<br>`}
+                  if (vm.alert.content) {
+                    vm.alert.active = true
+                  }
                 }
               }
             }, [
@@ -1347,13 +1460,79 @@ export default {
                 style: {
                   'background-color': item.color
                 }
-              }),
-              item.name
+              }), 
+              item.name, 
+              createElement('span', {
+                attrs: {
+                  class: 'badge-warn'
+                },
+                directives: [{
+                  name: 'show',
+                  value: item.categoryStatus
+                }]
+              }, item.categoryStatus)
             ])
           })
         ])
-      ])
-      /* /legend panel */
+      ]),/* /legend panel */
+      /* alert modal */
+      createElement('div', {
+        attrs: {
+          class: 'alert-modal'
+        },
+        directives: [
+          {
+            name: 'show',
+            value: vm.alert.active
+          }
+        ],
+        on: {
+          wheel: function (e) {
+            e.preventDefault()
+            e.stopPropagation()
+          }
+        }
+      }, [
+      createElement('div',{
+        attrs: {
+          class: 'alert-container'
+        }
+      },[
+        createElement('h3', {
+          attrs: {
+            class: 'alert-title'
+          }
+        }, vm.alert.title),
+        createElement('div', {
+          attrs: {
+            class: 'alert-content'
+          },
+          domProps:{
+            innerHTML: vm.alert.content
+          }
+        }),
+        createElement('div', {
+          attrs: {
+            class: 'button-container'
+          }
+        }, [
+            createElement('button',{
+              attrs: {
+                class: 'confirm-button'
+              },
+              on: {
+                click: function (e) {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  vm.alert.active = false
+                  vm.alert.title = null
+                  vm.alert.content = null
+                }
+              }
+            }, 'OK')
+          ])
+        ])
+      ])/* /alert modal */
     ])
   }
 }
@@ -1362,6 +1541,8 @@ export default {
 <style lang="sass" scoped>
   /* _xeats_: Do Not remove this for import in vframe */
   ._xeats_ {position: static;}
+
+  $font: 'Helvetica Neue', Helvetica, Arial, '微軟正黑體', sans-serif;
 
   svg {
     user-select: none;
@@ -1405,6 +1586,7 @@ export default {
     background-color: white;
     box-shadow: 0 1px 2px #DDD;
     padding: 5px 0;
+    font-family: $font;
 
     button {
       float: left;
@@ -1449,6 +1631,7 @@ export default {
     background-color: white;
     box-shadow: 0 1px 2px #DDD;
     padding: 5px;
+    font-family: $font;
 
     button {
       padding: 6px;
@@ -1488,6 +1671,7 @@ export default {
     background-color: white;
     box-shadow: 0 1px 2px #DDD;
     padding: 5px;
+    font-family: $font;
     
     .save {
 
@@ -1613,6 +1797,7 @@ export default {
       line-height: 1.5em;
       width: 100%;
       transition: all .3s ease;
+      font-family: $font;
       
       &.btn-primary:hover {
         border: 1px solid #108ee9;
@@ -1645,6 +1830,7 @@ export default {
     background-color: white;
     box-shadow: 0 1px 2px #DDD;
     padding: 5px;
+    font-family: $font;
   }
 
   .legend-list {
@@ -1680,6 +1866,22 @@ export default {
         border-top: 1px solid #ccc;
       }
 
+      .badge-warn {
+        display: inline-block;
+        margin-left: .4em;
+        padding: .25em .4em;
+        font-size: 75%;
+        font-weight: 700;
+        line-height: 1;
+        color: #fff;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: baseline;
+        background-color: #f0ad4e;
+        padding-right: .6em;
+        padding-left: .6em;
+        border-radius: 10rem;
+      }
     }
   }
 
@@ -1698,6 +1900,102 @@ export default {
     z-index: 30;
     white-space: nowrap;
     text-align: center;
+    font-family: $font;
+  }
+    /* style of alert-modal is forked from sweetAlert */
+  .alert-modal{
+    font-family: $font;
+    overflow-y: auto;
+    background-color: rgba(0,0,0,.4);
+    transition: background-color .1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    padding: 10px;
+    z-index: 1060;
+
+    .alert-container{
+      border-radius: 5px;
+      box-sizing: border-box;
+      text-align: center;
+      margin: auto;
+      overflow-x: hidden;
+      overflow-y: auto;
+      display: none;
+      position: relative;
+      max-width: 100%;
+      width: 500px;
+      padding: 20px;
+      background: rgb(255, 255, 255);
+      display: block;
+      min-height: 148px;
+      animation: showAlert .3s;
+    }
+
+    .alert-title{
+      color: #595959;
+      font-size: 30px;
+      text-align: center;
+      font-weight: 600;
+      text-transform: none;
+      position: relative;
+      margin: .4em 0;
+      padding: 0;
+      display: block;
+      word-wrap: break-word;
+    }
+
+    .alert-content{
+      font-size: 18px;
+      text-align: left;
+      font-weight: 300;
+      position: relative;
+      float: none;
+      margin: 0;
+      padding: 0;
+      line-height: normal;
+      color: #545454;
+      word-wrap: break-word;
+    }
+
+    .confirm-button{
+      background-color: #3085d6;
+      color: #fff;
+      border: 0;
+      -webkit-box-shadow: none;
+      box-shadow: none;
+      font-size: 17px;
+      font-weight: 500;
+      border-radius: 3px;
+      padding: 15px 35px;
+      margin: 20px 5px 0;
+      cursor: pointer;
+      white-space: nowrap;
+
+      &:hover{
+        background-color: #297dce;
+      }
+    }
+
+    @keyframes showAlert {
+      0% {
+        transform: scale(.7);
+      }
+      45% {
+        transform: scale(1.05);
+      }
+      80% {
+        transform: scale(.95);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
   }
 
   .dotted-around {
@@ -1714,6 +2012,7 @@ export default {
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
+    font-family: $font;
   }
 
   $loader-color: orange;
