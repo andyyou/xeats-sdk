@@ -1445,7 +1445,7 @@ export default {
                   if (item.categoryStartAt) {vm.alert.content += `開賣時間：${item.categoryStartAt}<br>`}
                   if (item.categoryEndAt) {vm.alert.content += `截止時間：${item.categoryEndAt}<br>`}
                   if (item.categorySn) {vm.alert.content += `SN: ${item.categorySn}<br>`}
-                  if (item.categoryInfo) {vm.alert.content += `Info: ${item.categoryInfo}<br>`}
+                  if (item.categoryInfo) {vm.alert.content += `Info: ${JSON.stringify(item.categoryInfo)}<br>`}
                   if (item.categoryComment) {vm.alert.content += `Comment: ${item.categoryComment}<br>`}
                   if (vm.alert.content) {
                     vm.alert.active = true
@@ -1927,7 +1927,11 @@ export default {
       overflow-x: hidden;
       overflow-y: auto;
       display: none;
-      position: relative;
+
+      position: absolute;
+      left: 0;
+      right: 0;
+
       max-width: 100%;
       width: 500px;
       padding: 20px;
