@@ -4,6 +4,8 @@ import VuePicking from '@/plugins/vue-picking'
 import '@/stylesheets/sdk'
 import promise from 'es6-promise'
 import axios from 'axios'
+// Polyfill of ES6 for IE
+import './polyfill'
 // To add to window
 if (!window.Promise) {
   window.Promise = promise

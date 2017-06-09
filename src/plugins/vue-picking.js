@@ -1,5 +1,3 @@
-import _ from 'lodash'
-
 export default {
   install (Vue, options) {
     let pickzone = document.createElement('div')
@@ -33,8 +31,8 @@ export default {
           xMax = Math.max(begin.x, moveTo.x)
           yMin = Math.min(begin.y, moveTo.y)
           yMax = Math.max(begin.y, moveTo.y)
-          pickzone.style.left = (xMin - el.parentElement.getBoundingClientRect().left) + 'px';
-          pickzone.style.top = (yMin - el.parentElement.getBoundingClientRect().top) + 'px';
+          pickzone.style.left = (xMin - el.parentNode.getBoundingClientRect().left) + 'px';
+          pickzone.style.top = (yMin - el.parentNode.getBoundingClientRect().top) + 'px';
           pickzone.style.width = xMax - xMin + 'px'
           pickzone.style.height = yMax - yMin + 'px'
         }
@@ -73,7 +71,7 @@ export default {
           vnode.context[binding.expression].height = yMax - yMin
         }
 
-        el.parentElement.appendChild(pickzone)
+        el.parentNode.appendChild(pickzone)
 
         el.addEventListener('mousedown', onDragStart)
         el.addEventListener('mousemove', onDragMove)
@@ -83,7 +81,6 @@ export default {
         } else {
           document.addEventListener('mouseup', onDragEnd)
         }
-        
       },
       unbind (el, binding, vnode, oldVnode) {
         el.removeEventListener('mousedown', onDragStart)
@@ -98,7 +95,7 @@ export default {
         vnode.context[binding.expression].y = 0
         vnode.context[binding.expression].width = 0
         vnode.context[binding.expression].height = 0
-        el.parentElement.removeChild(pickzone)
+        el.parentNode.removeChild(pickzone)
       }
     })
   }

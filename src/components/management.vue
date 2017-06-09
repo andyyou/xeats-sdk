@@ -401,7 +401,7 @@ export default {
     },
     buttonTooltip (buttonEventTarget) {
       // 如果自己（<i>）的 dataset 找不到 content，則找父層的（<button>）
-      let content = buttonEventTarget.target.dataset.content || buttonEventTarget.target.parentElement.dataset.content
+      let content = buttonEventTarget.target.dataset.content || buttonEventTarget.target.parentNode.dataset.content
       this.tooltip.active = true
       this.tooltip.content = content
       this.tooltip.left = buttonEventTarget.target.offsetLeft + 25
@@ -420,8 +420,8 @@ export default {
       point = point.matrixTransform(svgCanvas.getScreenCTM())
 
       // Offset point base svg translate x, y
-      this.tooltip.left = point.x - svgCanvas.parentElement.getBoundingClientRect().left
-      this.tooltip.top = (point.y + (seat.height + 5) / this.viewBox.scale) - svgCanvas.parentElement.getBoundingClientRect().top
+      this.tooltip.left = point.x - svgCanvas.parentNode.getBoundingClientRect().left
+      this.tooltip.top = (point.y + (seat.height + 5) / this.viewBox.scale) - svgCanvas.parentNode.getBoundingClientRect().top
     },
     reset () {
       this.viewBox.x = 0
@@ -521,8 +521,8 @@ export default {
         moveTo.y = bottom.y + bottom.height
         begin = begin.matrixTransform(svg.getScreenCTM())
         moveTo = moveTo.matrixTransform(svg.getScreenCTM())
-        this.around.x = begin.x - svg.parentElement.getBoundingClientRect().left
-        this.around.y = begin.y - svg.parentElement.getBoundingClientRect().top
+        this.around.x = begin.x - svg.parentNode.getBoundingClientRect().left
+        this.around.y = begin.y - svg.parentNode.getBoundingClientRect().top
         this.around.width = (moveTo.x - begin.x)
         this.around.height = (moveTo.y - begin.y)
       } else {
@@ -1558,7 +1558,18 @@ export default {
     position: relative;
     background-size: 20px 20px;
     background-color: white;
-    background-image: linear-gradient(to right, #EEE 1px, transparent 1px), linear-gradient(to bottom, #EEE 1px, transparent 1px);
+    background-repeat: repeat;
+    
+    background-image: 
+      linear-gradient(to right, #EEE 1px, transparent 1px),
+      linear-gradient(to bottom, #EEE 1px, transparent 1px);
+    
+    /**
+     * fallback for IE11
+    **/
+    background-image: 
+    -ms-linear-gradient(top, #EEEEEE 2px, transparent 2px),
+    -ms-linear-gradient(left, #EEEEEE 2px, transparent 2px);
   }
 
   .seat {
@@ -1739,7 +1750,7 @@ export default {
       .select-container {
         border: 1px solid #CCC;
         border-radius: 3px;
-        flex: 1;
+        flex-grow: 1;
         overflow: hidden;
         position: relative;
         margin-left: 8px;
