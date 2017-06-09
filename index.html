@@ -43,105 +43,101 @@
   <script>
     
     // NOTICE: For User to create Manager
-    (function () {
-      var xeat = new Xeats.ManagerMap({
-        el: '#seat-map',
-        accessKey: '70abb94c-0a4e-4b60-b228-d3e17f2eb4ad',
-        secret: '2a669a9ec56ae69bd0be2de0c3c81b79',
-        /**
-         * The unique key for create a seats.
-         * You can name it as hash or event name.
-         * NOTE: it decide which seats you use.
-         *  Each time you make a new name will create another seats.
-         */
-        seatsKey: 'f1cfbb64-1d00-4793-a4b1-70057236e52f',  // sandbox
-        // categories: ['Free', 'Early Bird', 'Normal'],
-        
-        
-        categories: [{
-          name: 'PreSale',
-          info: {
-            ticket_id: 'PreSale',
-            price: '0',
-          },
-          comment: "This is for PreSale",
-          sn:"0",
-          start_at: '2017-04-31T00:00:00.000Z',    // locale Time start_at
-          end_at: '2017-05-31T00:00:00.000Z'       // locale Time end_at
-        }, {
-          name: 'Early Bird',
-          info: {
-            ticket_id: 'earlyBird',
-            price: '545'
-          },
-          comment: 'This is for Early Birds',
-          sn:"1",
-          start_at: '2017-05-31T00:00:01.000Z',    // locale Time start_at
-          end_at: '2017-06-15T00:00:00.000Z'       // locale Time end_at
-        }, {
-          name: 'Normal',
-          info: {
-            ticket_id: 'normal',
-            price: '390'
-          },
-          comment: "This is Normal Price Ticket",
-          sn:"2",
-          start_at: '2017-06-15T00:00:01.000Z',    // locale Time start_at
-          end_at: '2017-07-15T00:00:00.000Z'       // locale Time end_at
-        }, {
-          name: 'Free',
-          info: {
-            ticket_id: 'free',
-            price: '0'
-          },
-          comment: "This is for Free Ticket",
-          sn:"3"
-        }],
-        
-        
-        // zoomMax: 4,    // default is 2
-        // zoomMin: 0.5,  // default is 0.5
-        disableWheel: true,
-        width: 'auto',    // For responsive set value to `auto`
-        height: 800,      // Height can not set to auto
-        onAfterSave: function (data) {console.log('data', data)}
-      })
-    })()
-
-    // NOTICE:For user to book SeatsMap
     // (function () {
-    //   var xeat = new Xeats.UserMap({
+    //   var xeat = new Xeats.ManagerMap({
     //     el: '#seat-map',
     //     accessKey: '70abb94c-0a4e-4b60-b228-d3e17f2eb4ad',
-    //     seatsKey: 'f1cfbb64-1d00-4793-a4b1-70057236e52f',
+    //     secret: '2a669a9ec56ae69bd0be2de0c3c81b79',
+    //     /**
+    //      * The unique key for create a seats.
+    //      * You can name it as hash or event name.
+    //      * NOTE: it decide which seats you use.
+    //      *  Each time you make a new name will create another seats.
+    //      */
+    //     seatsKey: 'sandbox',
+    //     // categories: ['Free', 'Early Bird', 'Normal'],
+        
+        
+    //     categories: [{
+    //       name: 'PreSale',
+    //       info: {
+    //         ticket_id: 'PreSale',
+    //         price: '0',
+    //       },
+    //       comment: "This is for PreSale",
+    //       sn:"0",
+    //       start_at: '2017-04-31T00:00:00.000Z',    // locale Time start_at
+    //       end_at: '2017-05-31T00:00:00.000Z'       // locale Time end_at
+    //     }, {
+    //       name: 'Early Bird',
+    //       info: {
+    //         ticket_id: 'earlyBird',
+    //         price: '545'
+    //       },
+    //       comment: 'This is for Early Birds',
+    //       sn:"1",
+    //       start_at: '2017-05-31T00:00:01.000Z',    // locale Time start_at
+    //       end_at: '2017-06-15T00:00:00.000Z'       // locale Time end_at
+    //     }, {
+    //       name: 'Normal',
+    //       info: {
+    //         ticket_id: 'normal',
+    //         price: '390'
+    //       },
+    //       comment: "This is Normal Price Ticket",
+    //       sn:"2",
+    //       start_at: '2017-06-15T00:00:01.000Z',    // locale Time start_at
+    //       end_at: '2017-07-15T00:00:00.000Z'       // locale Time end_at
+    //     }, {
+    //       name: 'Free',
+    //       info: {
+    //         ticket_id: 'free',
+    //         price: '0'
+    //       },
+    //       comment: "This is for Free Ticket",
+    //       sn:"3"
+    //     }],
+        
+        
+    //     // zoomMax: 4,    // default is 2
+    //     // zoomMin: 0.5,  // default is 0.5
     //     disableWheel: true,
-    //     // zoomMax: 4,
-    //     // zoomMin: 0.5,
     //     width: 'auto',    // For responsive set value to `auto`
     //     height: 800,      // Height can not set to auto
-    //     amountMax: 4,     // Limit selection amount
-    //     amountMin: 1,
-    //     /**
-    //      * Limit Category is for limit category amount (optional)
-    //      */
-    //     limitCategory: {
-    //       'Free': {
-    //         amountMax: 2,
-    //         amountMin: 0
-    //       }, 
-    //       'Normal': {
-    //         amountMax: 3,
-    //         amountMin: 0
-    //       },
-    //       'Early Bird': {
-    //         amountMax: 6,
-    //         amountMin: 0
-    //       }
-    //     },
-    //     disableDatetimeLimit: true,
-    //     generateFormFields: function(){ return }
+    //     onAfterSave: function (data) {console.log('data', data)}
     //   })
     // })()
+
+    // NOTICE:For user to book SeatsMap
+    (function () {
+      var xeat = new Xeats.UserMap({
+        el: '#seat-map',
+        accessKey: '70abb94c-0a4e-4b60-b228-d3e17f2eb4ad',
+        seatsKey: 'sandbox',
+        disableWheel: true,
+        // zoomMax: 4,
+        // zoomMin: 0.5,
+        width: 'auto',    // For responsive set value to `auto`
+        height: 800,      // Height can not set to auto
+        amountMax: 4,     // Limit selection amount
+        /**
+         * Limit Category is for limit category amount (optional)
+         */
+        limitCategory: {
+          'Free': {
+            amountMax: 2
+          }, 
+          'Normal': {
+            amountMax: 3
+          },
+          'Early Bird': {
+            amountMax: 6
+          }
+        },
+        disableDatetimeLimit: true,
+        generateFormFields: function(){ return }
+      })
+    })()
   </script>
 
 </body>

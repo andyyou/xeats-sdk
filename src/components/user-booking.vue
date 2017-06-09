@@ -64,10 +64,6 @@ export default {
       type: Number,
       required: true
     },
-    amountMin: {
-      type: Number,
-      required: true
-    },
     limitCategory: {
       type: Object
     },
