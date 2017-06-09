@@ -1,3 +1,5 @@
+###### tags: `wavinfo`
+
 xeats.io sdk
 ===
 
@@ -67,7 +69,6 @@ For User to Book Seats:
     width: 'auto',    // For responsive set value to `auto`
     height: 800,      // Height can not set to auto
     amountMax: 4,     // Limit selection amount
-    amountMin: 1,
     disableWheel: true,  // default is false
   })
 })()
@@ -198,11 +199,11 @@ seatsKey: 'sandbox',
 ```
 
 ##### zoomMax
-- Type: `Number`
+- Type: `Number`(optional)
 - Description: The maximum scale level to zoom in for the seats map. Larger value can scale in a lagrer level. Default is `2`.
 
 ##### zoomMin
-- Type: `Number`
+- Type: `Number`(optional)
 - Description: The minimum scale level to zoom out for the seats map. Smaller value can scale in a smaller level. Default is `0.5`.
 
 ##### width
@@ -222,13 +223,28 @@ width: 'auto',
 - Type: `Number`
 - Description: Maximum quantity of seats to book.
 
-##### amountMin
-- Type: `Number`
-- Description: Minimum quantity of seats to book.
+
+##### limitCategory
+- Type: `Object`(optional)
+- Description: This property is to limit the booking amount for each cateogry of seats. When setting this property, user can not book any seats when the amount is bigger than the limit.
+```jsx
+limitCategory: {
+  'Free': {
+    amountMax: 2
+  }, 
+  'Normal': {
+    amountMax: 3
+  },
+  'Early Bird': {
+    amountMax: 6
+}
+```
+
 
 ##### disableWheel
-- Type: `Boolean`
+- Type: `Boolean`(optional)
 - Description: Disable the function of zooming on mouse wheel in seats map. Default is `false`.
+
 
 ## Development
 
