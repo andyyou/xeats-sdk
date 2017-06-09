@@ -1938,11 +1938,9 @@ export default {
       overflow-x: hidden;
       overflow-y: auto;
       display: none;
-
       position: absolute;
       left: 0;
       right: 0;
-
       max-width: 100%;
       width: 500px;
       padding: 20px;
