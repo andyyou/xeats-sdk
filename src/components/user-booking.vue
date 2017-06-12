@@ -971,6 +971,7 @@ export default {
       line-height: 20px;
       margin-right: 10px;
       text-align: center;
+      padding: 3px;
       color: #FFF;
     }
 

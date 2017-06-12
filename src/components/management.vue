@@ -605,7 +605,15 @@ export default {
         /**
          * onAfterSave: This is for sending seatsId
          */
-        vm.$nextTick(vm.onAfterSave(vm.seatsDocument._id))
+        vm.$nextTick(vm.onAfterSave({
+          seatsId: vm.seatsDocument._id,
+          ticketInfo: vm.legend.map(category => {
+            return {
+              ticketId: category.categoryInfo.ticket_id || category.categoryInfo.ticketId,
+              count: category.count
+            }
+          })
+        }))
       })
       .catch(error => {
         vm.ajaxFailed = 'Saving failed. Try to save again later.'
@@ -618,8 +626,12 @@ export default {
   computed: {
     legend () {
       let vm = this
+      let counter = {}  // This is to count the number of seats in the category
       let temp = {}   // This is an empty object for reduce
+      
       let legend = this.seats.reduce( (acc, seat) => {
+
+        counter[seat.category] = counter[seat.category] ? counter[seat.category] + 1 : 1
 
         if (seat.lock === true) {
           // 如果有任何座位是 lock 狀態
@@ -628,6 +640,7 @@ export default {
         }
       
         let key = seat.category + '|' + seat.fill
+        
         if (!temp[key] && seat.fill !== DEFAULT.SEAT.unavailableColor) {
           temp[key] = true;
 
@@ -663,19 +676,24 @@ export default {
             categorySn: seat.sn || null,
             categoryComment: seat.comment || null,
             categoryInfo: seat.info || null,
-            categoryStatus
+            categoryStatus,
           })
         } else {
           return acc
         }
       }, [])
 
+      legend = legend.map(category => {
+        return Object.assign({}, category, {count: counter[category.name]})
+      })
+      
       // sort for clarity of legend
       legend.sort((a, b) => {
         if (a.name < b.name) return -1
         if (a.name > b.name) return 1
         return 0
       })
+      
       return legend
     },
     viewboxString () {
@@ -1460,7 +1478,7 @@ export default {
                 style: {
                   'background-color': item.color
                 }
-              }), 
+              }, item.count ? item.count : ""), 
               item.name, 
               createElement('span', {
                 attrs: {
@@ -1855,7 +1873,11 @@ export default {
     .block {
       width: 20px;
       height: 20px;
+      line-height: 20px;
       margin-right: 10px;
+      text-align: center;
+      padding: 3px;
+      color: #FFF;
     }
 
     li {

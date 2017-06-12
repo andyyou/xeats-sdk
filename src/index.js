@@ -10,10 +10,6 @@ import './polyfill'
 if (!window.Promise) {
   window.Promise = promise
 }
-
-
-
-
 axios.defaults.baseURL = 'https://xeats.io/v1.0'
 Vue.prototype.$http = axios
 
@@ -136,7 +132,8 @@ class ManagerMap {
           //     amountMax: options.amountMax,
           //     amountMin: options.amountMin,
           //     disableWheel: options.disableWheel,
-          //     categories: options.categories
+          //     categories: options.categories,
+          //     onAfterSave: this.onAfterSave
           //   }
           // })
           /* /development */
