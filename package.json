@@ -1,6 +1,6 @@
 {
   "name": "xeats-sdk",
-  "version": "0.4.2",
+  "version": "0.4.5",
   "description": "xeats API system client sdk",
   "main": "dist/xeats-sdk.js",
   "module": "dist/xeats-sdk.js",
@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "axios": "^0.16.0",
+    "es6-promise": "^4.1.0",
     "hammer-timejs": "^1.1.0",
     "hammerjs": "^2.0.8",
     "lodash": "^4.17.4",

@@ -401,7 +401,7 @@ export default {
     },
     buttonTooltip (buttonEventTarget) {
       // 如果自己（<i>）的 dataset 找不到 content，則找父層的（<button>）
-      let content = buttonEventTarget.target.dataset.content || buttonEventTarget.target.parentElement.dataset.content
+      let content = buttonEventTarget.target.dataset.content || buttonEventTarget.target.parentNode.dataset.content
       this.tooltip.active = true
       this.tooltip.content = content
       this.tooltip.left = buttonEventTarget.target.offsetLeft + 25
@@ -420,8 +420,8 @@ export default {
       point = point.matrixTransform(svgCanvas.getScreenCTM())
 
       // Offset point base svg translate x, y
-      this.tooltip.left = point.x - svgCanvas.parentElement.getBoundingClientRect().left
-      this.tooltip.top = (point.y + (seat.height + 5) / this.viewBox.scale) - svgCanvas.parentElement.getBoundingClientRect().top
+      this.tooltip.left = point.x - svgCanvas.parentNode.getBoundingClientRect().left
+      this.tooltip.top = (point.y + (seat.height + 5) / this.viewBox.scale) - svgCanvas.parentNode.getBoundingClientRect().top
     },
     reset () {
       this.viewBox.x = 0
@@ -521,8 +521,8 @@ export default {
         moveTo.y = bottom.y + bottom.height
         begin = begin.matrixTransform(svg.getScreenCTM())
         moveTo = moveTo.matrixTransform(svg.getScreenCTM())
-        this.around.x = begin.x - svg.parentElement.getBoundingClientRect().left
-        this.around.y = begin.y - svg.parentElement.getBoundingClientRect().top
+        this.around.x = begin.x - svg.parentNode.getBoundingClientRect().left
+        this.around.y = begin.y - svg.parentNode.getBoundingClientRect().top
         this.around.width = (moveTo.x - begin.x)
         this.around.height = (moveTo.y - begin.y)
       } else {
@@ -605,7 +605,15 @@ export default {
         /**
          * onAfterSave: This is for sending seatsId
          */
-        vm.$nextTick(vm.onAfterSave(vm.seatsDocument._id))
+        vm.$nextTick(vm.onAfterSave({
+          seatsId: vm.seatsDocument._id,
+          ticketInfo: vm.legend.map(category => {
+            return {
+              ticketId: category.categoryInfo.ticket_id || category.categoryInfo.ticketId,
+              count: category.count
+            }
+          })
+        }))
       })
       .catch(error => {
         vm.ajaxFailed = 'Saving failed. Try to save again later.'
@@ -618,8 +626,12 @@ export default {
   computed: {
     legend () {
       let vm = this
+      let counter = {}  // This is to count the number of seats in the category
       let temp = {}   // This is an empty object for reduce
+      
       let legend = this.seats.reduce( (acc, seat) => {
+
+        counter[seat.category] = counter[seat.category] ? counter[seat.category] + 1 : 1
 
         if (seat.lock === true) {
           // 如果有任何座位是 lock 狀態
@@ -628,6 +640,7 @@ export default {
         }
       
         let key = seat.category + '|' + seat.fill
+        
         if (!temp[key] && seat.fill !== DEFAULT.SEAT.unavailableColor) {
           temp[key] = true;
 
@@ -663,19 +676,24 @@ export default {
             categorySn: seat.sn || null,
             categoryComment: seat.comment || null,
             categoryInfo: seat.info || null,
-            categoryStatus
+            categoryStatus,
           })
         } else {
           return acc
         }
       }, [])
 
+      legend = legend.map(category => {
+        return Object.assign({}, category, {count: counter[category.name]})
+      })
+      
       // sort for clarity of legend
       legend.sort((a, b) => {
         if (a.name < b.name) return -1
         if (a.name > b.name) return 1
         return 0
       })
+      
       return legend
     },
     viewboxString () {
@@ -1445,7 +1463,7 @@ export default {
                   if (item.categoryStartAt) {vm.alert.content += `開賣時間：${item.categoryStartAt}<br>`}
                   if (item.categoryEndAt) {vm.alert.content += `截止時間：${item.categoryEndAt}<br>`}
                   if (item.categorySn) {vm.alert.content += `SN: ${item.categorySn}<br>`}
-                  if (item.categoryInfo) {vm.alert.content += `Info: ${item.categoryInfo}<br>`}
+                  if (item.categoryInfo) {vm.alert.content += `Info: ${JSON.stringify(item.categoryInfo)}<br>`}
                   if (item.categoryComment) {vm.alert.content += `Comment: ${item.categoryComment}<br>`}
                   if (vm.alert.content) {
                     vm.alert.active = true
@@ -1460,7 +1478,7 @@ export default {
                 style: {
                   'background-color': item.color
                 }
-              }), 
+              }, item.count ? item.count : ""), 
               item.name, 
               createElement('span', {
                 attrs: {
@@ -1558,7 +1576,18 @@ export default {
     position: relative;
     background-size: 20px 20px;
     background-color: white;
-    background-image: linear-gradient(to right, #EEE 1px, transparent 1px), linear-gradient(to bottom, #EEE 1px, transparent 1px);
+    background-repeat: repeat;
+    
+    background-image: 
+      linear-gradient(to right, #EEE 1px, transparent 1px),
+      linear-gradient(to bottom, #EEE 1px, transparent 1px);
+    
+    /**
+     * fallback for IE11
+    **/
+    background-image: 
+    -ms-linear-gradient(top, #EEEEEE 2px, transparent 2px),
+    -ms-linear-gradient(left, #EEEEEE 2px, transparent 2px);
   }
 
   .seat {
@@ -1739,7 +1768,7 @@ export default {
       .select-container {
         border: 1px solid #CCC;
         border-radius: 3px;
-        flex: 1;
+        flex-grow: 1;
         overflow: hidden;
         position: relative;
         margin-left: 8px;
@@ -1844,7 +1873,11 @@ export default {
     .block {
       width: 20px;
       height: 20px;
+      line-height: 20px;
       margin-right: 10px;
+      text-align: center;
+      padding: 3px;
+      color: #FFF;
     }
 
     li {
@@ -1927,7 +1960,9 @@ export default {
       overflow-x: hidden;
       overflow-y: auto;
       display: none;
-      position: relative;
+      position: absolute;
+      left: 0;
+      right: 0;
       max-width: 100%;
       width: 500px;
       padding: 20px;

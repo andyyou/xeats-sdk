@@ -64,10 +64,6 @@ export default {
       type: Number,
       required: true
     },
-    amountMin: {
-      type: Number,
-      required: true
-    },
     limitCategory: {
       type: Object
     },
@@ -354,8 +350,8 @@ export default {
       point = point.matrixTransform(svgCanvas.getScreenCTM())
 
       // Offset point base svg translate x, y
-      this.tooltip.left = point.x - svgCanvas.parentElement.getBoundingClientRect().left
-      this.tooltip.top = (point.y + (seat.height + 5) / this.viewBox.scale) - svgCanvas.parentElement.getBoundingClientRect().top
+      this.tooltip.left = point.x - svgCanvas.parentNode.getBoundingClientRect().left
+      this.tooltip.top = (point.y + (seat.height + 5) / this.viewBox.scale) - svgCanvas.parentNode.getBoundingClientRect().top
     },
     reset () {
       this.viewBox.x = 0
@@ -875,7 +871,15 @@ export default {
     position: relative;
     background-size: 20px 20px;
     background-color: white;
-    background-image: linear-gradient(to right, #EEE 1px, transparent 1px), linear-gradient(to bottom, #EEE 1px, transparent 1px);
+    background-image: 
+      linear-gradient(to right, #EEE 1px, transparent 1px),
+      linear-gradient(to bottom, #EEE 1px, transparent 1px);
+    /**
+     * fallback for IE11
+    **/
+    background-image:
+      -ms-linear-gradient(top, #EEEEEE 2px, transparent 2px),
+      -ms-linear-gradient(left, #EEEEEE 2px, transparent 2px);
   }
 
   .seat {
@@ -967,6 +971,7 @@ export default {
       line-height: 20px;
       margin-right: 10px;
       text-align: center;
+      padding: 3px;
       color: #FFF;
     }
 
@@ -1033,7 +1038,9 @@ export default {
       overflow-x: hidden;
       overflow-y: auto;
       display: none;
-      position: relative;
+      position: absolute;
+      left: 0;
+      right: 0;
       max-width: 100%;
       width: 500px;
       padding: 20px;

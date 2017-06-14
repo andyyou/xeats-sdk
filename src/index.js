@@ -1,8 +1,15 @@
 import Vue from 'vue'
-import axios from 'axios'
 import VuePanZoom from '@/plugins/vue-svg-pan-zoom'
 import VuePicking from '@/plugins/vue-picking'
 import '@/stylesheets/sdk'
+import promise from 'es6-promise'
+import axios from 'axios'
+// Polyfill of ES6 for IE
+import './polyfill'
+// To add to window
+if (!window.Promise) {
+  window.Promise = promise
+}
 axios.defaults.baseURL = 'https://xeats.io/v1.0'
 Vue.prototype.$http = axios
 
@@ -125,7 +132,8 @@ class ManagerMap {
           //     amountMax: options.amountMax,
           //     amountMin: options.amountMin,
           //     disableWheel: options.disableWheel,
-          //     categories: options.categories
+          //     categories: options.categories,
+          //     onAfterSave: this.onAfterSave
           //   }
           // })
           /* /development */
