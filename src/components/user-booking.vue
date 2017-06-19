@@ -57,6 +57,10 @@ export default {
       type: Number,
       default: DEFAULT.ZOOM.min
     },
+    readOnly: {
+      type: Boolean,
+      default: false
+    },
     /**
      * For limit total ticket buying amounts (required) and ticket category buying amounts (options)
      */
@@ -68,7 +72,8 @@ export default {
       type: Object
     },
     disableDatetimeLimit: {
-      type: Boolean
+      type: Boolean,
+      default: false
     },
     /**
      * For generate form fields out of iframe
@@ -842,7 +847,18 @@ export default {
             }, 'OK')
           ])
         ])
-      ])/* /alert modal */
+      ]),/* /alert modal */
+      /* read only modal */
+      createElement('div', {
+        attrs: {
+          class: 'read-only'
+        },
+        directives: [
+          {
+            name: 'show',
+            value: vm.readOnly
+          }
+        ]})/* /read only modal */
     ])
   }
 }
@@ -901,7 +917,7 @@ export default {
 
   .manipulate {
     position: absolute;
-    z-index: 2;
+    z-index: 12;
     top: 30px;
     left: 30px;
     cursor: pointer;
@@ -1013,6 +1029,16 @@ export default {
     }
   }
 
+  .read-only{
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    z-index: 10;
+    background-color: rgba(0,0,0,0)
+  }
+
   /* style of alert-modal is forked from sweetAlert */
   .alert-modal{
     font-family: $font;
@@ -1103,7 +1129,7 @@ export default {
         transform: scale(1.05);
       }
       80% {
-        transform: scale(.95);
+        transform: scale(1);
       }
       100% {
         transform: scale(1);

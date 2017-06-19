@@ -1,5 +1,3 @@
-###### tags: `wavinfo`
-
 xeats.io sdk
 ===
 
@@ -70,6 +68,7 @@ For User to Book Seats:
     height: 800,      // Height can not set to auto
     amountMax: 4,     // Limit selection amount
     disableWheel: true,  // default is false
+    readOnly: true,   // default is false
   })
 })()
 </script>
@@ -223,6 +222,9 @@ width: 'auto',
 - Type: `Number`
 - Description: Maximum quantity of seats to book.
 
+#### readOnly
+- Type: `Boolean`(optional)
+- Description: Setting this option to true can make seats on map unclickable. Default is `False`.
 
 ##### limitCategory
 - Type: `Object`(optional)
@@ -256,6 +258,18 @@ There are currently four VUE components in the package.
 - `management`: This component is for managers to choose spots, create seats, change seats status, change seats shape, also to categorize seats.
 - `spots-list`: This component is embedded in `management` component, which will get the list of authorized spots for user to change current spots.
 - `v-frame`: This component is for embedding other components in an iframe.
+
+### Close iframe for developers to debug
+
+Since embedded components in iframe would cause browser can not display log message in the console and Vue inspection tool. Therefore, you can disable the vframe component manually.
+
+There are two steps to disable the `vframe` component:
+
+1. In `index.js`, each Vue render function has two different createElement. You can find it by search the term `NOTICE: This is for production` and `NOTICE: This is for development`. Comment out the createElement in `product` and uncomment the createElement in `development`.
+2. In the components `user-booking.vue` and `management.vue`, you can search the term `vframe` by eidtor in the `modifiers` object and set it to `false`. This will close the vframe components.
+
+After debugging, remember to comment out development code and uncomment production code in `index.js`, and set `vframe` to `true` in `user-booking.vue` and `management.vue`.
+
 
 
 ## Change log

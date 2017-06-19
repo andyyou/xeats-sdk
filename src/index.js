@@ -57,7 +57,7 @@ class ManagerMap {
         },
 
         render (createElement) {
-          // NOTICE: This is for production
+          // NOTICE: This is for production (embedded components in iframe)
           return createElement('div', {
             style: {
               height: '100%'
@@ -118,10 +118,8 @@ class ManagerMap {
           /**
            * Wrap in iframe will cause console has nothing.
            * The snippet as follow provide for dev.
-           *
-           * NOTE: v-pan-zoom, v-picking will have modifier when use vframe
-           * e.g. v-pan-zoom.vframe
            */
+          // NOTICE: This is for development
           // return createElement('app', {
           //   props: {
           //     width: options.width,
@@ -173,7 +171,7 @@ class UserMap {
         }
       },
       render (createElement) {
-        // NOTICE: render element in iframe
+        // NOTICE: This is for production (embedded components in iframe)
         return createElement('div', {
           style: {
             height: '100%'
@@ -219,6 +217,7 @@ class UserMap {
                 zoomMin: options.zoomMin,
                 amountMax: options.amountMax,
                 amountMin: options.amountMin,
+                readOnly: options.readOnly,
                 /**
                  * For limiting the booking time for each seat category
                  */
@@ -238,7 +237,7 @@ class UserMap {
           ])
         ]) /* /production */
 
-        // NOTICE: This is for develope
+        // NOTICE: This is for development
         // return createElement('app', {
         //   props: {
         //     width: options.width,
@@ -249,6 +248,7 @@ class UserMap {
         //     zoomMin: options.zoomMin,
         //     amountMax: options.amountMax,
         //     amountMin: options.amountMin,
+        //     readOnly: options.readOnly,
         //     limitCategory: options.limitCategory,
         //     disableDatetimeLimit: options.disableDatetimeLimit,
         //     disableWheel: options.disableWheel,
