@@ -1,5 +1,3 @@
-###### tags: `wavinfo`
-
 xeats.io sdk
 ===
 
@@ -70,6 +68,7 @@ For User to Book Seats:
     height: 800,      // Height can not set to auto
     amountMax: 4,     // Limit selection amount
     disableWheel: true,  // default is false
+    readOnly: true,   // default is false
   })
 })()
 </script>
@@ -223,6 +222,9 @@ width: 'auto',
 - Type: `Number`
 - Description: Maximum quantity of seats to book.
 
+#### readOnly
+- Type: `Boolean`(optional)
+- Description: Setting this option to true can make seats on map unclickable. Default is `False`.
 
 ##### limitCategory
 - Type: `Object`(optional)
