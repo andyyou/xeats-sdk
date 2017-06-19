@@ -217,6 +217,7 @@ class UserMap {
                 zoomMin: options.zoomMin,
                 amountMax: options.amountMax,
                 amountMin: options.amountMin,
+                readOnly: options.readOnly,
                 /**
                  * For limiting the booking time for each seat category
                  */
@@ -247,6 +248,7 @@ class UserMap {
         //     zoomMin: options.zoomMin,
         //     amountMax: options.amountMax,
         //     amountMin: options.amountMin,
+        //     readOnly: options.readOnly,
         //     limitCategory: options.limitCategory,
         //     disableDatetimeLimit: options.disableDatetimeLimit,
         //     disableWheel: options.disableWheel,
