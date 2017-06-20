@@ -91,21 +91,10 @@ export default {
 
       vm.$mount(el)
       this.app = vm
-
-      console.log('styles in deliver', styles)
     }
   },
-  beforeCreate(){
-    console.log('beforeCreate in vframe')
-    console.log('styles', document.querySelectorAll('style'))
-  },
-  created () {
-    console.log('created in vframe')
-    console.log('styles', document.querySelectorAll('style'))
-  },
-  mounted () {
-    console.log('mounted in vframe')
-    this.deliver()
-  }
+  // mounted () {
+  //   this.deliver()
+  // }
 }
 </script>

@@ -1,5 +1,5 @@
 <script>
-import _ from 'lodash'
+// import _ from 'lodash'
 import spotsList from '@/components/spots-list.vue'
 
 function darken (color, percent) {
@@ -65,6 +65,21 @@ function hsl2hex (h, s, l) {
     return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 }
 
+function debounce(func, wait = 20, immediate = true) {
+  let timeout;
+  return function() {
+    let context = this,
+      args = arguments;
+    let later = function() {
+      timeout = null;
+      if (!immediate) func.apply(context, args);
+    };
+    let callNow = immediate && !timeout;
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+    if (callNow) func.apply(context, args);
+  };
+}
 const DEFAULT = {
   SEAT: {
     unavailableColor: '#d3d3d3',      // This color means the seat is unavailable
@@ -472,7 +487,7 @@ export default {
       this.viewBox.scale = scale
       svgCanvas.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${viewport.width * scale} ${viewport.height * scale}`)
     },
-    pick: _.debounce(function (seat) {
+    pick: debounce(function (seat) {
       if (this.mode === 'picking') {
         
         this.seats = this.seats.map(function (s) {

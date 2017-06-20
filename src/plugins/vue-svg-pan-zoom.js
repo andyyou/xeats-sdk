@@ -1,5 +1,5 @@
 import Hammer from 'hammerjs'
-import hammertime from 'hammer-timejs'
+import 'hammer-timejs'
 
 export default {
   install (Vue, options) {
