@@ -266,7 +266,7 @@ Since embedded components in iframe would cause browser can not display log mess
 There are two steps to disable the `vframe` component:
 
 1. In `index.js`, each Vue render function has two different createElement. You can find it by search the term `NOTICE: This is for production` and `NOTICE: This is for development`. Comment out the createElement in `product` and uncomment the createElement in `development`.
-2. In the components `user-booking.vue` and `management.vue`, you can search the term `vframe` by eidtor in the `modifiers` object and set it to `false`. This will close the vframe components.
+2. In the components `user-booking.vue` and `management.vue`, you can search the term `vframe` by editor in the `modifiers` object and set it to `false`. This will close the vframe components.
 
 After debugging, remember to comment out development code and uncomment production code in `index.js`, and set `vframe` to `true` in `user-booking.vue` and `management.vue`.
 

@@ -816,7 +816,7 @@ export default {
         name: vm.mode, 
         expression: expressions[vm.mode],
         modifiers: {
-          vframe: true,
+          vframe: false,
           'disable-wheel': vm.disableWheel
         }
       }
@@ -1081,6 +1081,42 @@ export default {
           createElement('i', {
             attrs: {
               class: 'icon-object-group'
+            }
+          })
+        ]),
+        // FIXME:
+        // auto sn button
+        createElement('button', {
+          attrs: {
+            'data-content': 'Auto SN'
+          },
+          class: {
+            active: vm.mode === 'autoSN',
+            btn: true
+          },
+          on: {
+            click: function (e) {
+              e.preventDefault()
+              e.stopPropagation()
+              vm.mode = 'autoSN'
+            },
+            mouseover: function (e) {
+              e.preventDefault()
+              e.stopPropagation()
+              vm.tooltip.timer = setTimeout(function () {
+                return vm.buttonTooltip(e)
+              }, 300)
+            },
+            mouseout: function (e) {
+              e.preventDefault()
+              clearTimeout(vm.tooltip.timer)
+              vm.tooltip.active = false
+            }
+          }
+        }, [
+          createElement('i', {
+            attrs: {
+              class: 'icon-sort-numeric-asc'
             }
           })
         ]),
