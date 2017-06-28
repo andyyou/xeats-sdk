@@ -184,7 +184,8 @@ export default {
             node_id: s.node_id,
             label: s.label,
             category: s.category,
-            info: s.info
+            info: s.info,
+            sn: s.sn
           }
         })
       return result

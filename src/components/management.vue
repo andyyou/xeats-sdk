@@ -2149,7 +2149,7 @@ export default {
     overflow: auto;
 
     .block {
-      width: 20px;
+      width: 30px;
       height: 20px;
       line-height: 20px;
       margin-right: 10px;
