@@ -874,12 +874,16 @@ export default {
         spotId: res.data.spot
       })
 
+      console.log('response', res.data)
       // set autoSn
-      vm.autoSn = Object.assign({}, {
-        prefix: '',
-        startSn: '',
-        endSn: ''
-      }, res.data.info.autoSn)
+
+      if (res.data.info) {
+        vm.autoSn = Object.assign({}, {
+          prefix: '',
+          startSn: '',
+          endSn: ''
+        }, res.data.info.autoSn)
+      }
 
       vm.initialize(vm, res)
       vm.loading = false
