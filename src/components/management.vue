@@ -513,11 +513,15 @@ export default {
       this.viewBox.scale = scale
       svgCanvas.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${viewport.width * scale} ${viewport.height * scale}`)
     },
-    pick: debounce(function (seat) {
+    pick: debounce(function (seat, e) {
+      
       if (this.mode === 'picking') {
         
         this.seats = this.seats.map(function (s) {
-          let picked = false
+
+          // Let manager can pick multiple seats through cmd key(metaKey)
+          let picked = (e.metaKey) ? s.picked : false
+
           if (seat.node_id === s.node_id) {
             picked = !s.picked
           }
@@ -844,7 +848,7 @@ export default {
                         (center.x <= val.x + val.width * vm.viewBox.scale) && 
                         (center.y >= val.y) && 
                         (center.y <= val.y + val.height * vm.viewBox.scale))
-            
+
             return Object.assign({}, seat, {
               picked: picked
             })
@@ -1012,7 +1016,7 @@ export default {
               click: function (e) {
                 e.preventDefault()
                 e.stopPropagation()
-                vm.pick(seat)
+                vm.pick(seat, e)
               },
               touchend: function () {
                 vm.pick(seat)

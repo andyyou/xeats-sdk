@@ -92,6 +92,11 @@ new Xeats.ManagerMap({...})
 new Xeats.UserMap({...})
 ```
 
+## Feature
+
+### Manager Map
+When setting category on seats, manager now can pick multiple seats through Cmd/Alt Key.
+
 ## API Documentation
 
 ### ManagerMap
@@ -250,7 +255,6 @@ limitCategory: {
 }
 ```
 
-
 ##### disableWheel
 - Type: `Boolean`(optional)
 - Description: Disable the function of zooming on mouse wheel in seats map. Default is `false`.
@@ -282,6 +286,7 @@ After debugging, remember to comment out development code and uncomment producti
 
 ## Change log
 
+* `2017-07-18` Add new feature for Manager to pick multiple keys through Cmd Key
 * `2017-06-28` Add new feature to automatically assign sn for seats in management.vue"
 * `2017-05-25` Add new argument 'disableWheel' for user to disable zooming on wheel.
 * `2017-05-23` Accept array of objects for category property in ManagerMap. Display the legend in UserMap.
