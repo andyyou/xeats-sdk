@@ -65,10 +65,15 @@ export default {
       /**
        * Only import style has ._xeats_ class.
        */
-      Array.prototype.forEach.call(styles, function (style) {
+      Array.prototype.forEach.call(styles, function (style) { 
         if (style) {
           if (style.textContent.indexOf('_xeats_') > -1) {
-            d.body.appendChild(style)
+            /**
+             * If appendChild directly without clone, 
+             * the style will be eat into iframe!
+             */
+            let cloneStyle = style.cloneNode(true)
+            d.body.appendChild(cloneStyle)
           }
         }
       })
@@ -87,6 +92,9 @@ export default {
       vm.$mount(el)
       this.app = vm
     }
-  }
+  },
+  // mounted () {
+  //   this.deliver()
+  // }
 }
 </script>

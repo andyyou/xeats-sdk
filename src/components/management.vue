@@ -1,5 +1,5 @@
 <script>
-import _ from 'lodash'
+// import _ from 'lodash'
 import spotsList from '@/components/spots-list.vue'
 
 function darken (color, percent) {
@@ -65,6 +65,28 @@ function hsl2hex (h, s, l) {
     return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 }
 
+function debounce(func, wait = 20, immediate = false) {
+  let timeout;
+  return function() {
+    let context = this,
+      args = arguments;
+    let later = function() {
+      timeout = null;
+      if (!immediate) func.apply(context, args);
+    };
+    let callNow = immediate && !timeout;
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+    if (callNow) func.apply(context, args);
+  };
+}
+
+function filterInt (value) {
+  if(/^(\-|\+)?([0-9]+|Infinity)$/.test(value))
+    return Number(value);
+  return NaN;
+}
+
 const DEFAULT = {
   SEAT: {
     unavailableColor: '#d3d3d3',      // This color means the seat is unavailable
@@ -115,7 +137,10 @@ const SEATS_SHAPE = {
 const ERROR_MESSAGE = {
   getSeatsFailed: '無法取得座位表，請稍後重試',
   saveFailed: '存檔失敗',
-  seatsLocked: '此座位表目前為 Lock 狀態，無法編輯，如需變更請聯絡管理者'
+  seatsLocked: '此座位表目前為 Lock 狀態，無法編輯，如需變更請聯絡管理者',
+  browserNotSupported: '目前您所用的瀏覽器不支援此功能',
+  invalidFormat: '您輸入的流水號格式錯誤',
+  unequalSnSeatSize: '輸入的流水號數量和座位數量不符'
 }
 
 export default {
@@ -157,6 +182,9 @@ export default {
     },
     onAfterSave: {
       type: Function
+    },
+    info: {
+      type: Object
     }
   },
   data () {
@@ -286,7 +314,13 @@ export default {
       /**
        * Status for save
        */
-      diff: false
+      diff: false,
+      autoSn: {
+        prefix: '',
+        startSn: '',
+        endSn: '',
+      },
+      infoFromProp: this.info
     }
   },
   components: {
@@ -300,11 +334,12 @@ export default {
         comment: res.data.comment,
         shape: res.data.shape || DEFAULT.SEAT.shape           // circle is default shape
       })
-
+      
       vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
       vm.stages = res.data.objects.filter(obj => obj.type === 'stage')
-      vm.facilities = res.data.objects.filter(obj => obj.type === 'facilities')
-      vm.disabilities = res.data.objects.filter(obj => obj.type === 'disabilities')
+      vm.facilities = res.data.objects.filter(obj => obj.type === 'facility')
+      vm.disabilities = res.data.objects.filter(obj => obj.type === 'disability')
+
       // set svg width, height in vm
       vm.svg.width = res.data.svg.width
       vm.svg.height = res.data.svg.height
@@ -367,8 +402,7 @@ export default {
         // Catch request error
         if (res.data && res.data.error) {
           vm.ajaxFailed = 'Saving failed. Try to save again later.'
-          vm.alert.title = `${ERROR_MESSAGE.getSeatsFailed}（${res.data.error}）`
-          vm.alert.active = true
+          vm.emitAlert(`${ERROR_MESSAGE.getSeatsFailed}（${res.data.error}）`)
           return
         }
 
@@ -377,13 +411,20 @@ export default {
         vm.seatsDocument.spotId = spotId
         vm.seatsDocument.name = null
         vm.seatsDocument.comment = null
+
+         // set autoSn
+        vm.autoSn = Object.assign({}, {
+          prefix: '',
+          startSn: '',
+          endSn: ''
+        })
+
         vm.loading = false
         vm.mode = 'pan-zoom'
       })
       .catch( error => {
         vm.ajaxFailed = 'API request failed, Try to reload please.'
-        vm.alert.title = ERROR_MESSAGE.getSeatsFailed
-        vm.alert.active = true
+        vm.emitAlert(ERROR_MESSAGE.getSeatsFailed)
         console.error('error', error)
       })
     },
@@ -409,7 +450,7 @@ export default {
     },
     seatTooltip (seat){
       this.tooltip.active = true
-      this.tooltip.content = seat.label + '<br>' + (seat.category || DEFAULT.SEAT.tooltipContent)     // tooltipContent: 無法購買
+      this.tooltip.content = `${seat.label} <br> ${(seat.category || DEFAULT.SEAT.tooltipContent)} <br> ${(seat.sn) ? seat.sn : ''}`     // tooltipContent: 無法購買
 
       let svgCanvas = this.$el.querySelector('#svg-canvas')
       let point = svgCanvas.createSVGPoint()
@@ -472,11 +513,15 @@ export default {
       this.viewBox.scale = scale
       svgCanvas.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${viewport.width * scale} ${viewport.height * scale}`)
     },
-    pick: _.debounce(function (seat) {
+    pick: debounce(function (seat, e) {
+      
       if (this.mode === 'picking') {
         
         this.seats = this.seats.map(function (s) {
-          let picked = false
+
+          // Let manager can pick multiple seats through cmd key(metaKey)
+          let picked = (e.metaKey) ? s.picked : false
+
           if (seat.node_id === s.node_id) {
             picked = !s.picked
           }
@@ -557,7 +602,10 @@ export default {
             category: (vm.categoryItems[index]) ? vm.categoryItems[index].name : null,
             info: (vm.categoryItems[index]) ? vm.categoryItems[index].info : null,
             comment: (vm.categoryItems[index]) ? vm.categoryItems[index].comment : null,
-            sn: (vm.categoryItems[index]) ? vm.categoryItems[index].sn : null,
+            /**
+             * sn 改成透過配號的方式給，無法在 SDK 外層透過參數給進來設定
+             **/
+            // sn: (vm.categoryItems[index]) ? vm.categoryItems[index].sn : null,
             start_at: (vm.categoryItems[index]) ? vm.categoryItems[index].start_at : null,
             end_at: (vm.categoryItems[index]) ? vm.categoryItems[index].end_at : null,
             status: changeStatus,
@@ -574,12 +622,19 @@ export default {
       
       let vm = this
 
+      let autoSn = {
+        prefix: vm.autoSn.prefix || null,
+        startSn: vm.autoSn.startSn || null,
+        endSn: vm.autoSn.endSn || null
+      }
+
       vm.$http.post(`/seats/${vm.seatsDocument._id}`, {
           objects: vm.seats.concat(vm.stages, vm.facilities, vm.disabilities),
           name: vm.seatsDocument.name || null,
           shape: vm.seatsDocument.shape,
           spot_id: vm.seatsDocument.spotId,
           comment: vm.seatsDocument.comment || null,
+          info: Object.assign({}, {autoSn}, vm.infoFromProp),
           svg: vm.svg
       }, {headers: {
           'Authorization': `Bearer ${localStorage.getItem('_x_t')}`,
@@ -593,8 +648,7 @@ export default {
         **/
         if (res.data && res.data.error) {
           vm.ajaxFailed = 'Saving failed. Try to save again later.'
-          vm.alert.title = `${ERROR_MESSAGE.saveFailed}（${res.data.error}）`
-          vm.alert.active = true
+          vm.emitAlert( `${ERROR_MESSAGE.saveFailed}（${res.data.error}）`)
           return
         }
 
@@ -617,10 +671,61 @@ export default {
       })
       .catch(error => {
         vm.ajaxFailed = 'Saving failed. Try to save again later.'
-        vm.alert.title = ERROR_MESSAGE.saveFailed
-        vm.alert.active = true
+        vm.emitAlert(ERROR_MESSAGE.saveFailed)
         console.error('error', error)
       })
+    },
+    emitAlert(content) {
+      this.alert.title = content
+      this.alert.active = true
+    },
+    assignAutoSn () {
+
+      let startSn = filterInt(this.autoSn.startSn)
+      let endSn = filterInt(this.autoSn.endSn)
+      let snLength = Math.max(this.autoSn.startSn.length, this.autoSn.endSn.length)
+      let snSize = endSn - startSn + 1
+      
+      if (!String.prototype.padStart) {
+        // 如果瀏覽器不支援 String.prototype.padStart
+        this.emitAlert(ERROR_MESSAGE.browserNotSupported)
+        return
+      }
+
+      if (!startSn || !endSn) {
+        // 如果輸入的格式有誤（不是數值）
+        this.emitAlert(`${ERROR_MESSAGE.invalidFormat} (${startSn}, ${endSn})`)
+        return
+      }
+
+      if (startSn > endSn) {
+        // 如果輸入的起號大於迄號
+        this.emitAlert(`${ERROR_MESSAGE.invalidFormat} (${startSn}, ${endSn})`)
+        return
+      }
+
+      if (snSize !== this.seats.length) {
+        this.emitAlert(ERROR_MESSAGE.unequalSnSeatSize)
+        return
+      }
+
+      let sn = []
+      for (let i = startSn; i <= endSn; i++){
+        sn.push(this.autoSn.prefix.concat(i.toString().padStart(snLength, '0')))
+      }
+      if (sn.length !== this.seats.length) {
+         this.emitAlert('Oops!! Some error occurred in assignAutoSn()')
+         return
+      }
+
+      this.seats = this.seats.map((seat, index) => {
+        return Object.assign({}, seat, {
+          sn: sn[index]
+        })
+      })
+
+      this.emitAlert('自動配發流水號成功')
+      this.mode = 'pan-zoom'
     }
   },
   computed: {
@@ -635,8 +740,7 @@ export default {
 
         if (seat.lock === true) {
           // 如果有任何座位是 lock 狀態
-          vm.alert.title = ERROR_MESSAGE.seatsLocked
-          vm.alert.active = true
+          vm.emitAlert(ERROR_MESSAGE.seatsLocked)
         }
       
         let key = seat.category + '|' + seat.fill
@@ -725,6 +829,9 @@ export default {
           }) ? 'block' : 'none'
         }
       }
+    },
+    autoSnAlreadySet () {
+      return this.seats.some(seat => (seat.sn) ? true : false)
     }
   },
   watch: {
@@ -741,7 +848,7 @@ export default {
                         (center.x <= val.x + val.width * vm.viewBox.scale) && 
                         (center.y >= val.y) && 
                         (center.y <= val.y + val.height * vm.viewBox.scale))
-            
+
             return Object.assign({}, seat, {
               picked: picked
             })
@@ -763,9 +870,8 @@ export default {
 
       // Catch request error
       if (res.data && res.data.error) {
-        vm.ajaxFailed = 'Saving failed. Try to save again later.'
-        vm.alert.title = `${ERROR_MESSAGE.getSeatsFailed}（${res.data.error}）`
-        vm.alert.active = true
+        // vm.ajaxFailed = 'Get Seats Failed'
+        vm.emitAlert(`${ERROR_MESSAGE.getSeatsFailed}（${res.data.error}）`)
         return
       }
 
@@ -773,13 +879,22 @@ export default {
         _id: res.data._id,
         spotId: res.data.spot
       })
+
+      // set autoSn
+      if (res.data.info) {
+        vm.autoSn = Object.assign({}, {
+          prefix: '',
+          startSn: '',
+          endSn: ''
+        }, res.data.info.autoSn)
+      }
+
       vm.initialize(vm, res)
       vm.loading = false
     })
     .catch( error => {
       vm.ajaxFailed = 'API request failed, Try to reload please.'
-      vm.alert.title = ERROR_MESSAGE.getSeatsFailed
-      vm.alert.active = true
+      vm.emitAlert(ERROR_MESSAGE.getSeatsFailed)
       console.error('error', error)
     })
   },
@@ -880,8 +995,11 @@ export default {
         }),
         vm.disabilities.map(function (disability) {
           return createElement('g', {
+            attrs:{
+              fill: "steelblue"
+            },
             domProps: {
-              innerHTML: disability.html
+              innerHTML: disability.html,
             }
           })
         }),
@@ -898,7 +1016,7 @@ export default {
               click: function (e) {
                 e.preventDefault()
                 e.stopPropagation()
-                vm.pick(seat)
+                vm.pick(seat, e)
               },
               touchend: function () {
                 vm.pick(seat)
@@ -1069,6 +1187,41 @@ export default {
             }
           })
         ]),
+        // auto sn button
+        createElement('button', {
+          attrs: {
+            'data-content': 'Auto SN'
+          },
+          class: {
+            active: vm.mode === 'autoSn',
+            btn: true
+          },
+          on: {
+            click: function (e) {
+              e.preventDefault()
+              e.stopPropagation()
+              vm.mode = 'autoSn'
+            },
+            mouseover: function (e) {
+              e.preventDefault()
+              e.stopPropagation()
+              vm.tooltip.timer = setTimeout(function () {
+                return vm.buttonTooltip(e)
+              }, 300)
+            },
+            mouseout: function (e) {
+              e.preventDefault()
+              clearTimeout(vm.tooltip.timer)
+              vm.tooltip.active = false
+            }
+          }
+        }, [
+          createElement('i', {
+            attrs: {
+              class: 'icon-sort-numeric-asc'
+            }
+          })
+        ]),
         // save button
         createElement('button', {
           attrs: {
@@ -1229,8 +1382,7 @@ export default {
                   if (pickedColor === DEFAULT.SEAT.unavailableColor || pickedColor === DEFAULT.SEAT.errorColor) {
                     // Avoid manager pick an unavailableColor
                     pickedColor = DEFAULT.SEAT.preventDefaultColor
-                    vm.alert.title = 'This color is disallowed.'
-                    vm.alert.active = true
+                    vm.emitAlert('This color is disallowed.')
                   }
                   vm.applyToSeatColor = pickedColor
                   vm.categoryItems.find(category => category.name === vm.category).color = pickedColor
@@ -1423,6 +1575,134 @@ export default {
           ]
         })
       ]),
+      // setup-panel-for-auto-sn
+      createElement('transition', {
+        props: {
+          name: 'fade'
+        }
+      }, [
+        createElement('div', {
+          attrs: {
+            class: 'setup-panel'
+          },
+          on: {
+            mouseup: function (e) {
+              e.stopPropagation()
+            }
+          },
+          directives: [
+            {
+              name: 'show',
+              value: vm.mode === 'autoSn'
+            }
+          ]
+        }, [
+          createElement('div', {
+            attrs: {
+              class: 'auto-sn'
+            }
+          }, [
+            createElement('input', {
+              attrs: {
+                type: 'text',
+                placeholder: 'SN Prefix',
+                disabled: vm.autoSnAlreadySet
+              },
+              class: {
+                disabled: vm.autoSnAlreadySet
+              },
+              domProps: {
+                value: vm.autoSn.prefix
+              },
+              on: {
+                change: function (e) {
+                  vm.autoSn.prefix = e.target.value
+                }
+              }
+            }),
+            createElement('input', {
+              attrs: {
+                type: 'text',
+                placeholder: 'Start SN',
+                disabled: vm.autoSnAlreadySet
+              },
+              class: {
+                disabled: vm.autoSnAlreadySet
+              },
+              domProps: {
+                value: vm.autoSn.startSn
+              },
+              on: {
+                change: function (e) {
+                  vm.autoSn.startSn = e.target.value
+                  vm.autoSn.endSn = (Number(e.target.value) + vm.seats.length - 1).toString()
+                }
+              }
+            }),
+            createElement('input', {
+              attrs: {
+                type: 'text',
+                placeholder: 'End SN',
+                disabled: vm.autoSnAlreadySet
+              },
+              class: {
+                disabled: vm.autoSnAlreadySet
+              },
+              domProps: {
+                value: vm.autoSn.endSn
+              },
+              on: {
+                change: function (e) {
+                  vm.autoSn.endSn = e.target.value
+                }
+              }
+            })
+          ]),
+          createElement('button', {
+            attrs: {
+              class: 'btn-primary'
+            },
+            on: {
+              click: function (e) {
+                e.preventDefault()
+                e.stopPropagation()
+                vm.assignAutoSn()
+              }
+            },
+            directives: [
+              {
+                name: 'show',
+                value: !vm.autoSnAlreadySet
+              }
+            ]
+          }, 'Confirm'),
+          createElement('button', {
+            attrs: {
+              class: 'btn-danger'
+            },
+            directives: [
+              {
+                name: 'show',
+                value: vm.autoSnAlreadySet
+              }
+            ],
+            on: {
+              click: function (e) {
+                e.preventDefault()
+                e.stopPropagation()
+                let resetAutoSn = confirm('確定要重置流水號的設定嗎？')
+                if (resetAutoSn) {
+                  vm.seats = vm.seats.map(seat => Object.assign({}, seat, {sn: null}))
+                }
+                vm.autoSn.prefix = ''
+                vm.autoSn.startSn = ''
+                vm.autoSn.endSn = ''
+                vm.mode='pan-zoom'
+              }
+            }
+          }, 'Reset')
+        ])
+      ]),
 
       /* legend panel */
       createElement('div', {
@@ -1604,6 +1884,11 @@ export default {
   
   }
 
+  input:disabled, .disabled{
+    cursor: not-allowed !important;
+    background-color: #eceeef !important;
+    opacity: 1 !important;
+  }
   .manipulate {
     position: absolute;
     z-index: 10;
@@ -1702,7 +1987,7 @@ export default {
     padding: 5px;
     font-family: $font;
     
-    .save {
+    .save, .auto-sn {
 
       input, select, option {
         border: 1px solid #CCC;
@@ -1752,7 +2037,7 @@ export default {
       .select-container{
         position: relative;
         &:before{
-          content: "\e00a";
+          content: "\6c";
           font-family: "xeats-fonts" !important;
           position: absolute;
           right: 3px;
@@ -1796,7 +2081,7 @@ export default {
         }
         
         &:before {
-          content: "\e00a";
+          content: "\6c";
           font-family: "xeats-fonts" !important;
           top: 5px;
           right: 5px;
@@ -1871,7 +2156,7 @@ export default {
     overflow: auto;
 
     .block {
-      width: 20px;
+      width: 30px;
       height: 20px;
       line-height: 20px;
       margin-right: 10px;
@@ -1935,7 +2220,8 @@ export default {
     text-align: center;
     font-family: $font;
   }
-    /* style of alert-modal is forked from sweetAlert */
+
+  /* style of alert-modal is forked from sweetAlert */
   .alert-modal{
     font-family: $font;
     overflow-y: auto;
@@ -2089,6 +2375,7 @@ export default {
       color: red;
     }
   }
+
   .fade-enter-active, .fade-leave-active {
     transition: opacity .1s ease-out;
   }
@@ -2097,46 +2384,46 @@ export default {
     opacity: 0
   }
 
- @keyframes loader-figure {
-  0% {
-    width: 0;
-    height: 0;
-    background-color: $loader-color;
+  @keyframes loader-figure {
+    0% {
+      width: 0;
+      height: 0;
+      background-color: $loader-color;
+    }
+
+    29% {
+      background-color: $loader-color;
+    }
+
+    30% {
+      width: 50px;
+      height: 50px;
+      background-color: transparent;
+      border-width: 25px;
+      opacity: 1
+    }
+
+    100% {
+      width: 50px;
+      height: 50px;
+      border-width: 0;
+      opacity: 0;
+      background-color: transparent;
+    }
   }
 
-  29% {
-    background-color: $loader-color;
+  @keyframes loader-label {
+    0% {
+      opacity: 0.25;
+    }
+
+    30% {
+      opacity: 1;
+    }
+
+    100% {
+      opacity: 0.25;
+    }
   }
-
-  30% {
-    width: 50px;
-    height: 50px;
-    background-color: transparent;
-    border-width: 25px;
-    opacity: 1
-  }
-
-  100% {
-    width: 50px;
-    height: 50px;
-    border-width: 0;
-    opacity: 0;
-    background-color: transparent;
-  }
- }
-
- @keyframes loader-label {
-   0% {
-     opacity: 0.25;
-   }
-
-   30% {
-     opacity: 1;
-   }
-
-   100% {
-     opacity: 0.25;
-   }
- }
 
 </style>

@@ -92,6 +92,11 @@ new Xeats.ManagerMap({...})
 new Xeats.UserMap({...})
 ```
 
+## Feature
+
+### Manager Map
+When setting category on seats, manager now can pick multiple seats through Cmd/Alt Key.
+
 ## API Documentation
 
 ### ManagerMap
@@ -127,7 +132,8 @@ seatsKey: 'sandbox',
 ```js
 categories: ['Normal', 'Early Bird', 'Special', 'Free']
 ```
-For setting detail of seats, put an array of object. Notice that the `commnet` and `sn` property can only accept `String`. If you want to put more seat related information, you can put in `info` property, which accept an `Object`. 
+For setting detail of seats, put an array of object. Notice that the `comment` property can only accept `String`. If you want to put more seat related information, you can put in `info` property, which accept an `Object`. 
+
 ```js
 categories: [
     {
@@ -137,7 +143,6 @@ categories: [
             price: 0
         },
         comment:"This is for student",
-        sn:""
     },
     {
         name: 'Early-Bird',
@@ -146,13 +151,12 @@ categories: [
             price: 200
         },
         comment:"This is for student",
-        sn:""
     }
 ]
 ```
 ##### zoomMax
 - Type: `Number`
-- Description: The maximum scale level to zoom in for the seats map. Larger value can scale in a lagrer level. Default is `2`.
+- Description: The maximum scale level to zoom in for the seats map. Larger value can scale in a larger level. Default is `2`.
 
 ##### zoomMin
 - Type: `Number`
@@ -174,6 +178,15 @@ width: 'auto',
 ##### disableWheel
 - Type: `Boolean`
 - Description: Disable the function of zooming on mouse wheel in seats map. Default is `false`.
+
+#####   info
+- Type: `Object`
+- Description: You can put any information wanted to save in database.
+```js
+  info: {
+    environment: 'development'
+  }
+```
 
 ## UserMap
 
@@ -242,7 +255,6 @@ limitCategory: {
 }
 ```
 
-
 ##### disableWheel
 - Type: `Boolean`(optional)
 - Description: Disable the function of zooming on mouse wheel in seats map. Default is `false`.
@@ -266,7 +278,7 @@ Since embedded components in iframe would cause browser can not display log mess
 There are two steps to disable the `vframe` component:
 
 1. In `index.js`, each Vue render function has two different createElement. You can find it by search the term `NOTICE: This is for production` and `NOTICE: This is for development`. Comment out the createElement in `product` and uncomment the createElement in `development`.
-2. In the components `user-booking.vue` and `management.vue`, you can search the term `vframe` by eidtor in the `modifiers` object and set it to `false`. This will close the vframe components.
+2. In the components `user-booking.vue` and `management.vue`, you can search the term `vframe` by editor in the `modifiers` object and set it to `false`. This will close the vframe components.
 
 After debugging, remember to comment out development code and uncomment production code in `index.js`, and set `vframe` to `true` in `user-booking.vue` and `management.vue`.
 
@@ -274,6 +286,8 @@ After debugging, remember to comment out development code and uncomment producti
 
 ## Change log
 
+* `2017-07-18` Add new feature for Manager to pick multiple keys through Cmd Key
+* `2017-06-28` Add new feature to automatically assign sn for seats in management.vue"
 * `2017-05-25` Add new argument 'disableWheel' for user to disable zooming on wheel.
 * `2017-05-23` Accept array of objects for category property in ManagerMap. Display the legend in UserMap.
 * `2017-05-19` Accomplish changing seats shape.

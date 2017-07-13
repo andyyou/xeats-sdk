@@ -1,5 +1,5 @@
 <script>
-import _ from 'lodash'
+// import _ from 'lodash'
 
 const DEFAULT = {
   SEAT: {
@@ -184,7 +184,8 @@ export default {
             node_id: s.node_id,
             label: s.label,
             category: s.category,
-            info: s.info
+            info: s.info,
+            sn: s.sn
           }
         })
       return result
@@ -224,8 +225,8 @@ export default {
 
       vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
       vm.stages = res.data.objects.filter(obj => obj.type === 'stage')
-      vm.facilities = res.data.objects.filter(obj => obj.type === 'facilities')
-      vm.disabilities = res.data.objects.filter(obj => obj.type === 'disabilities')
+      vm.facilities = res.data.objects.filter(obj => obj.type === 'facility')
+      vm.disabilities = res.data.objects.filter(obj => obj.type === 'disability')
 
       vm.shape = res.data.shape
 
@@ -633,6 +634,9 @@ export default {
         /* disabilities */
         vm.disabilities.map(function (disability) {
           return createElement('g', {
+            attrs:{
+              fill: "steelblue"
+            },
             domProps: {
               innerHTML: disability.html
             }
