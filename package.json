@@ -1,6 +1,6 @@
 {
   "name": "xeats-sdk",
-  "version": "0.4.13",
+  "version": "0.4.14",
   "description": "xeats API system client sdk",
   "main": "dist/xeats-sdk.js",
   "module": "dist/xeats-sdk.js",
