@@ -65,7 +65,7 @@ function hsl2hex (h, s, l) {
     return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 }
 
-function debounce(func, wait = 20, immediate = true) {
+function debounce(func, wait = 20, immediate = false) {
   let timeout;
   return function() {
     let context = this,
@@ -182,6 +182,9 @@ export default {
     },
     onAfterSave: {
       type: Function
+    },
+    info: {
+      type: Object
     }
   },
   data () {
@@ -316,7 +319,8 @@ export default {
         prefix: '',
         startSn: '',
         endSn: '',
-      }
+      },
+      infoFromProp: this.info
     }
   },
   components: {
@@ -333,8 +337,8 @@ export default {
       
       vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
       vm.stages = res.data.objects.filter(obj => obj.type === 'stage')
-      vm.facilities = res.data.objects.filter(obj => obj.type === 'facilities')
-      vm.disabilities = res.data.objects.filter(obj => obj.type === 'disabilities')
+      vm.facilities = res.data.objects.filter(obj => obj.type === 'facility')
+      vm.disabilities = res.data.objects.filter(obj => obj.type === 'disability')
 
       // set svg width, height in vm
       vm.svg.width = res.data.svg.width
@@ -614,12 +618,10 @@ export default {
       
       let vm = this
 
-      let info = {
-        autoSn: {
-          prefix: vm.autoSn.prefix || null,
-          startSn: vm.autoSn.startSn || null,
-          endSn: vm.autoSn.endSn || null
-        }
+      let autoSn = {
+        prefix: vm.autoSn.prefix || null,
+        startSn: vm.autoSn.startSn || null,
+        endSn: vm.autoSn.endSn || null
       }
 
       vm.$http.post(`/seats/${vm.seatsDocument._id}`, {
@@ -628,7 +630,7 @@ export default {
           shape: vm.seatsDocument.shape,
           spot_id: vm.seatsDocument.spotId,
           comment: vm.seatsDocument.comment || null,
-          info,
+          info: Object.assign({}, {autoSn}, vm.infoFromProp),
           svg: vm.svg
       }, {headers: {
           'Authorization': `Bearer ${localStorage.getItem('_x_t')}`,
@@ -864,7 +866,7 @@ export default {
 
       // Catch request error
       if (res.data && res.data.error) {
-        vm.ajaxFailed = 'Saving failed. Try to save again later.'
+        // vm.ajaxFailed = 'Get Seats Failed'
         vm.emitAlert(`${ERROR_MESSAGE.getSeatsFailed}（${res.data.error}）`)
         return
       }
@@ -874,9 +876,7 @@ export default {
         spotId: res.data.spot
       })
 
-      console.log('response', res.data)
       // set autoSn
-
       if (res.data.info) {
         vm.autoSn = Object.assign({}, {
           prefix: '',
@@ -991,8 +991,11 @@ export default {
         }),
         vm.disabilities.map(function (disability) {
           return createElement('g', {
+            attrs:{
+              fill: "steelblue"
+            },
             domProps: {
-              innerHTML: disability.html
+              innerHTML: disability.html,
             }
           })
         }),

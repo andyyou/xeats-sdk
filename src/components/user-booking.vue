@@ -225,8 +225,8 @@ export default {
 
       vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
       vm.stages = res.data.objects.filter(obj => obj.type === 'stage')
-      vm.facilities = res.data.objects.filter(obj => obj.type === 'facilities')
-      vm.disabilities = res.data.objects.filter(obj => obj.type === 'disabilities')
+      vm.facilities = res.data.objects.filter(obj => obj.type === 'facility')
+      vm.disabilities = res.data.objects.filter(obj => obj.type === 'disability')
 
       vm.shape = res.data.shape
 
@@ -634,6 +634,9 @@ export default {
         /* disabilities */
         vm.disabilities.map(function (disability) {
           return createElement('g', {
+            attrs:{
+              fill: "steelblue"
+            },
             domProps: {
               innerHTML: disability.html
             }

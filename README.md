@@ -174,6 +174,15 @@ width: 'auto',
 - Type: `Boolean`
 - Description: Disable the function of zooming on mouse wheel in seats map. Default is `false`.
 
+#####   info
+- Type: `Object`
+- Description: You can put any information wanted to save in database.
+```js
+  info: {
+    environment: 'development'
+  }
+```
+
 ## UserMap
 
 ##### el

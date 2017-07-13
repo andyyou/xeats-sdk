@@ -103,6 +103,7 @@ class ManagerMap {
                   amountMin: options.amountMin,
                   categories: options.categories,
                   disableWheel: options.disableWheel,
+                  info: options.info,
                   /**
                    * When use vframe
                    * Please make sure your component need to place data
@@ -131,6 +132,7 @@ class ManagerMap {
           //     amountMin: options.amountMin,
           //     disableWheel: options.disableWheel,
           //     categories: options.categories,
+          //     info: options.info,
           //     onAfterSave: this.onAfterSave
           //   }
           // })
