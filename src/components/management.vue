@@ -1,5 +1,4 @@
 <script>
-// import _ from 'lodash'
 import spotsList from '@/components/spots-list.vue'
 
 function darken (color, percent) {
@@ -320,7 +319,6 @@ export default {
         startSn: '',
         endSn: '',
       },
-      infoFromProp: this.info
     }
   },
   components: {
@@ -634,7 +632,7 @@ export default {
           shape: vm.seatsDocument.shape,
           spot_id: vm.seatsDocument.spotId,
           comment: vm.seatsDocument.comment || null,
-          info: Object.assign({}, {autoSn}, vm.infoFromProp),
+          info: Object.assign({}, {autoSn}, vm.info),
           svg: vm.svg
       }, {headers: {
           'Authorization': `Bearer ${localStorage.getItem('_x_t')}`,
@@ -679,18 +677,12 @@ export default {
       this.alert.title = content
       this.alert.active = true
     },
-    assignAutoSn () {
+    assignSn () {
 
       let startSn = filterInt(this.autoSn.startSn)
       let endSn = filterInt(this.autoSn.endSn)
       let snLength = Math.max(this.autoSn.startSn.length, this.autoSn.endSn.length)
       let snSize = endSn - startSn + 1
-      
-      if (!String.prototype.padStart) {
-        // 如果瀏覽器不支援 String.prototype.padStart
-        this.emitAlert(ERROR_MESSAGE.browserNotSupported)
-        return
-      }
 
       if (!startSn || !endSn) {
         // 如果輸入的格式有誤（不是數值）
@@ -710,11 +702,13 @@ export default {
       }
 
       let sn = []
+      let pad = new Array(snLength + 1).join('0')
       for (let i = startSn; i <= endSn; i++){
-        sn.push(this.autoSn.prefix.concat(i.toString().padStart(snLength, '0')))
+        sn.push(this.autoSn.prefix + pad.substring(0, pad.length - i.toString().length) + i.toString())
       }
+
       if (sn.length !== this.seats.length) {
-         this.emitAlert('Oops!! Some error occurred in assignAutoSn()')
+         this.emitAlert('Oops!! Some error occurred in assignSn()')
          return
       }
 
@@ -830,7 +824,7 @@ export default {
         }
       }
     },
-    autoSnAlreadySet () {
+    isSnAssigned () {
       return this.seats.some(seat => (seat.sn) ? true : false)
     }
   },
@@ -1606,10 +1600,10 @@ export default {
               attrs: {
                 type: 'text',
                 placeholder: 'SN Prefix',
-                disabled: vm.autoSnAlreadySet
+                disabled: vm.isSnAssigned
               },
               class: {
-                disabled: vm.autoSnAlreadySet
+                disabled: vm.isSnAssigned
               },
               domProps: {
                 value: vm.autoSn.prefix
@@ -1624,10 +1618,10 @@ export default {
               attrs: {
                 type: 'text',
                 placeholder: 'Start SN',
-                disabled: vm.autoSnAlreadySet
+                disabled: vm.isSnAssigned
               },
               class: {
-                disabled: vm.autoSnAlreadySet
+                disabled: vm.isSnAssigned
               },
               domProps: {
                 value: vm.autoSn.startSn
@@ -1643,10 +1637,10 @@ export default {
               attrs: {
                 type: 'text',
                 placeholder: 'End SN',
-                disabled: vm.autoSnAlreadySet
+                disabled: vm.isSnAssigned
               },
               class: {
-                disabled: vm.autoSnAlreadySet
+                disabled: vm.isSnAssigned
               },
               domProps: {
                 value: vm.autoSn.endSn
@@ -1666,13 +1660,13 @@ export default {
               click: function (e) {
                 e.preventDefault()
                 e.stopPropagation()
-                vm.assignAutoSn()
+                vm.assignSn()
               }
             },
             directives: [
               {
                 name: 'show',
-                value: !vm.autoSnAlreadySet
+                value: !vm.isSnAssigned
               }
             ]
           }, 'Confirm'),
@@ -1683,7 +1677,7 @@ export default {
             directives: [
               {
                 name: 'show',
-                value: vm.autoSnAlreadySet
+                value: vm.isSnAssigned
               }
             ],
             on: {
