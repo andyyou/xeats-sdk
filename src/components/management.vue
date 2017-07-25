@@ -696,7 +696,7 @@ export default {
         return
       }
 
-      if (snSize !== this.seats.length) {
+      if (snSize !== this.seats.length + this.disabilities.length) {
         this.emitAlert(ERROR_MESSAGE.unequalSnSeatSize)
         return
       }
@@ -707,16 +707,27 @@ export default {
         sn.push(this.autoSn.prefix + pad.substring(0, pad.length - i.toString().length) + i.toString())
       }
 
-      if (sn.length !== this.seats.length) {
+      if (sn.length !== this.seats.length + this.disabilities.length) {
          this.emitAlert('Oops!! Some error occurred in assignSn()')
          return
       }
 
       this.seats = this.seats.map((seat, index) => {
         return Object.assign({}, seat, {
-          sn: sn[index]
+          sn: sn.shift()
         })
       })
+
+      this.disabilities = this.disabilities.map((disability, index) => {
+        return Object.assign({}, disability, {
+          sn: sn.shift()
+        })
+      })
+
+      if (sn.length > 0) {
+         this.emitAlert('Oops!! Some error occurred in assignSn()')
+         return
+      }
 
       this.emitAlert('自動配發流水號成功')
       this.mode = 'pan-zoom'
@@ -1629,7 +1640,7 @@ export default {
               on: {
                 change: function (e) {
                   vm.autoSn.startSn = e.target.value
-                  vm.autoSn.endSn = (Number(e.target.value) + vm.seats.length - 1).toString()
+                  vm.autoSn.endSn = (Number(e.target.value) + vm.seats.length + vm.disabilities.length - 1).toString()
                 }
               }
             }),
@@ -1687,6 +1698,7 @@ export default {
                 let resetAutoSn = confirm('確定要重置流水號的設定嗎？')
                 if (resetAutoSn) {
                   vm.seats = vm.seats.map(seat => Object.assign({}, seat, {sn: null}))
+                  vm.disabilities = vm.disabilities.map(disability => Object.assign({}, disability, {sn: null}))
                 }
                 vm.autoSn.prefix = ''
                 vm.autoSn.startSn = ''

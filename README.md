@@ -286,6 +286,7 @@ After debugging, remember to comment out development code and uncomment producti
 
 ## Change log
 
+* `2017-07-25` Include disabilities when assigning sn.
 * `2017-07-18` Add new feature for Manager to pick multiple keys through Cmd Key
 * `2017-06-28` Add new feature to automatically assign sn for seats in management.vue"
 * `2017-05-25` Add new argument 'disableWheel' for user to disable zooming on wheel.
