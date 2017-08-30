@@ -526,7 +526,7 @@ export default {
                   width: seat.width,
                   height: seat.height,
                   fill: seat.fill,
-                  'stroke-width': seat.status === 0 || seat.status === 3 ? '0' : vm.viewBox.initialScale
+                  'stroke-width': seat.status === 0 || seat.status === 3 ? '0' : (Math.min(seat.width, seat.height) * 1.05 - Math.min(seat.width, seat.height))
                 },
                 class: [
                   'seat',
@@ -571,7 +571,7 @@ export default {
                   cy: seat.y + seat.height / 2,
                   r: Math.min(seat.width / 2, seat.height / 2),
                   fill: seat.fill,
-                  'stroke-width': seat.status === 0 || seat.status === 3 ? '0' : vm.viewBox.initialScale
+                  'stroke-width': seat.status === 0 || seat.status === 3 ? '0' : (Math.min(seat.width, seat.height) * 1.05 - Math.min(seat.width, seat.height))
                 },
                 class: [
                   'seat',
@@ -914,8 +914,8 @@ export default {
     }
 
     @keyframes hover-category-animation {
-      0%   { opacity: 0.3; stroke: #FFF; stroke-width: 8; }
-      100% { opacity: 1; stroke: #444; stroke-width: 2; }
+      0%   { opacity: 0.3; stroke: #FFF;}
+      100% { opacity: 1; stroke: #444;}
     }
   }
 
