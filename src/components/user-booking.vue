@@ -90,7 +90,7 @@ export default {
         height: this.height
       },
       /**
-       * Original SVG size from API 
+       * Original SVG size from API
        */
       svg: {
         width: 0,
@@ -168,7 +168,7 @@ export default {
     booked () {
       let result = this.seats
         .filter(function (s) {
-          return s.picked && 
+          return s.picked &&
             s.status === 1 &&
             /^:[\w]+-[\d]+-[\d]+$/.test(s.node_id)
         })
@@ -237,7 +237,7 @@ export default {
       if (isNaN(+vm.viewport.width) === false && vm.viewport.height === 'auto') {
         vm.viewport.height = Math.floor(this.$el.getBoundingClientRect().height)
       }
-      
+
       if (isNaN(+vm.viewport.height) === false && vm.viewport.width === 'auto') {
         if (Math.floor(this.$el.getBoundingClientRect().height < vm.viewport.height)) {
           vm.viewport.height = Math.floor(this.$el.getBoundingClientRect().height)
@@ -346,7 +346,7 @@ export default {
     seatTooltip (seat) {
       this.tooltip.active = true
       this.tooltip.content = seat.label + '<br>' + (seat.category || DEFAULT.SEAT.tooltipContent)     // tooltipContent: 無法購買
-      
+
       let svgCanvas = this.$el.querySelector('#svg-canvas')
       let point = svgCanvas.createSVGPoint()
       point.x = seat.x
@@ -371,7 +371,7 @@ export default {
       let point = svgCanvas.createSVGPoint()
       // Viewport is equal to width & height of svg el.
       let viewport = svgCanvas.getBoundingClientRect()
-    
+
       // Setup ratio & never grater than zoomMax nor smaller than zoomMin.
       let scale = this.viewBox.scale
 
@@ -392,7 +392,7 @@ export default {
        */
       point.x = viewport.width / 2 + viewport.left
       point.y = viewport.height / 2 + viewport.top
-    
+
       let startSvgCenterPoint = point.matrixTransform(svgCanvas.getScreenCTM().inverse())
 
       // process scale directly
@@ -402,7 +402,7 @@ export default {
 
       let viewBox = svgCanvas.getAttribute('viewBox').split(' ').map(n => parseFloat(n))
       let endSvgCenterPoint = point.matrixTransform(svgCanvas.getScreenCTM().inverse())
-      
+
       this.viewBox.x = viewBox[0] + startSvgCenterPoint.x - endSvgCenterPoint.x
       this.viewBox.y = viewBox[1] + startSvgCenterPoint.y - endSvgCenterPoint.y
       this.viewBox.scale = scale
@@ -429,7 +429,7 @@ export default {
           } else {
             vm.alert.title = `${vm.legend[legendIndex].name} 座位數量不得大於 ${vm.legend[legendIndex].amountMax}`
             vm.alert.active = true
-            return 
+            return
           }
         } else {
           // 購買數量大於 amountMax
@@ -494,7 +494,7 @@ export default {
         })
       ]) : null,
       /* /loader */
-      
+
       /* svg */
       createElement('svg', {
         attrs: {
@@ -526,7 +526,7 @@ export default {
                   width: seat.width,
                   height: seat.height,
                   fill: seat.fill,
-                  'stroke-width': seat.status === 0 || seat.status === 3 ? '0' : '2'
+                  'stroke-width': seat.status === 0 || seat.status === 3 ? '0' : vm.viewBox.initialScale
                 },
                 class: [
                   'seat',
@@ -571,7 +571,7 @@ export default {
                   cy: seat.y + seat.height / 2,
                   r: Math.min(seat.width / 2, seat.height / 2),
                   fill: seat.fill,
-                  'stroke-width': seat.status === 0 || seat.status === 3 ? '0' : '2'
+                  'stroke-width': seat.status === 0 || seat.status === 3 ? '0' : vm.viewBox.initialScale
                 },
                 class: [
                   'seat',
@@ -780,7 +780,7 @@ export default {
                   'background-color': item.color
                 }
               }, (item.amount) ? item.amount : ''),
-              item.name, 
+              item.name,
               createElement('span', {
                 attrs: {
                   class: 'badge-warn'
@@ -891,7 +891,7 @@ export default {
     position: relative;
     background-size: 20px 20px;
     background-color: white;
-    background-image: 
+    background-image:
       linear-gradient(to right, #EEE 1px, transparent 1px),
       linear-gradient(to bottom, #EEE 1px, transparent 1px);
     /**
