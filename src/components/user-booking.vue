@@ -411,6 +411,14 @@ export default {
       if (seat.status !== SEAT_STATUS.available) {
         return
       }
+      /**
+       * For ReadOnly Mode
+      **/
+      if (this.readOnly) {
+        this.alert.title = '此座位表僅供檢視'
+        this.alert.active = true
+        return
+      } // End of ReadOnly Mode
       let legendIndex = this.legend.findIndex((item) => {
         return item.name === seat.category
       })
@@ -861,7 +869,7 @@ export default {
             name: 'show',
             value: vm.readOnly
           }
-        ]})/* /read only modal */
+        ]}, '此座位表僅供檢視')/* /read only modal */
     ])
   }
 }
@@ -1033,13 +1041,11 @@ export default {
   }
 
   .read-only{
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
     z-index: 10;
-    background-color: rgba(0,0,0,0)
+    color: rgba(0, 0, 0, 0.4);
   }
 
   /* style of alert-modal is forked from sweetAlert */
