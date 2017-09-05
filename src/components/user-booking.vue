@@ -170,12 +170,11 @@ export default {
         .filter(function (s) {
           return s.picked &&
             s.status === 1 &&
-            /^:[\w]+-[\d]+-[\d]+$/.test(s.node_id)
+            /^:[\w]+-[\d]+-[\d]+-?[\w]*$/.test(s.node_id)
         })
         .map(function (s) {
           // e.g. [`:seat-1-2`, `seat`, `1`, `2`]
-          let args = s.node_id.match(/^:([\w]+)-([\d]+)-([\d]+)$/)
-
+          let args = s.node_id.match(/^:([\w]+)-([\d]+)-([\d]+)-?[\w]*$/)
           return {
             type: args[1],
             row: args[2],

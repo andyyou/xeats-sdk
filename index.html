@@ -15,9 +15,9 @@
     svg {
       background-color: white;
       /** Note: width will cause svg adjust
-       * 
+       *
        * width: 100%;
-       * 
+       *
        */
       overflow: scroll;
     }
@@ -42,7 +42,7 @@
 
   <script src="dist/xeats-sdk.js"></script>
   <script>
-    
+
     // NOTICE: For User to create Manager
     // (function () {
     //   var xeat = new Xeats.ManagerMap({
@@ -95,8 +95,8 @@
     //       },
     //       comment: "This is for Free Ticket",
     //     }],
-        
-        
+
+
     //     // zoomMax: 4,    // default is 2
     //     // zoomMin: 0.5,  // default is 0.5
     //     disableWheel: true,
@@ -124,7 +124,7 @@
         limitCategory: {
           'Free': {
             amountMax: 2
-          }, 
+          },
           'Normal': {
             amountMax: 3
           },
@@ -134,7 +134,7 @@
         },
         // readOnly: true,
         disableDatetimeLimit: false,
-        generateFormFields: function(){ return }
+        onPick: function(data){ console.log('data', data) }
       })
     })()
   </script>
