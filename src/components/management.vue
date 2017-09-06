@@ -118,7 +118,7 @@ const SEATS_SHAPE = {
         height: this.height,
         fill: this.picked ? darken(this.fill, -0.2) : this.fill,
       }
-    } 
+    }
   },
   circle: {
     content: 'circle',
@@ -196,7 +196,7 @@ export default {
         height: this.height
       },
       /**
-       * Original SVG size from API 
+       * Original SVG size from API
        */
       svg: {
         width: 0,
@@ -257,11 +257,11 @@ export default {
       },
       /**
        * mode will mount directive to svg
-       * `pan-zoom`, `picking` mode is the directive name 
+       * `pan-zoom`, `picking` mode is the directive name
        */
       mode: 'pan-zoom',
       /**
-       * Mousemove make a selection area to select seats 
+       * Mousemove make a selection area to select seats
        */
       picking: {
         x: 0,
@@ -269,8 +269,8 @@ export default {
         width: 0,
         height: 0
       },
-      /** 
-       * Make a dotted rectangle to note selection area 
+      /**
+       * Make a dotted rectangle to note selection area
        */
       around: {
         x: 0,
@@ -278,7 +278,7 @@ export default {
         width: 0,
         height: 0
       },
-      /** 
+      /**
        * select a color for apply to seats object's fill
        * show in setup-panel-category e.g. current color & category
        */
@@ -332,7 +332,7 @@ export default {
         comment: res.data.comment,
         shape: res.data.shape || DEFAULT.SEAT.shape           // circle is default shape
       })
-      
+
       vm.seats = res.data.objects.filter(obj => obj.type === 'seat')
       vm.stages = res.data.objects.filter(obj => obj.type === 'stage')
       vm.facilities = res.data.objects.filter(obj => obj.type === 'facility')
@@ -407,6 +407,7 @@ export default {
         // Replace seats with new spots
         vm.initialize(vm, res)
         vm.seatsDocument.spotId = spotId
+        vm.seatsDocument.spotName = res.data.name
         vm.seatsDocument.name = null
         vm.seatsDocument.comment = null
 
@@ -474,7 +475,7 @@ export default {
       let point = svgCanvas.createSVGPoint()
       // Viewport is equal to width & height of svg el.
       let viewport = svgCanvas.getBoundingClientRect()
-     
+
       // Setup ratio & never grater than zoomMax nor smaller than zoomMin.
       let scale = this.viewBox.scale
       if (effect === 'out') {
@@ -495,7 +496,7 @@ export default {
        */
       point.x = viewport.width / 2 + viewport.left
       point.y = viewport.height / 2 + viewport.top
-    
+
       let startSvgCenterPoint = point.matrixTransform(svgCanvas.getScreenCTM().inverse())
 
       // process scale directly
@@ -505,16 +506,16 @@ export default {
 
       let viewBox = svgCanvas.getAttribute('viewBox').split(' ').map(n => parseFloat(n))
       let endSvgCenterPoint = point.matrixTransform(svgCanvas.getScreenCTM().inverse())
-      
+
       this.viewBox.x = viewBox[0] + startSvgCenterPoint.x - endSvgCenterPoint.x
       this.viewBox.y = viewBox[1] + startSvgCenterPoint.y - endSvgCenterPoint.y
       this.viewBox.scale = scale
       svgCanvas.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${viewport.width * scale} ${viewport.height * scale}`)
     },
     pick: debounce(function (seat, e) {
-      
+
       if (this.mode === 'picking') {
-        
+
         this.seats = this.seats.map(function (s) {
 
           // Let manager can pick multiple seats through cmd key(metaKey)
@@ -536,7 +537,7 @@ export default {
       let seats = this.seats.filter(function (seat) {
         return seat.picked
       })
-      
+
       if (seats.length > 0) {
         let left = seats.reduce(function (prev, curr, index, arr) {
           return prev.x < curr.x ? prev : curr
@@ -617,7 +618,7 @@ export default {
     save () {
       this.mode = 'save'
       this.loading = true
-      
+
       let vm = this
 
       let autoSn = {
@@ -631,6 +632,7 @@ export default {
           name: vm.seatsDocument.name || null,
           shape: vm.seatsDocument.shape,
           spot_id: vm.seatsDocument.spotId,
+          spot_name: vm.seatsDocument.spotName,
           comment: vm.seatsDocument.comment || null,
           info: Object.assign({}, {autoSn}, vm.info),
           svg: vm.svg
@@ -738,7 +740,7 @@ export default {
       let vm = this
       let counter = {}  // This is to count the number of seats in the category
       let temp = {}   // This is an empty object for reduce
-      
+
       let legend = this.seats.reduce( (acc, seat) => {
 
         counter[seat.category] = counter[seat.category] ? counter[seat.category] + 1 : 1
@@ -747,9 +749,9 @@ export default {
           // 如果有任何座位是 lock 狀態
           vm.emitAlert(ERROR_MESSAGE.seatsLocked)
         }
-      
+
         let key = seat.category + '|' + seat.fill
-        
+
         if (!temp[key] && seat.fill !== DEFAULT.SEAT.unavailableColor) {
           temp[key] = true;
 
@@ -795,14 +797,14 @@ export default {
       legend = legend.map(category => {
         return Object.assign({}, category, {count: counter[category.name]})
       })
-      
+
       // sort for clarity of legend
       legend.sort((a, b) => {
         if (a.name < b.name) return -1
         if (a.name > b.name) return 1
         return 0
       })
-      
+
       return legend
     },
     viewboxString () {
@@ -848,10 +850,10 @@ export default {
               x: seat.x + seat.width / 2,
               y: seat.y + seat.height / 2
             }
-            
-            let picked = ((center.x >= val.x) && 
-                        (center.x <= val.x + val.width * vm.viewBox.scale) && 
-                        (center.y >= val.y) && 
+
+            let picked = ((center.x >= val.x) &&
+                        (center.x <= val.x + val.width * vm.viewBox.scale) &&
+                        (center.y >= val.y) &&
                         (center.y <= val.y + val.height * vm.viewBox.scale))
 
             return Object.assign({}, seat, {
@@ -882,7 +884,8 @@ export default {
 
       vm.seatsDocument = Object.assign({}, vm.seatsDocument, {
         _id: res.data._id,
-        spotId: res.data.spot
+        spotId: res.data.spot,
+        spotName: res.data.spot_name
       })
 
       // set autoSn
@@ -918,7 +921,7 @@ export default {
 
       directive = {
         /* mode is directive name */
-        name: vm.mode, 
+        name: vm.mode,
         expression: expressions[vm.mode],
         modifiers: {
           vframe: true,
@@ -927,8 +930,8 @@ export default {
       }
 
       directives = [directive]
-    } 
-    
+    }
+
 
     let loader = createElement('div', {
       attrs: {
@@ -1064,7 +1067,7 @@ export default {
           }
         ]
       }),
-      
+
       /* /tooltip */
 
       /* manipulate*/
@@ -1419,7 +1422,7 @@ export default {
                     vm.$emit('change', e.target.value)
                   }
                 }
-              }, 
+              },
               this.categoryItems.map( category => {
                 return createElement('option',{
                   domProps: {
@@ -1764,8 +1767,8 @@ export default {
                 style: {
                   'background-color': item.color
                 }
-              }, item.count ? item.count : ""), 
-              item.name, 
+              }, item.count ? item.count : ""),
+              item.name,
               createElement('span', {
                 attrs: {
                   class: 'badge-warn'
@@ -1836,7 +1839,12 @@ export default {
             }, 'OK')
           ])
         ])
-      ])/* /alert modal */
+      ]),/* /alert modal */
+      /* show spot name */
+      createElement('div', {
+        attrs: {
+          class: 'spot-name'
+        }}, vm.seatsDocument.spotName)/* /show spot name */
     ])
   }
 }
@@ -1863,15 +1871,15 @@ export default {
     background-size: 20px 20px;
     background-color: white;
     background-repeat: repeat;
-    
-    background-image: 
+
+    background-image:
       linear-gradient(to right, #EEE 1px, transparent 1px),
       linear-gradient(to bottom, #EEE 1px, transparent 1px);
-    
+
     /**
      * fallback for IE11
     **/
-    background-image: 
+    background-image:
     -ms-linear-gradient(top, #EEEEEE 2px, transparent 2px),
     -ms-linear-gradient(left, #EEEEEE 2px, transparent 2px);
   }
@@ -1887,7 +1895,7 @@ export default {
       0%   { opacity: 0.3; stroke: #FFF; stroke-width: 8; }
       100% { opacity: 1; stroke: #444; stroke-width: 2; }
     }
-  
+
   }
 
   input:disabled, .disabled{
@@ -1992,7 +2000,7 @@ export default {
     box-shadow: 0 1px 2px #DDD;
     padding: 5px;
     font-family: $font;
-    
+
     .save, .auto-sn {
 
       input, select, option {
@@ -2025,7 +2033,7 @@ export default {
         outline: 0;
         -webkit-appearance: none;
         -moz-appearance: none;
-        
+
         &:-moz-focusring {
           color: transparent;
           text-shadow: 0 0 0 #000;
@@ -2034,7 +2042,7 @@ export default {
           outline: none;
         }
       }
-      
+
       input[type='text'] {
         &::placeholder {
           color: #BBB;
@@ -2076,7 +2084,7 @@ export default {
           outline: 0;
           -webkit-appearance: none;
           -moz-appearance: none;
-          
+
           &:-moz-focusring {
               color: transparent;
               text-shadow: 0 0 0 #000;
@@ -2085,7 +2093,7 @@ export default {
             outline: none;
           }
         }
-        
+
         &:before {
           content: "\6c";
           font-family: "xeats-fonts" !important;
@@ -2102,7 +2110,7 @@ export default {
       padding: 0;
       margin: 5px;
     }
-    
+
     button {
       border: 1px solid #CCC;
       background-color: white;
@@ -2118,7 +2126,7 @@ export default {
       width: 100%;
       transition: all .3s ease;
       font-family: $font;
-      
+
       &.btn-primary:hover {
         border: 1px solid #108ee9;
         color: white;
@@ -2225,6 +2233,14 @@ export default {
     white-space: nowrap;
     text-align: center;
     font-family: $font;
+  }
+
+  .spot-name{
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 10;
+    color: rgba(0, 0, 0, 0.4);
   }
 
   /* style of alert-modal is forked from sweetAlert */
