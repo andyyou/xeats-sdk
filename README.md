@@ -3,14 +3,14 @@ xeats.io sdk
 
 ## What is xeats-sdk
 
-`xeats-sdk` is the sdk provided by [xeats.io](http://xeats.io/). 
-- For seats managers, this is for managing the seats map, setting tickets and categorizing seats for an activity. 
+`xeats-sdk` is the sdk provided by [xeats.io](http://xeats.io/).
+- For seats managers, this is for managing the seats map, setting tickets and categorizing seats for an activity.
 - For seats users, this is for participants who want to enroll an activity to book their seats.
 
 ## Getting started
 
 1. Sign up in `https://xeats.io`.
-2. Use `email` and `password` to get `access_key` and `secret`. Visit [documents](https://xeats.io/documents/api) for more. NOTE: use this SDK require `access_key` and `secret`. 
+2. Use `email` and `password` to get `access_key` and `secret`. Visit [documents](https://xeats.io/documents/api) for more. NOTE: use this SDK require `access_key` and `secret`.
 3. Put HTML into your page or watch - [Demo (creating seats)](https://jsfiddle.net/pjchender/5yuffu1y/) and [Demo (booking seats)](https://jsfiddle.net/pjchender/vwrtsktr/) directly.
 
 ```html
@@ -31,6 +31,7 @@ For User to Create Manager:
 // NOTICE: For User to create Manager
 (function () {
   var xeat = new Xeats.ManagerMap({
+    endPoint: 'https://xeats.io/v1.0',
     el: '#seat-map',
     accessKey: '70abb94c-0a4e-4b60-b228-d3e17f2eb4ad',
     secret: '2a669a9ec56ae69bd0be2de0c3c81b79',
@@ -59,6 +60,7 @@ For User to Book Seats:
 // NOTICE:For user to book seats
 (function () {
   var xeat = new Xeats.UserMap({
+    endPoint: 'https://xeats.io/v1.0',
     el: '#seat-map',
     accessKey: '70abb94c-0a4e-4b60-b228-d3e17f2eb4ad',
     seatsKey: 'create',
@@ -101,6 +103,14 @@ When setting category on seats, manager now can pick multiple seats through Cmd/
 
 ### ManagerMap
 
+##### endPoint
+- Type: `String`
+- Description: The end point of the sdk
+- Usage:
+```js
+endPoint: 'https://xeats.io/v1.0',
+```
+
 ##### el
 - Type: `String`
 - Description: The Dom element ID for xeats to mount.
@@ -132,7 +142,7 @@ seatsKey: 'sandbox',
 ```js
 categories: ['Normal', 'Early Bird', 'Special', 'Free']
 ```
-For setting detail of seats, put an array of object. Notice that the `comment` property can only accept `String`. If you want to put more seat related information, you can put in `info` property, which accept an `Object`. 
+For setting detail of seats, put an array of object. Notice that the `comment` property can only accept `String`. If you want to put more seat related information, you can put in `info` property, which accept an `Object`.
 
 ```js
 categories: [
@@ -165,7 +175,7 @@ categories: [
 ##### width
 - Type: `Number` | `String`
 - Description: Set the width of the seats map to show. For responsive, set value to `auto`.
-- Usage: 
+- Usage:
 ```js
 width: 'auto',
 // width: 720
@@ -189,6 +199,14 @@ width: 'auto',
 ```
 
 ## UserMap
+
+##### endPoint
+- Type: `String`
+- Description: The end point of the sdk
+- Usage:
+```js
+endPoint: 'https://xeats.io/v1.0',
+```
 
 ##### el
 - Type: `String`
@@ -221,7 +239,7 @@ seatsKey: 'sandbox',
 ##### width
 - Type: `Number` | `String`
 - Description: Set the width of the seats map to show. For responsive, set value to `auto`.
-- Usage: 
+- Usage:
 ```js
 width: 'auto',
 // width: 720
@@ -246,7 +264,7 @@ width: 'auto',
 limitCategory: {
   'Free': {
     amountMax: 2
-  }, 
+  },
   'Normal': {
     amountMax: 3
   },
@@ -286,6 +304,7 @@ After debugging, remember to comment out development code and uncomment producti
 
 ## Change log
 
+* `2017-09-07` Extract end point from component as a new API
 * `2017-07-25` Include disabilities when assigning sn.
 * `2017-07-18` Add new feature for Manager to pick multiple keys through Cmd Key
 * `2017-06-28` Add new feature to automatically assign sn for seats in management.vue"
