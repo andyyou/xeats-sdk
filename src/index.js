@@ -10,7 +10,7 @@ import './polyfill'
 if (!window.Promise) {
   window.Promise = promise
 }
-axios.defaults.baseURL = 'https://xeats.io/v1.0'
+
 Vue.prototype.$http = axios
 
 Vue.use(VuePanZoom)
@@ -22,7 +22,7 @@ Vue.use(VuePicking)
 class ManagerMap {
   constructor (options) {
     // const componentNames = ['management', 'user-booking']
-
+    axios.defaults.baseURL = options.endPoint
     if (!options.el && !/([^\r\n,{}]+)(,(?=[^}]*{)|\s*{)/g.test(options.el)) {
       throw new Error('el attribute has no setting')
     }
@@ -152,6 +152,7 @@ class ManagerMap {
 
 class UserMap {
   constructor (options) {
+    axios.defaults.baseURL = options.endPoint
     if (!options.el && !/([^\r\n,{}]+)(,(?=[^}]*{)|\s*{)/g.test(options.el)) {
       throw new Error('el attribute has no setting')
     }
