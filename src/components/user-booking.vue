@@ -168,13 +168,11 @@ export default {
     booked () {
       let result = this.seats
         .filter(function (s) {
-          return s.picked &&
-            s.status === 1 &&
-            /^:[\w]+-[\d]+-[\d]+-?[\w]*$/.test(s.node_id)
+          return s.picked && s.status === 1
         })
         .map(function (s) {
           // e.g. [`:seat-1-2`, `seat`, `1`, `2`]
-          let args = s.node_id.match(/^:([\w]+)-([\d]+)-([\d]+)-?[\w]*$/)
+          let args = s.node_id.match(/^:([\w]+)-([\w]+)-([\w]+)-?[\w]*$/)
           return {
             type: args[1],
             row: args[2],
