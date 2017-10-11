@@ -519,6 +519,39 @@ export default {
         ]
       }, [
 
+        /* stages */
+        vm.stages.map(function (stage) {
+          return createElement('g', {
+            domProps: {
+              innerHTML: stage.html
+            }
+          })
+        }),
+        /* /stages */
+
+        /* facilities */
+        vm.facilities.map(function (facility) {
+          return createElement('g', {
+            domProps: {
+              innerHTML: facility.html
+            }
+          })
+        }),
+        /* /facilities */
+
+        /* disabilities */
+        vm.disabilities.map(function (disability) {
+          return createElement('g', {
+            attrs:{
+              fill: "steelblue"
+            },
+            domProps: {
+              innerHTML: disability.html
+            }
+          })
+        }),
+        /* /disabilities */
+
         /* seats */
         createElement('g', null, [
           vm.seats.map(function (seat, index) {
@@ -613,41 +646,8 @@ export default {
               })
             }
           })
-        ]),
+        ])
         /* /seats */
-
-        /* stages */
-        vm.stages.map(function (stage) {
-          return createElement('g', {
-            domProps: {
-              innerHTML: stage.html
-            }
-          })
-        }),
-        /* /stages */
-
-        /* facilities */
-        vm.facilities.map(function (facility) {
-          return createElement('g', {
-            domProps: {
-              innerHTML: facility.html
-            }
-          })
-        }),
-        /* /facilities */
-
-        /* disabilities */
-        vm.disabilities.map(function (disability) {
-          return createElement('g', {
-            attrs:{
-              fill: "steelblue"
-            },
-            domProps: {
-              innerHTML: disability.html
-            }
-          })
-        }),
-        /* /disabilities */
       ]),
       /* /svg */
 
