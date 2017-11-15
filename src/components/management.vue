@@ -617,6 +617,15 @@ export default {
     },
     save () {
       this.mode = 'save'
+
+      /**
+       * 提醒尚未執行自動配號
+       */
+      if (!this.autoSn.endSn) {
+        let isConfirmSave = window.confirm('提醒：尚未進行自動配號，是否仍要儲存？')
+        if (!isConfirmSave) return
+      }
+
       this.loading = true
 
       let vm = this
@@ -1920,6 +1929,7 @@ export default {
       float: left;
       padding: 5px 12px;
       background-color: transparent;
+      border-radius: 0;
       border: none;
       border-right: 1px solid #CCC;
       text-align: center;

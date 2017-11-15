@@ -940,6 +940,7 @@ export default {
       float: left;
       padding: 5px 12px;
       background-color: transparent;
+      border-radius: 0;
       border: none;
       border-right: 1px solid #CCC;
       text-align: center;
