@@ -723,7 +723,17 @@ export default {
          return
       }
 
-      this.seats = this.seats.map((seat, index) => {
+      this.seats = this.seats.sort((seatA, seatB) => {
+        if (seatA.category === null) { return 1 }
+        if (seatB.category === null) { return -1 }
+        if (seatA.category > seatB.category) {
+          return 1
+        } else if (seatA.category < seatB.category) {
+          return -1
+        } else {
+          return 0
+        }
+      }).map((seat, index) => {
         return Object.assign({}, seat, {
           sn: sn.shift()
         })
