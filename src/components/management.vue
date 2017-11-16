@@ -713,7 +713,7 @@ export default {
       }
 
       let sn = []
-      let pad = new Array(snLength + 1).join('0')
+      let pad = Array(snLength).fill('0').join('')
       for (let i = startSn; i <= endSn; i++){
         sn.push(this.autoSn.prefix + pad.substring(0, pad.length - i.toString().length) + i.toString())
       }
@@ -1660,9 +1660,20 @@ export default {
                 value: vm.autoSn.startSn
               },
               on: {
-                change: function (e) {
+                keyup: function (e) {
+
                   vm.autoSn.startSn = e.target.value
-                  vm.autoSn.endSn = (Number(e.target.value) + vm.seats.length + vm.disabilities.length - 1).toString()
+
+                  // 檢驗 startSn 是否為數值
+                  if(/^[0-9]+$/.test(e.target.value)) {
+                    let startSn = e.target.value
+                    let endSn = (Number(e.target.value) + vm.seats.length + vm.disabilities.length - 1).toString()
+                    let snLength = Math.max(startSn.length, endSn.length)
+                    let pad = Array(snLength).fill('0').join('')
+                    vm.autoSn.endSn = pad.substring(0, pad.length - endSn.toString().length) + endSn.toString()
+                  } else {
+                    vm.autoSn.endSn = ''
+                  }
                 }
               }
             }),
@@ -1670,10 +1681,10 @@ export default {
               attrs: {
                 type: 'text',
                 placeholder: 'End SN',
-                disabled: vm.isSnAssigned
+                disabled: true
               },
               class: {
-                disabled: vm.isSnAssigned
+                disabled: true
               },
               domProps: {
                 value: vm.autoSn.endSn
