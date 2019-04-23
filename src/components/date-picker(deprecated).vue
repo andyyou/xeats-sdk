@@ -2,11 +2,12 @@
   <div>
     <input type='date' required pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}"
     v-if="useNative"
+    class="inputStyle"
     :style="inputStyle"
     :min="options.minYear + '-01-01'"
     :max="options.maxYear + '-12-31'"
-    :value="pickDate"
-    @change="setDate($event)"
+    :value="datePicked"
+    @change="userChangeDate($event)"
     >
 
     <div
@@ -42,7 +43,7 @@
         >{{ day }}</option>
       </select>
 
-      <input type="hidden" :value="pickDate">
+      <input type="hidden" :value="datePicked">
     </div>
   </div>
 </template>
@@ -64,6 +65,9 @@ export default {
     },
     inputStyle: {
       type: Object
+    },
+    datePickerOption: {
+      type: String
     }
   },
   data () {
@@ -81,16 +85,24 @@ export default {
       useNative: true
     }
   },
+  watch: {
+    // This is to update setDate for props
+    datePickerOption (value) {
+      console.log('datePickerOption', value)
+      if (/\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+/.test(value)) {
+        let date = value.split('T')[0]
+        this.year = date.split('-')[0]
+        this.month = date.split('-')[1]
+        this.day = date.split('-')[2]
+      }
+    }
+  },
   computed: {
-    pickDate () {
-      let date = `${this.year}-${this.month}-${this.day}`
-      console.log('emit')
-      this.$emit('get-date', date)
-      return date
+    datePicked () {
+      return `${this.year}-${this.month}-${this.day}`
     },
     dayOptions: {
       get () {
-        console.log('computed dayOptions')
         let dayOptions = []
         let dayNumber
         let month = this.month
@@ -121,13 +133,16 @@ export default {
     }
   },
   methods: {
-    setDate (event) {
-      console.log('event', event.target.value)
+    userChangeDate (event) {
+      console.log('userChangeDate', event)
+      // 判斷 value 是否存在，若 value 不存在表示使用者輸入無效的日期
       if (event.target.value) {
         let pickDay = event.target.value.split('-')
         this.year = pickDay[0]
         this.month = pickDay[1]
         this.day = pickDay[2]
+        console.log('refresh-date', this.datePicked)
+        this.$emit('refresh-date', this.datePicked)
       }
     }
   },
@@ -140,10 +155,15 @@ export default {
 
     this.options.today = today.toISOString().split('T')[0]
 
-    // 將今天設為預設值
+    // 如果沒有指定日期，則預設顯示今天
     this.year = this.options.today.split('-')[0]
     this.month = this.options.today.split('-')[1]
     this.day = this.options.today.split('-')[2]
+
+
+    console.log('refresh-date', this.datePicked)
+    this.$emit('refresh-date', this.datePicked)
+    
 
     if (isNativeSupport.type === 'text') {
       this.useNative = false
@@ -164,4 +184,21 @@ export default {
 </script>
 
 <style lang="sass" scoped>
+  .inputStyle{
+    border: 1px solid #CCC;
+    background-color: white;
+    border-radius: 3px;
+    align-self: flex-end;
+    padding: 5px 8px;
+    margin-top: 5px;
+    cursor: pointer;
+    color: rgba(0, 0, 0, 0.65);
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 1.5em;
+    transition: all .3s ease;
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+  }
 </style>

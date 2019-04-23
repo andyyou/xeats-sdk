@@ -15,12 +15,12 @@ module.exports = {
     filename: '[name].js',
     publicPath: '/dist',
     libraryTarget: 'umd',
-    library: 'Xeat'
+    library: 'Xeats'
   },
   resolve: {
     extensions: ['.js', '.vue', '.json', '.css'],
     alias: {
-      'vue$': 'vue/dist/vue.esm.js',
+      // 'vue$': 'vue/dist/vue.esm.js',
       '@': resolve('src')
     }
   },
@@ -42,7 +42,20 @@ module.exports = {
       },
       {
         test: /\.css$/,
-        use: ['style-loader', 'css-loader']
+        use: [
+          {
+            loader: 'style-loader',
+            options: {
+              attrs: {
+                id: 'xeats-sdk-styles',
+                prefix: 'xeats-sdk'
+              }
+            }
+          },
+          {
+            loader: 'css-loader'
+          }
+        ]
       },
       {
         test: /\.(eot|svg|ttf|woff|woff2)(\?.*)?$/,

@@ -1,5 +1,5 @@
 import Hammer from 'hammerjs'
-import hammertime from 'hammer-timejs'
+import 'hammer-timejs'
 
 export default {
   install (Vue, options) {
@@ -14,8 +14,11 @@ export default {
         let currentScale
 
         // Create Manager
-        mc = new Hammer.Manager(svgElement)
-
+        if (binding.modifiers.vframe) {
+          mc = new Hammer.Manager(document.querySelector('#vframe').contentWindow.document.body)
+        } else {
+          mc = new Hammer.Manager(svgElement)
+        }
         // Create Recognizer
         const pinch = new Hammer.Pinch({domEvents: true})
         const pan = new Hammer.Pan({domEvents: true})
@@ -25,7 +28,6 @@ export default {
 
         onPanStart = function () {
           panning = true
-          console.log('onPanStart')
           startViewBox = svgElement.getAttribute('viewBox').split(' ').map(n => parseFloat(n))
         }
 
@@ -57,7 +59,6 @@ export default {
         }
 
         onPanEnd = function () {
-          console.log('panend')
           panning = false
         }
 
@@ -75,7 +76,7 @@ export default {
             startPoint.x = e.center.x
             startPoint.y = e.center.y
           } else {
-            console.warn('event not support')
+            console.warn('Event not support')
           }
           let svgStartPoint = startPoint.matrixTransform(ctm.inverse())
 
@@ -105,7 +106,7 @@ export default {
               currentScale = scaleRange.maxSize
             }
           } else {
-            console.warn('not handle event')
+            console.warn('Not handle event')
           }
 
           svgElement.setAttribute('viewBox', `${startViewBox[0]} ${startViewBox[1]} ${viewport.width * currentScale} ${viewport.height * currentScale}`)
@@ -131,27 +132,33 @@ export default {
           vnode.context[binding.expression].scale = currentScale
           mc.off('pan')
           setTimeout(mc.on('pan'), 500)
-          console.log('pinchend')
         }
 
-        mc.on('pinchstart', () => { console.log('pinchstart', el) })
+        mc.on('pinchstart', () => {})
         mc.on('pinchmove', onZoom)
         mc.on('pinchend', onPinchEnd)
         mc.on('panstart', onPanStart)
         mc.on('panmove', onPanMove)
         mc.on('panend', onPanEnd)
-        el.addEventListener('wheel', onZoom, false)
+        if (!binding.modifiers['disable-wheel']) {
+          el.addEventListener('wheel', onZoom, false)
+        }
       },
       unbind (el, binding, vnode, oldVnode) {
-        mc.off('pinchstart', () => { console.log('pinchstart', el) })
-        mc.off('pinchmove', onZoom)
+        mc.off('pinchstart', () => {})
+        
+        if (!binding.modifiers['disable-wheel']) {
+          mc.off('pinchmove', onZoom)
+        }
         mc.off('pinchend', onPinchEnd)
         mc.off('panstart', onPanStart)
         mc.off('panmove', onPanMove)
         mc.off('panend', onPanEnd)
         mc.off('pan')
         mc.off('pinch')
-        el.removeEventListener('wheel', onZoom)
+        if (!binding.modifiers['disable-wheel']) {
+          el.removeEventListener('wheel', onZoom)
+        }
       }
     })
   }
